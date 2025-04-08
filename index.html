@@ -62,11 +62,35 @@
         .admin-action-icon:hover { opacity: 1; }
          .table .admin-only { text-align: center; } /* Centrer les icônes dans les cellules d'action */
          .list-group-item .admin-only { margin-left: auto; /* Pousser les icônes à droite dans les listes */ }
+         
+         /* Style pour les erreurs de debug */
+         .debug-error-box {
+            background-color: #fee; 
+            border: 1px solid #f99; 
+            padding: 10px; 
+            margin-bottom: 15px; 
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+         }
+         
+         /* Ajouter un style pour l'indicateur de statut sur le tableau de bord */
+         .firebase-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 5px;
+            background: #eee;
+         }
+         .firebase-status.ok { background: var(--success); color: white; }
+         .firebase-status.error { background: var(--danger); color: white; }
+         .firebase-status.warning { background: var(--warning); color: #333; }
     </style>
 </head>
 <body>
     <!-- Overlay global -->
-    <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+    <div class="loading-overlay show" id="loadingOverlay"><div class="spinner"></div></div>
 
     <!-- Admin Badge -->
     <div class="admin-badge" id="adminBadge" title="Connexion administrateur"><i class="fas fa-lock"></i></div>
@@ -205,6 +229,60 @@
             </div>
         </div>
     </div>
+    
+    <!-- Nouveau: Modal de Debug -->
+    <div class="modal fade" id="debugModal" tabindex="-1" aria-labelledby="debugModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="debugModalTitle">Diagnostic de l'Application</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="debugContent">
+                    <h6>Status de la connexion Firebase</h6>
+                    <div id="firebaseStatus" class="p-2 my-2">Chargement...</div>
+                    
+                    <h6>Contenu des collections</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm table-bordered">
+                                <thead><tr><th>Collection</th><th>Nombre d'entrées</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Sessions</td><td id="debugSessionsCount">-</td></tr>
+                                    <tr><td>Groupes</td><td id="debugGroupsCount">-</td></tr>
+                                    <tr><td>Participants</td><td id="debugParticipantsCount">-</td></tr>
+                                    <tr><td>Formations</td><td id="debugTrainingsCount">-</td></tr>
+                                    <tr><td>Services</td><td id="debugServicesCount">-</td></tr>
+                                    <tr><td>Administrateurs</td><td id="debugAdminsCount">-</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status Auth:</strong> <span id="debugAuthStatus">-</span></p>
+                            <p><strong>User ID:</strong> <span id="debugUserId">-</span></p>
+                            <p><strong>Anonymous:</strong> <span id="debugAnonymous">-</span></p>
+                            <p><strong>Admin:</strong> <span id="debugAdmin">-</span></p>
+                            <p><strong>Data Loaded:</strong> <span id="debugDataLoaded">-</span></p>
+                        </div>
+                    </div>
+                    
+                    <h6>Journal d'erreurs</h6>
+                    <div id="debugErrorLog" class="debug-error-box" style="max-height: 200px; overflow-y: auto;">
+                        Aucune erreur enregistrée.
+                    </div>
+                    
+                    <h6>Actions de diagnostic</h6>
+                    <button id="debugTestFirebase" class="btn btn-warning me-2">Tester Firebase</button>
+                    <button id="debugReloadData" class="btn btn-primary me-2">Recharger les données</button>
+                    <button id="debugAnonymousLogin" class="btn btn-secondary me-2">Connexion Anonyme</button>
+                    <button id="debugClearErrors" class="btn btn-danger me-2">Effacer les erreurs</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -220,7 +298,12 @@
             <li class="nav-item mt-auto admin-only" style="display: none;"><a class="nav-link" href="#" data-page="settings"><i class="fas fa-cog fa-fw"></i> Paramètres</a></li>
             <li class="nav-item admin-only" style="display: none;"><a class="nav-link" href="#" id="exportPlanningLink"><i class="fas fa-file-export fa-fw"></i> Exporter Planning</a></li>
         </ul>
-        <div class="sidebar-footer"><p class="small text-muted mb-0">© 2025 Anecoop-France</p></div>
+        <div class="sidebar-footer">
+            <p class="small text-muted mb-0">© 2025 Anecoop-France</p>
+            <button id="debugButton" class="btn btn-sm btn-outline-secondary mt-2" title="Mode Debug">
+                <i class="fas fa-bug"></i> Debug
+            </button>
+        </div>
     </div>
 
     <!-- Main Content Area -->
@@ -270,6 +353,18 @@
             <!-- Dashboard -->
             <div id="dashboardPage" class="page-content active">
                 <h2 class="mb-4">Tableau de bord</h2>
+                
+                <!-- Nouveau: Section de diagnostic -->
+                <div id="diagnosticSection" class="alert alert-warning mb-4" style="display: none;">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i> Problèmes détectés</h5>
+                    <div id="diagnosticMessages">
+                        Vérification de la connexion Firebase...
+                    </div>
+                    <button id="fixFirebaseConfigBtn" class="btn btn-sm btn-warning mt-2" style="display: none;">
+                        <i class="fas fa-wrench me-1"></i> Corriger la configuration Firebase
+                    </button>
+                </div>
+                
                 <div class="card mb-4">
                     <div class="card-header">Nos Formations Disponibles</div>
                     <div class="card-body">
@@ -465,7 +560,43 @@
                               <div class="card-body">
                                  <p>Ajoutez, modifiez ou supprimez les services disponibles pour les groupes et participants.</p>
                                  <button class="btn btn-outline-primary" data-page="services"><i class="fas fa-building me-1"></i> Aller à la Gestion des Services</button>
-                             </div>
+                              </div>
+                         </div>
+                         
+                         <!-- Nouvelle section pour la configuration Firebase -->
+                         <div class="card mt-4">
+                             <div class="card-header bg-warning text-dark">Configuration Firebase</div>
+                              <div class="card-body">
+                                <form id="firebaseConfigForm">
+                                    <div class="mb-2">
+                                        <label for="apiKey" class="form-label">API Key</label>
+                                        <input type="text" class="form-control form-control-sm" id="apiKey" placeholder="AIzaSy...">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="authDomain" class="form-label">Auth Domain</label>
+                                        <input type="text" class="form-control form-control-sm" id="authDomain" placeholder="your-app.firebaseapp.com">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="projectId" class="form-label">Project ID</label>
+                                        <input type="text" class="form-control form-control-sm" id="projectId" placeholder="your-project-id">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="storageBucket" class="form-label">Storage Bucket</label>
+                                        <input type="text" class="form-control form-control-sm" id="storageBucket" placeholder="your-app.appspot.com">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-2">
+                                            <label for="messagingSenderId" class="form-label">Messaging Sender ID</label>
+                                            <input type="text" class="form-control form-control-sm" id="messagingSenderId">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="appId" class="form-label">App ID</label>
+                                            <input type="text" class="form-control form-control-sm" id="appId">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-warning">Mettre à jour Config Firebase</button>
+                                </form>
+                              </div>
                          </div>
                     </div>
                 </div>
@@ -479,21 +610,46 @@
 
     <!-- Dépendances JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
     <script>
-       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCrcpvq1sz1IVVq7MiNOhj_Fj4dtd9YVyA",
-  authDomain: "anecoop-formations.firebaseapp.com",
-  projectId: "anecoop-formations",
-  storageBucket: "anecoop-formations.firebasestorage.app",
-  messagingSenderId: "81893594187",
-  appId: "1:81893594187:web:ee0a07c0b5e7a1844569ce",
-  measurementId: "G-2TMQMNC7KW"
-};
+        // Variables pour le système de debug
+        let debugErrors = [];
+        
+        // Gestionnaire d'erreurs global
+        window.addEventListener('error', function(event) {
+            const errorMsg = `ERROR [${new Date().toLocaleTimeString()}]: ${event.error ? event.error.message : event.message}`;
+            console.error(errorMsg);
+            
+            // Ajouter à notre journal d'erreurs
+            debugErrors.push({ 
+                time: new Date(), 
+                message: event.error ? event.error.message : event.message,
+                stack: event.error ? event.error.stack : null 
+            });
+            
+            // Mettre à jour le journal dans la modal si elle est ouverte
+            updateDebugErrorLog();
+            
+            // Afficher notification
+            showNotification("Une erreur s'est produite. Ouvrez le debug pour plus de détails (bouton en bas de la barre latérale).", "danger");
+            
+            // Afficher le diagnostic sur le dashboard
+            showDiagnosticSection();
+        });
+        
+        // --- Configuration Firebase ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCrcpvq1sz1IVVq7MiNOhj_Fj4dtd9YVyA", 
+          authDomain: "anecoop-formations.firebaseapp.com",
+          projectId: "anecoop-formations",
+          storageBucket: "anecoop-formations.appspot.com",
+          messagingSenderId: "81893594187",
+          appId: "1:81893594187:web:ee0a07c0b5e7a1844569ce",
+          measurementId: "G-2TMQMNC7KW"
+        };
 
         // --- Variables Globales ---
         let firebaseApp, db, auth, useFirebase = false, adminLoggedIn = false, currentUserId = null;
@@ -551,9 +707,13 @@ const firebaseConfig = {
             connectionStatusEl.classList.toggle('offline', !isConnected);
             if (connectionStatusText) connectionStatusText.textContent = message || (isConnected ? 'Connecté' : 'Non connecté');
             if (retryConnectionBtn) retryConnectionBtn.style.display = (!isConnected && connectionAttempts >= maxConnectionAttempts) ? 'inline-block' : 'none';
+            
+            // Mettre à jour le statut dans le debug
+            updateDebugStatus();
         }
 
         function showNotification(message, type = 'info') {
+            console.log(`NOTIFICATION [${type}]: ${message}`);
             const template = document.getElementById('notificationTemplate');
             if (!template) return;
             const notification = template.children[0].cloneNode(true);
@@ -616,9 +776,8 @@ const firebaseConfig = {
             if (uid === currentUserId && isAnonymousUser) {
                 return 'Utilisateur Anonyme';
             }
-            // Find participant name if possible? Needs linking UID to participant ID.
-             const participant = getData().participants.find(p => p.userId === uid); // Assuming a userId field exists
-             if (participant) return participant.name;
+            const participant = getData().participants.find(p => p.userId === uid);
+            if (participant) return participant.name;
 
             return 'Utilisateur';
         }
@@ -654,193 +813,312 @@ const firebaseConfig = {
         }
 
         async function checkAndInitializeDefaultData() {
-            if (!db || !adminLoggedIn) return false; // Only allow init by admin maybe? Or first load? Check logic.
-
-             // Let's allow init on first load even if not admin for setup simplicity in this context
-             // Check if settings exist as a proxy for initialization
-             const settingsSnap = await db.collection('settings').doc('app_settings').get();
-             if (settingsSnap.exists) {
-                 // console.log("Settings found, assuming data is initialized.");
-                 return false; // Already initialized
-             }
-
-             console.log("Data potentially uninitialized, checking collections...");
-             showNotification("Initialisation des données par défaut...", "info");
+            console.log("=== VÉRIFICATION DONNÉES PAR DÉFAUT ===");
+            if (!db) {
+                console.error("ERREUR: Firestore non disponible pour l'initialisation des données par défaut");
+                return false;
+            }
 
             try {
-                 const batch = db.batch();
-                 let initialized = false;
+                console.log("Vérification du document des paramètres...");
+                const settingsSnap = await db.collection('settings').doc('app_settings').get();
+                
+                if (settingsSnap.exists) {
+                    console.log("Paramètres trouvés, données probablement déjà initialisées.");
+                    return false;
+                }
 
-                 // Check Trainings
-                 const trainingsSnap = await db.collection('trainings').limit(1).get();
-                 if (trainingsSnap.empty) {
-                     console.log("Initializing Trainings...");
-                     initialized = true;
-                     defaultTrainings.forEach(training => {
-                         const docRef = db.collection('trainings').doc(training.id);
-                         batch.set(docRef, { name: training.name, duration: training.duration, description: training.description, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                     });
-                 }
+                console.log("Paramètres non trouvés, vérification des collections...");
+                showNotification("Initialisation des données par défaut...", "info");
 
-                 // Check Services
-                 const servicesSnap = await db.collection('services').limit(1).get();
-                 if (servicesSnap.empty) {
-                     console.log("Initializing Services...");
-                     initialized = true;
-                      defaultServices.forEach(service => {
-                         const docRef = service.id ? db.collection('services').doc(service.id) : db.collection('services').doc(); // Generate ID if not provided
-                         batch.set(docRef, { name: service.name, managerEmail: service.managerEmail || '', notes: '', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                     });
-                 }
+                const batch = db.batch();
+                let initialized = false;
 
-                 // Check Groups (depends on services potentially)
-                 const groupsSnap = await db.collection('groups').limit(1).get();
-                 if (groupsSnap.empty) {
-                     console.log("Initializing Groups...");
-                     initialized = true;
-                      defaultGroups.forEach(group => {
-                          // Find the corresponding default service ID if needed, or just use name for now
-                          const serviceName = group.service; // Assumes default groups use names from default services
-                         const docRef = group.id ? db.collection('groups').doc(group.id) : db.collection('groups').doc();
-                         batch.set(docRef, { name: group.name, service: serviceName, minSize: group.minSize, maxSize: group.maxSize, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                     });
-                 }
+                // Vérification formations
+                console.log("Vérification des formations...");
+                const trainingsSnap = await db.collection('trainings').limit(1).get();
+                if (trainingsSnap.empty) {
+                    console.log("Collection formations vide, initialisation...");
+                    initialized = true;
+                    defaultTrainings.forEach(training => {
+                        const docRef = db.collection('trainings').doc(training.id);
+                        batch.set(docRef, {
+                            name: training.name,
+                            duration: training.duration,
+                            description: training.description,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log(`Formation ajoutée: ${training.name}`);
+                    });
+                }
 
-                  // Initialize settings (since we checked it was missing earlier)
-                  console.log("Initializing Settings...");
-                  const settingsRef = db.collection('settings').doc('app_settings');
-                  batch.set(settingsRef, {
-                        companyName: 'Anecoop-France', siteLocation: 'Anecoop', minGroupSize: 8, maxGroupSize: 12,
-                        defaultDuration: 90, planningPeriod: 'Mai-Juin 2025', createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                  });
+                // Vérification services
+                console.log("Vérification des services...");
+                const servicesSnap = await db.collection('services').limit(1).get();
+                if (servicesSnap.empty) {
+                    console.log("Collection services vide, initialisation...");
+                    initialized = true;
+                    defaultServices.forEach(service => {
+                        const docRef = service.id ? 
+                            db.collection('services').doc(service.id) : 
+                            db.collection('services').doc();
+                        batch.set(docRef, {
+                            name: service.name,
+                            managerEmail: service.managerEmail || '',
+                            notes: '',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log(`Service ajouté: ${service.name}`);
+                    });
+                }
 
-                 if (initialized) {
-                     await batch.commit();
-                     showNotification("Données par défaut initialisées.", "success");
-                     return true;
-                 } else {
-                      console.log("Collections not empty, skipping initialization.");
-                      // Still ensure settings doc exists even if others weren't empty
-                       if (!settingsSnap.exists) {
-                           await settingsRef.set({ /* default settings */ createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                       }
-                     return false;
-                 }
+                // Vérification groupes
+                console.log("Vérification des groupes...");
+                const groupsSnap = await db.collection('groups').limit(1).get();
+                if (groupsSnap.empty) {
+                    console.log("Collection groupes vide, initialisation...");
+                    initialized = true;
+                    defaultGroups.forEach(group => {
+                        const docRef = group.id ? 
+                            db.collection('groups').doc(group.id) : 
+                            db.collection('groups').doc();
+                        batch.set(docRef, {
+                            name: group.name,
+                            service: group.service,
+                            minSize: group.minSize,
+                            maxSize: group.maxSize,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log(`Groupe ajouté: ${group.name}`);
+                    });
+                }
+
+                // Initialisation paramètres
+                console.log("Initialisation du document des paramètres...");
+                const settingsRef = db.collection('settings').doc('app_settings');
+                batch.set(settingsRef, {
+                    companyName: 'Anecoop-France',
+                    siteLocation: 'Anecoop',
+                    minGroupSize: 8,
+                    maxGroupSize: 12,
+                    defaultDuration: 90,
+                    planningPeriod: 'Mai-Juin 2025',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                if (initialized) {
+                    console.log("Validation des modifications par lot...");
+                    await batch.commit();
+                    console.log("Batch commit réussi!");
+                    showNotification("Données par défaut initialisées.", "success");
+                    return true;
+                } else {
+                    console.log("Collections non vides, pas besoin d'initialisation.");
+                    // S'assurer que les paramètres existent même si les autres collections n'étaient pas vides
+                    if (!settingsSnap.exists) {
+                        await settingsRef.set({
+                            companyName: 'Anecoop-France',
+                            siteLocation: 'Anecoop',
+                            minGroupSize: 8,
+                            maxGroupSize: 12,
+                            defaultDuration: 90,
+                            planningPeriod: 'Mai-Juin 2025',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log("Document des paramètres créé.");
+                    }
+                    return false;
+                }
 
             } catch (error) {
-                console.error("Erreur lors de l'initialisation des données par défaut:", error);
+                console.error("ERREUR: Initialisation des données par défaut:", error);
+                console.error("Stack trace:", error.stack);
                 showNotification("Erreur initialisation données: " + error.message, "danger");
+                
+                // Enregistrer l'erreur pour le debug
+                debugErrors.push({
+                    time: new Date(),
+                    context: "Initialisation données par défaut", 
+                    message: error.message,
+                    stack: error.stack
+                });
+                updateDebugErrorLog();
+                
                 return false;
             }
         }
 
         async function loadDataAndRenderUI(attemptRetry = true) {
+            console.log("=== CHARGEMENT DES DONNÉES ===");
+            
             if (!useFirebase || !db) {
-                 if (attemptRetry) { // Only show error if it's a retry or initial load
+                console.error("ERREUR: Firebase/Firestore non disponible pour chargement des données");
+                if (attemptRetry) {
                     showNotification("Connexion base de données non disponible.", "danger");
                     updateConnectionStatus(false, "Erreur BDD");
-                 }
+                }
                 hideLoading();
+                showDiagnosticSection("Impossible d'accéder à Firebase. Vérifiez votre configuration et votre connexion Internet.");
                 return;
             }
 
             console.log("Chargement/Rafraîchissement des données...");
-            showLoading(); // Show global overlay for full refresh
+            showLoading();
 
             try {
-                // Check/Initialize default data only on initial load maybe?
-                 if (!dataLoadedSuccessfully) { // Check only once?
-                      await checkAndInitializeDefaultData();
-                 }
+                // Vérifiez les données par défaut
+                if (!dataLoadedSuccessfully) {
+                    console.log("Première charge: vérification données par défaut...");
+                    const initialized = await checkAndInitializeDefaultData();
+                    if (initialized) {
+                        console.log("Données par défaut initialisées avec succès");
+                    }
+                }
 
-                // Fetch all data concurrently
-                const [sessionsSnap, groupsSnap, participantsSnap, trainingsSnap, settingsSnap, servicesSnap, adminsSnap] = await Promise.all([
-                    db.collection('sessions').get(),
-                    db.collection('groups').orderBy('name', 'asc').get(),
-                    db.collection('participants').orderBy('name', 'asc').get(),
-                    db.collection('trainings').orderBy('name', 'asc').get(),
-                    db.collection('settings').doc('app_settings').get(),
-                    db.collection('services').orderBy('name', 'asc').get(), // Charger services
-                    db.collection('administrators').get() // Charger admins
-                ]);
+                console.log("Chargement des collections Firestore...");
+                
+                // Log de chaque requête
+                console.log("- Chargement des sessions...");
+                const sessionsPromise = db.collection('sessions').get();
+                
+                console.log("- Chargement des groupes...");
+                const groupsPromise = db.collection('groups').orderBy('name', 'asc').get();
+                
+                console.log("- Chargement des participants...");
+                const participantsPromise = db.collection('participants').orderBy('name', 'asc').get();
+                
+                console.log("- Chargement des formations...");
+                const trainingsPromise = db.collection('trainings').orderBy('name', 'asc').get();
+                
+                console.log("- Chargement des paramètres...");
+                const settingsPromise = db.collection('settings').doc('app_settings').get();
+                
+                console.log("- Chargement des services...");
+                const servicesPromise = db.collection('services').orderBy('name', 'asc').get();
+                
+                console.log("- Chargement des administrateurs...");
+                const adminsPromise = db.collection('administrators').get();
 
-                // Store data globally
+                // Attendez toutes les promesses ensemble
+                const [sessionsSnap, groupsSnap, participantsSnap, trainingsSnap, settingsSnap, servicesSnap, adminsSnap] = 
+                    await Promise.all([
+                        sessionsPromise, groupsPromise, participantsPromise, trainingsPromise,
+                        settingsPromise, servicesPromise, adminsPromise
+                    ]);
+
+                // Log des résultats
+                console.log(`Sessions: ${sessionsSnap.size}, Groupes: ${groupsSnap.size}, Participants: ${participantsSnap.size}`);
+                console.log(`Formations: ${trainingsSnap.size}, Services: ${servicesSnap.size}, Admins: ${adminsSnap.size}`);
+                console.log(`Paramètres: ${settingsSnap.exists ? 'Existent' : 'Manquants'}`);
+
+                // Stockage des données
                 window.appData = {
                     sessions: sessionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     groups: groupsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     participants: participantsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     trainings: trainingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     settings: settingsSnap.exists ? settingsSnap.data() : { minGroupSize: 8, maxGroupSize: 12, defaultDuration: 90 },
-                    services: servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })), // Store services
-                    administrators: adminsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) // Store admin docs (might just contain UID or more)
+                    services: servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    administrators: adminsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                 };
 
                 dataLoadedSuccessfully = true;
-                // Update connection status based on current auth state AFTER data load
                 updateConnectionStatus(true, authInitialized ? (adminLoggedIn ? "Connecté (Admin)" : "Connecté") : "Chargement Auth...");
                 connectionAttempts = 0;
 
-                console.log("Données chargées:", window.appData);
+                console.log("Données chargées avec succès.");
+                
+                // Masquer le diagnostic si tout va bien
+                hideDiagnosticSection();
 
-                // Populate dynamic dropdowns *after* data is loaded
+                // Populate dropdowns
+                console.log("Remplissage des dropdowns...");
                 populateSelectWithOptions('proposeGroupId', getData().groups, g => `${g.name} (${g.service || 'N/A'})`, g => g.id);
-                populateSelectWithOptions('participantService', getData().services, s => s.name, s => s.name); // Use service name as value/text
+                populateSelectWithOptions('participantService', getData().services, s => s.name, s => s.name);
                 populateSelectWithOptions('participantGroupId', getData().groups, g => `${g.name} (${g.service || 'N/A'})`, g => g.id);
                 populateSelectWithOptions('groupService', getData().services, s => s.name, s => s.name);
-                populateSelectWithOptions('sessionManualTrainingId', getData().trainings, t => t.name, t => t.id, true); // Add data-name
-                populateSelectWithOptions('sessionManualGroupId', getData().groups, g => `${g.name} (${g.service || 'N/A'})`, g => g.id, true); // Add data-name/service
+                populateSelectWithOptions('sessionManualTrainingId', getData().trainings, t => t.name, t => t.id, true);
+                populateSelectWithOptions('sessionManualGroupId', getData().groups, g => `${g.name} (${g.service || 'N/A'})`, g => g.id, true);
                 populateSelectWithOptions('exportFilterService', getData().services, s => s.name, s => s.name);
 
+                // Mettre à jour le debug
+                updateDebugStatus();
 
-                // Render the currently active page with the new data
-                navigateTo(currentActivePage, false); // false = do not reload data again
+                // Navigation
+                console.log("Rendu de la page:", currentActivePage);
+                navigateTo(currentActivePage, false);
 
             } catch (error) {
-                console.error("Erreur chargement données Firebase:", error);
+                console.error("ERREUR CHARGEMENT DONNÉES:", error);
+                console.error("Stack trace:", error.stack);
                 showNotification("Erreur de chargement des données: " + error.message, "danger");
                 dataLoadedSuccessfully = false;
                 updateConnectionStatus(false, "Erreur chargement");
+
+                // Enregistrer l'erreur pour le debug
+                debugErrors.push({
+                    time: new Date(),
+                    context: "Chargement données", 
+                    message: error.message,
+                    stack: error.stack
+                });
+                updateDebugErrorLog();
+                
+                // Afficher le diagnostic
+                let errorMessage = `Erreur lors du chargement des données: ${error.message}`;
+                if (error.code === 'permission-denied') {
+                    errorMessage += "<br>Les règles de sécurité Firestore empêchent l'accès aux données. Vérifiez vos règles dans la console Firebase.";
+                }
+                showDiagnosticSection(errorMessage);
 
                 if (attemptRetry && connectionAttempts < maxConnectionAttempts) {
                     connectionAttempts++;
                     showNotification(`Tentative de reconnexion (${connectionAttempts}/${maxConnectionAttempts})...`, "warning");
                     setTimeout(() => {
-                        loadDataAndRenderUI(true); // Retry the load
+                        loadDataAndRenderUI(true);
                     }, 3000 * connectionAttempts);
                 } else if (attemptRetry) {
                     showNotification("Impossible de charger les données après plusieurs tentatives.", "danger");
                     updateConnectionStatus(false, "Échec chargement");
-                    hideLoading(); // Hide loading on final failure
-                    navigateTo(currentActivePage, false); // Attempt to render page (will show error)
+                    hideLoading();
+                    navigateTo(currentActivePage, false);
                 } else {
-                    hideLoading(); // Hide if not retrying
+                    hideLoading();
                 }
             } finally {
-                // Ensure loading is hidden if no more retries are planned
-                 if (!attemptRetry || connectionAttempts >= maxConnectionAttempts) {
-                     hideLoading();
-                 }
+                if (!attemptRetry || connectionAttempts >= maxConnectionAttempts) {
+                    hideLoading();
+                }
             }
         }
 
         // --- Helper pour peupler les Selects ---
         function populateSelectWithOptions(selectId, dataArray, textMapper, valueMapper, addDataAttrs = false) {
             const selectElement = document.getElementById(selectId);
-            if (!selectElement) return;
+            if (!selectElement) {
+                console.warn(`Select avec ID '${selectId}' non trouvé dans le DOM`);
+                return;
+            }
 
             const currentVal = selectElement.value; // Preserve current value if possible
             selectElement.innerHTML = `<option value="">-- Sélectionnez --</option>`; // Default empty option
 
             if (dataArray && dataArray.length > 0) {
                 dataArray.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = valueMapper(item);
-                    option.textContent = textMapper(item);
-                    if (addDataAttrs && item.name) option.dataset.name = item.name;
-                    if (addDataAttrs && item.service) option.dataset.service = item.service;
-                    selectElement.appendChild(option);
+                    try {
+                        const option = document.createElement('option');
+                        option.value = valueMapper(item);
+                        option.textContent = textMapper(item);
+                        if (addDataAttrs && item.name) option.dataset.name = item.name;
+                        if (addDataAttrs && item.service) option.dataset.service = item.service;
+                        selectElement.appendChild(option);
+                    } catch (err) {
+                        console.warn(`Erreur lors de l'ajout d'option au select '${selectId}':`, err);
+                    }
                 });
+                console.log(`Dropdown ${selectId} rempli avec ${dataArray.length} options`);
             } else {
+                console.log(`Aucune donnée pour le dropdown ${selectId}`);
                 selectElement.innerHTML = `<option value="">Aucune option disponible</option>`;
             }
             selectElement.value = currentVal; // Restore value
@@ -853,7 +1131,10 @@ const firebaseConfig = {
             removeLoadingPlaceholder('upcomingSessionsList');
             removeLoadingPlaceholder('serviceProgressContainer');
 
-            if (!dataLoadedSuccessfully) return; // Check after removing placeholders
+            if (!dataLoadedSuccessfully) {
+                console.warn("Impossible de rendre le dashboard: données non chargées");
+                return;
+            }
 
             const data = getData();
             const trainingsListEl = document.getElementById('availableTrainingsList');
