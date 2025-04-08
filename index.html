@@ -72,6 +72,214 @@
     <div class="modal fade" id="confirmSessionModal" tabindex="-1" aria-labelledby="confirmSessionModalLabel" aria-hidden="true">
          <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="confirmSessionModalLabel">Confirmer la Session</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><form id="confirmSessionForm"><div class="modal-body"><input type="hidden" id="confirmSessionId"><p>Confirmer: <strong id="confirmSessionDetails"></strong></p><p>Proposé: <span id="confirmProposedDate"></span></p><div class="mb-3"><label for="confirmDate" class="form-label">Date Confirmée</label><input type="date" id="confirmDate" class="form-control" required></div><div class="mb-3"><label for="confirmTime" class="form-label">Heure Confirmée</label><input type="time" id="confirmTime" class="form-control" required></div><div class="mb-3"><label for="confirmLocation" class="form-label">Lieu Confirmé</label><input type="text" id="confirmLocation" class="form-control"></div><div class="mb-3"><label for="confirmNotes" class="form-label">Notes Admin</label><textarea id="confirmNotes" class="form-control" rows="2"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="submit" class="btn btn-success">Confirmer Session</button></div></form></div></div>
      </div>
+    <!-- Participant Modal -->
+    <div class="modal fade" id="participantModal" tabindex="-1" aria-labelledby="participantModalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="participantModalTitle">Ajouter un Participant</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="participantForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="participantId">
+                        <div class="mb-3">
+                            <label for="participantName" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="participantName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="participantEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="participantEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="participantService" class="form-label">Service</label>
+                            <select class="form-select" id="participantService" required>
+                                <option value="">Sélectionnez un service...</option>
+                                <option value="Commerce">Commerce</option>
+                                <option value="Comptabilité">Comptabilité</option>
+                                <option value="RH">RH</option>
+                                <option value="Qualité">Qualité</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Informatique">Informatique</option>
+                                <option value="Direction">Direction</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="participantGroupId" class="form-label">Groupe</label>
+                            <select class="form-select" id="participantGroupId">
+                                <option value="">Sélectionnez un groupe...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="participantNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="participantNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-anecoop">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Group Modal -->
+    <div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="groupModalTitle">Ajouter un Groupe</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="groupForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="groupId">
+                        <div class="mb-3">
+                            <label for="groupName" class="form-label">Nom du Groupe</label>
+                            <input type="text" class="form-control" id="groupName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="groupService" class="form-label">Service</label>
+                            <select class="form-select" id="groupService" required>
+                                <option value="">Sélectionnez un service...</option>
+                                <option value="Commerce">Commerce</option>
+                                <option value="Comptabilité">Comptabilité</option>
+                                <option value="Services support">Services support</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="groupMinSize" class="form-label">Taille Min</label>
+                                <input type="number" class="form-control" id="groupMinSize" min="1" value="8">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="groupMaxSize" class="form-label">Taille Max</label>
+                                <input type="number" class="form-control" id="groupMaxSize" min="1" value="12">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="groupNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="groupNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-anecoop">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Session Manual Modal (Admin) -->
+    <div class="modal fade" id="sessionManualModal" tabindex="-1" aria-labelledby="sessionManualModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sessionManualModalTitle">Ajouter une Session Manuellement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="sessionManualForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="sessionManualId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="sessionManualTrainingId" class="form-label">Formation</label>
+                                <select class="form-select" id="sessionManualTrainingId" required>
+                                    <option value="">Sélectionnez une formation...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sessionManualGroupId" class="form-label">Groupe</label>
+                                <select class="form-select" id="sessionManualGroupId" required>
+                                    <option value="">Sélectionnez un groupe...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="sessionManualDate" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="sessionManualDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sessionManualTime" class="form-label">Heure Début</label>
+                                <input type="time" class="form-control" id="sessionManualTime" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="sessionManualLocation" class="form-label">Lieu</label>
+                                <input type="text" class="form-control" id="sessionManualLocation">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sessionManualStatus" class="form-label">Statut</label>
+                                <select class="form-select" id="sessionManualStatus" required>
+                                    <option value="proposed">Proposée</option>
+                                    <option value="confirmed" selected>Confirmée</option>
+                                    <option value="completed">Terminée</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sessionManualNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="sessionManualNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-anecoop">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Export Planning -->
+    <div class="modal fade" id="exportPlanningModal" tabindex="-1" aria-labelledby="exportPlanningModalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportPlanningModalTitle">Exporter le Planning</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="exportFormat" class="form-label">Format d'export</label>
+                        <select class="form-select" id="exportFormat">
+                            <option value="html">HTML</option>
+                            <option value="text">Texte</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Inclure</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeProposed" checked>
+                            <label class="form-check-label" for="includeProposed">Sessions proposées</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeConfirmed" checked>
+                            <label class="form-check-label" for="includeConfirmed">Sessions confirmées</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeCompleted">
+                            <label class="form-check-label" for="includeCompleted">Sessions terminées</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="exportFilterService" class="form-label">Filtrer par service</label>
+                        <select class="form-select" id="exportFilterService">
+                            <option value="">Tous les services</option>
+                            <option value="Commerce">Commerce</option>
+                            <option value="Comptabilité">Comptabilité</option>
+                            <option value="Services support">Services support (RH/Qualité/Marketing)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-anecoop" id="exportPlanningBtn">Exporter</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
@@ -84,6 +292,7 @@
             <li class="nav-item"><a class="nav-link" href="#" data-page="participants"><i class="fas fa-user-graduate fa-fw"></i> Participants</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-page="reports"><i class="fas fa-chart-bar fa-fw"></i> Rapports</a></li>
             <li class="nav-item mt-4 admin-only" style="display: none;"><a class="nav-link" href="#" data-page="settings"><i class="fas fa-cog fa-fw"></i> Paramètres</a></li>
+            <li class="nav-item mt-4 admin-only" style="display: none;"><a class="nav-link" href="#" id="exportPlanningLink"><i class="fas fa-file-export fa-fw"></i> Exporter Planning</a></li>
         </ul>
         <div class="sidebar-footer"><p class="small text-muted mb-0">© 2025 Anecoop-France</p></div>
     </div>
@@ -95,7 +304,7 @@
              <div class="container-fluid d-flex justify-content-end">
                  <div class="d-flex align-items-center">
                     <div class="connection-status offline" id="connectionStatus">
-                        <i class="fas fa-circle"></i> 
+                        <i class="fas fa-circle"></i>
                         <span id="connectionStatusText">Non connecté</span>
                         <button class="btn btn-sm btn-outline-secondary btn-retry-connection" id="retryConnectionBtn" style="display: none;">
                             <i class="fas fa-sync-alt"></i>
@@ -127,10 +336,10 @@
             </div>
 
             <!-- Groupes -->
-            <div id="groupsPage" class="page-content"><div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">Groupes</h2><button class="btn btn-anecoop btn-sm admin-only" style="display: none;" id="addGroupBtn"><i class="fas fa-plus me-1"></i> Ajouter</button></div><div class="card"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Nom</th><th>Service</th><th>Taille Min/Max</th><th>Participants</th><th class="admin-only" style="display: none;">Actions</th></tr></thead><tbody class="loading-placeholder" id="groupsTableBody"></tbody></table></div></div></div></div>
+            <div id="groupsPage" class="page-content"><div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">Groupes</h2><button class="btn btn-anecoop btn-sm admin-only" style="display: none;" id="addGroupBtn"><i class="fas fa-plus me-1"></i> Ajouter</button></div><div class="card"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0" id="groupsTable"><thead><tr><th>Nom</th><th>Service</th><th>Taille Min/Max</th><th>Participants</th><th class="admin-only" style="display: none;">Actions</th></tr></thead><tbody class="loading-placeholder" id="groupsTableBody"></tbody></table></div></div></div></div>
 
             <!-- Participants -->
-            <div id="participantsPage" class="page-content"><div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">Participants</h2><button class="btn btn-anecoop btn-sm admin-only" style="display: none;" id="addParticipantBtn"><i class="fas fa-plus me-1"></i> Ajouter</button></div><div class="card"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Nom</th><th>Email</th><th>Service</th><th>Groupe</th><th class="admin-only" style="display: none;">Actions</th></tr></thead><tbody class="loading-placeholder" id="participantsTableBody"></tbody></table></div></div></div></div>
+            <div id="participantsPage" class="page-content"><div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0">Participants</h2><button class="btn btn-anecoop btn-sm admin-only" style="display: none;" id="addParticipantBtn"><i class="fas fa-plus me-1"></i> Ajouter</button></div><div class="card"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0" id="participantsTable"><thead><tr><th>Nom</th><th>Email</th><th>Service</th><th>Groupe</th><th class="admin-only" style="display: none;">Actions</th></tr></thead><tbody class="loading-placeholder" id="participantsTableBody"></tbody></table></div></div></div></div>
 
             <!-- Rapports -->
             <div id="reportsPage" class="page-content"><h2 class="mb-4">Rapports</h2><div class="row"><div class="col-md-6"><div class="card"><div class="card-header">Sessions en Attente de Confirmation</div><ul class="list-group list-group-flush loading-placeholder" id="pendingConfirmationList"></ul></div></div><div class="col-md-6"><div class="card"><div class="card-header">Taux de Remplissage (Confirmées/Terminées)</div><div class="card-body loading-placeholder" id="fillRateReport"></div></div></div></div><div class="row mt-4"><div class="col-12"><div class="card"><div class="card-header">Progression Formations par Groupe</div><div class="card-body loading-placeholder" id="groupCompletionReport"></div></div></div></div></div>
@@ -153,10 +362,10 @@
     <script>
         // Configuration Firebase
         const firebaseConfig = {
-          apiKey: "AIzaSyCrcpvq1sz1IVVq7MiNOhj_Fj4dtd9YVyA",
+          apiKey: "AIzaSyCrcpvq1sz1IVVq7MiNOhj_Fj4dtd9YVyA", // REMPLACEZ PAR VOTRE CLE API
           authDomain: "anecoop-formations.firebaseapp.com",
           projectId: "anecoop-formations",
-          storageBucket: "anecoop-formations.firebasestorage.app",
+          storageBucket: "anecoop-formations.appspot.com", // CORRECTION: .appspot.com et non firebasestorage.app
           messagingSenderId: "81893594187",
           appId: "1:81893594187:web:ee0a07c0b5e7a1844569ce",
           measurementId: "G-2TMQMNC7KW"
@@ -171,19 +380,34 @@
         let currentActivePage = 'dashboard';
         let dataLoadedSuccessfully = false; // Flag pour savoir si les données sont chargées
 
+        // Données par défaut pour pré-remplir la base
+        const defaultTrainings = [
+            { id: 'training1', name: 'Communiquer avec Teams', duration: 60, description: 'Maîtriser les fonctionnalités de communication de Teams' },
+            { id: 'training2', name: 'Collaborer avec Teams/SharePoint', duration: 90, description: 'Apprendre à collaborer efficacement avec Teams et SharePoint' },
+            { id: 'training3', name: 'Gérer les tâches d\'équipe', duration: 60, description: 'Organiser et suivre les tâches d\'équipe' },
+            { id: 'training4', name: 'Gérer mes fichiers avec OneDrive/SharePoint', duration: 90, description: 'Gestion efficace des documents avec OneDrive et SharePoint' }
+        ];
+
+        const defaultGroups = [
+            { id: 'group1', name: 'Commerce 1', service: 'Commerce', minSize: 8, maxSize: 12 },
+            { id: 'group2', name: 'Commerce 2', service: 'Commerce', minSize: 8, maxSize: 12 },
+            { id: 'group3', name: 'Comptabilité', service: 'Comptabilité', minSize: 8, maxSize: 12 },
+            { id: 'group4', name: 'RH/Qualité/Marketing', service: 'Services support', minSize: 6, maxSize: 10 }
+        ];
+
         // --- Fonctions Utilitaires ---
         const loadingOverlay = document.getElementById('loadingOverlay');
         const connectionStatus = document.getElementById('connectionStatus');
         const connectionStatusText = document.getElementById('connectionStatusText');
         const retryConnectionBtn = document.getElementById('retryConnectionBtn');
 
-        function showLoading() { 
-            loadingOverlay.style.opacity = '1'; 
-            loadingOverlay.style.visibility = 'visible'; 
+        function showLoading() {
+            loadingOverlay.style.opacity = '1';
+            loadingOverlay.style.visibility = 'visible';
         }
-        
-        function hideLoading() { 
-            loadingOverlay.style.opacity = '0'; 
+
+        function hideLoading() {
+            loadingOverlay.style.opacity = '0';
             setTimeout(() => {
                 loadingOverlay.style.visibility = 'hidden';
             }, 300);
@@ -199,7 +423,7 @@
                 connectionStatus.classList.remove('online');
                 connectionStatus.classList.add('offline');
                 connectionStatusText.textContent = message || 'Non connecté';
-                
+
                 // Afficher le bouton de retry si on a épuisé les tentatives automatiques
                 if (connectionAttempts >= maxConnectionAttempts) {
                     retryConnectionBtn.style.display = 'inline-block';
@@ -214,13 +438,17 @@
             notification.querySelector('.notification-content').textContent = message;
             notification.className = 'notification';
             let bgColor = 'var(--info)';
-            switch (type) { 
-                case 'success': bgColor = 'var(--success)'; break; 
-                case 'danger': bgColor = 'var(--danger)'; break; 
-                case 'warning': bgColor = 'var(--warning)'; break; 
+            switch (type) {
+                case 'success': bgColor = 'var(--success)'; break;
+                case 'danger': bgColor = 'var(--danger)'; break;
+                case 'warning': bgColor = 'var(--warning)'; break;
             }
             notification.style.backgroundColor = bgColor;
             document.body.appendChild(notification);
+            // Force reflow to trigger animation
+            void notification.offsetWidth;
+            // Add class to start animation (although CSS animation should handle it)
+            // notification.classList.add('show'); // Assuming a .show class for animation start if needed
             setTimeout(() => { notification.remove(); }, 4100);
         }
 
@@ -228,7 +456,7 @@
             if (!dateInput) return 'N/A';
             let date;
              // Gestion Timestamp Firebase ou String YYYY-MM-DD
-             if (dateInput.toDate) {
+             if (dateInput?.toDate) { // Check if toDate exists
                  date = dateInput.toDate();
              } else if (typeof dateInput === 'string') {
                  // Essayer de parser YYYY-MM-DD (ou autre format si nécessaire)
@@ -240,10 +468,10 @@
                      date = new Date(dateInput); // Fallback
                  }
              } else {
-                 date = new Date(dateInput); // Fallback pour d'autres types
+                 date = new Date(dateInput); // Fallback pour d'autres types (e.g., number timestamp)
              }
 
-             if (isNaN(date.getTime())) return 'Date invalide';
+             if (isNaN(date?.getTime())) return 'Date invalide';
 
             const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
             if (includeTime) { options.hour = '2-digit'; options.minute = '2-digit'; }
@@ -268,7 +496,7 @@
                 return 'Utilisateur Anonyme';
             }
             // Ici, on pourrait chercher dans une collection 'users' si on stockait les noms
-            return 'Utilisateur'; // Pour les anonymes
+            return 'Utilisateur'; // Pour les anonymes ou non-admin
         }
 
         function removeLoadingPlaceholder(elementId) {
@@ -281,22 +509,95 @@
         }
 
         // --- Gestion des Données (Firebase) ---
-        function getData() { 
-            return window.appData || { sessions: [], groups: [], participants: [], trainings: [], settings: {} }; 
+        function getData() {
+            return window.appData || { sessions: [], groups: [], participants: [], trainings: [], settings: {} };
+        }
+
+        // Fonction pour vérifier si les données par défaut doivent être chargées
+        async function checkAndInitializeDefaultData() {
+            if (!db) return false;
+
+            try {
+                // Vérifier si nous avons déjà des formations
+                const trainingsSnap = await db.collection('trainings').limit(1).get(); // Limit 1 for efficiency
+
+                if (trainingsSnap.empty) {
+                    console.log("Aucune formation trouvée, initialisation des données par défaut...");
+                    const batch = db.batch(); // Use batch for efficiency
+
+                    // Chargement des formations par défaut
+                    for (const training of defaultTrainings) {
+                        const docRef = db.collection('trainings').doc(training.id);
+                        batch.set(docRef, {
+                            name: training.name,
+                            duration: training.duration,
+                            description: training.description,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+
+                    // Vérifier si nous avons déjà des groupes (ne charger que si formations étaient vides)
+                    const groupsSnap = await db.collection('groups').limit(1).get();
+                    if (groupsSnap.empty) {
+                        // Chargement des groupes par défaut
+                        for (const group of defaultGroups) {
+                             const docRef = db.collection('groups').doc(group.id);
+                             batch.set(docRef, {
+                                name: group.name,
+                                service: group.service,
+                                minSize: group.minSize,
+                                maxSize: group.maxSize,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                    }
+
+                    // Initialiser les paramètres par défaut s'ils n'existent pas
+                    const settingsRef = db.collection('settings').doc('app_settings');
+                    const settingsSnap = await settingsRef.get();
+                    if (!settingsSnap.exists) {
+                        batch.set(settingsRef, {
+                            companyName: 'Anecoop-France',
+                            siteLocation: 'Anecoop',
+                            minGroupSize: 8,
+                            maxGroupSize: 12,
+                            defaultDuration: 90,
+                            planningPeriod: 'Mai-Juin 2025',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+
+                    await batch.commit(); // Commit the batch operation
+                    return true; // Données initialisées
+                }
+
+                return false; // Pas besoin d'initialisation
+
+            } catch (error) {
+                console.error("Erreur lors de l'initialisation des données par défaut:", error);
+                showNotification("Erreur initialisation données: " + error.message, "danger");
+                return false;
+            }
         }
 
         async function loadDataAndRenderUI(attemptRetry = true) {
             if (!useFirebase || !db) {
                 showNotification("Connexion base de données échouée.", "danger");
                 updateConnectionStatus(false, "Erreur de connexion");
-                hideLoading(); 
+                hideLoading();
                 return;
             }
-            
+
             console.log("Chargement/Rafraîchissement données Firebase...");
             showLoading();
-            
+
             try {
+                // Vérifier si nous devons initialiser les données par défaut
+                const dataInitialized = await checkAndInitializeDefaultData();
+                if (dataInitialized) {
+                    showNotification("Données de formation initialisées avec succès!", "success");
+                }
+
                 const [sessionsSnap, groupsSnap, participantsSnap, trainingsSnap, settingsSnap] = await Promise.all([
                     db.collection('sessions').get(),
                     db.collection('groups').orderBy('name', 'asc').get(),
@@ -312,37 +613,43 @@
                     trainings: trainingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     settings: settingsSnap.exists ? settingsSnap.data() : { minGroupSize: 8, maxGroupSize: 12, defaultDuration: 90 }
                 };
-                
+
                 dataLoadedSuccessfully = true; // Marquer que les données sont chargées
                 updateConnectionStatus(true, isAnonymousUser ? "Connecté (anonyme)" : "Connecté");
                 connectionAttempts = 0; // Réinitialiser le compteur si réussi
-                
+
                 console.log("Données chargées:", window.appData);
 
-                populateProposeModalOptions();
+                populateProposeModalOptions(); // Assurez-vous que les options du modal sont remplies
                 navigateTo(currentActivePage, false); // Afficher la page actuelle SANS recharger les données
 
             } catch (error) {
                 console.error("Erreur chargement données Firebase:", error);
-                showNotification("Erreur de chargement des données.", "danger");
+                showNotification("Erreur de chargement des données: " + error.message, "danger");
                 dataLoadedSuccessfully = false;
                 updateConnectionStatus(false, "Erreur de chargement");
-                
+
                 // Tentative automatique de reconnexion
                 if (attemptRetry && connectionAttempts < maxConnectionAttempts) {
                     connectionAttempts++;
                     showNotification(`Tentative de reconnexion (${connectionAttempts}/${maxConnectionAttempts})...`, "warning");
                     setTimeout(() => {
-                        initializeFirebase(true);
-                    }, 2000); // Attendre 2 secondes avant de réessayer
+                        initializeFirebase(true); // Réessayer l'initialisation Firebase complète
+                    }, 2000 * connectionAttempts); // Augmenter le délai à chaque tentative
                 } else if (attemptRetry) {
                     showNotification("Impossible de charger les données après plusieurs tentatives.", "danger");
+                    updateConnectionStatus(false, "Échec connexion"); // Garder le statut d'échec
                 }
-                
-                hideLoading();
+
+                hideLoading(); // Cacher le loading après l'échec
+                navigateTo(currentActivePage, false); // Essayer d'afficher la page même en cas d'échec (affichera le message d'erreur)
+
+
             } finally {
-                 // Cacher le loading seulement après la tentative de chargement et le premier rendu
-                 hideLoading();
+                 // Cacher le loading seulement après la tentative de chargement et le premier rendu, SAUF si une retentative est en cours
+                 if (!attemptRetry || connectionAttempts >= maxConnectionAttempts) {
+                     hideLoading();
+                 }
             }
         }
 
@@ -355,25 +662,25 @@
                 removeLoadingPlaceholder('availableTrainingsList');
                 if (data.trainings.length > 0) {
                     trainingsListEl.innerHTML = data.trainings.map(t => `
-                        <div class="col-md-6 col-lg-3 mb-3 d-flex"> 
-                            <div class="card training-card h-100 w-100" data-training-id="${t.id}" data-training-name="${t.name}"> 
-                                <div class="card-body text-center d-flex flex-column justify-content-between"> 
+                        <div class="col-md-6 col-lg-3 mb-3 d-flex">
+                            <div class="card training-card h-100 w-100" data-training-id="${t.id}" data-training-name="${t.name}">
+                                <div class="card-body text-center d-flex flex-column justify-content-between">
                                     <div>
-                                        <h5 class="card-title mb-2">${t.name}</h5> 
+                                        <h5 class="card-title mb-2">${t.name}</h5>
                                         <p class="card-text small text-muted mb-3">Durée: ${t.duration || 'N/A'} min</p>
-                                    </div> 
-                                    <button class="btn btn-sm btn-outline-primary btn-propose-session mt-auto" data-training-id="${t.id}" data-training-name="${t.name}"> 
-                                        <i class="fas fa-calendar-plus me-1"></i> Proposer 
-                                    </button> 
-                                </div> 
-                            </div> 
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary btn-propose-session mt-auto" data-training-id="${t.id}" data-training-name="${t.name}">
+                                        <i class="fas fa-calendar-plus me-1"></i> Proposer
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     `).join('');
                 } else {
                     trainingsListEl.innerHTML = '<div class="col-12"><p>Aucune formation de base trouvée dans la base de données.</p></div>';
                 }
             }
-            
+
             const upcomingList = document.getElementById('upcomingSessionsList');
             if (upcomingList) {
                 removeLoadingPlaceholder('upcomingSessionsList');
@@ -382,27 +689,27 @@
                     .filter(s => s.status === 'confirmed' && s.confirmedDate && (s.confirmedDate.toDate ? s.confirmedDate.toDate() >= today : new Date(s.confirmedDate) >= today))
                     .sort((a, b) => (a.confirmedDate.toDate ? a.confirmedDate.toDate() : new Date(a.confirmedDate)) - (b.confirmedDate.toDate ? b.confirmedDate.toDate() : new Date(b.confirmedDate)))
                     .slice(0, 5);
-                
+
                 if (upcomingSessions.length > 0) {
                     upcomingList.innerHTML = upcomingSessions.map(s => `
-                        <li class="list-group-item d-flex justify-content-between align-items-center"> 
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="mb-0">${s.trainingName || 'N/A'}</h6>
                                 <small class="text-muted">${s.groupName || 'N/A'} - ${formatDate(s.confirmedDate)} ${s.confirmedStartTime || ''}</small>
-                            </div> 
-                            <span class="badge bg-success">Confirmée</span> 
+                            </div>
+                            <span class="badge bg-success">Confirmée</span>
                         </li>`).join('');
                 } else {
                     upcomingList.innerHTML = '<li class="list-group-item">Aucune session confirmée à venir.</li>';
                 }
             }
-            
+
             const serviceProgressContainer = document.getElementById('serviceProgressContainer');
             if (serviceProgressContainer) {
                 removeLoadingPlaceholder('serviceProgressContainer');
                 renderServiceProgress();
             }
-            
+
             document.getElementById('completedSessionsCount').textContent = data.sessions.filter(s => s.status === 'completed').length;
             document.getElementById('totalParticipantsCount').textContent = data.participants.length;
         }
@@ -410,31 +717,59 @@
         function renderServiceProgress() {
              const data = getData();
              const progressContainer = document.getElementById('serviceProgressContainer');
-             if (!progressContainer || !data.groups || !data.trainings || !data.sessions) { 
-                 if (progressContainer) progressContainer.innerHTML = '<p>Données indisponibles.</p>'; 
-                 return; 
+             if (!progressContainer || !data.groups || !data.trainings || !data.sessions) {
+                 if (progressContainer) progressContainer.innerHTML = '<p>Données indisponibles.</p>';
+                 return;
              }
-             
-             const services = [...new Set(data.groups.map(g => g.service).filter(s => s))];
+
+             const services = [...new Set(data.groups.map(g => g.service).filter(s => s))].sort(); // Sort services alphabetically
              const totalTrainings = data.trainings.length;
-             
-             if (totalTrainings === 0) { 
-                 progressContainer.innerHTML = '<p>Aucune formation définie.</p>'; 
-                 return; 
+
+             if (totalTrainings === 0) {
+                 progressContainer.innerHTML = '<p>Aucune formation définie.</p>';
+                 return;
              }
-             
+
              let html = '';
              services.forEach(service => {
                  const serviceGroups = data.groups.filter(g => g.service === service);
                  let totalCompletedForService = 0;
                  let totalPossibleForService = 0;
-                 
+
                  serviceGroups.forEach(group => {
-                     totalCompletedForService += data.sessions.filter(s => s.groupId === group.id && s.status === 'completed').length;
-                     totalPossibleForService += totalTrainings;
+                    // Consider a training completed for a group if *any* session for that training & group is completed
+                    const completedTrainingsForGroup = new Set();
+                    data.sessions.forEach(session => {
+                        if (session.groupId === group.id && session.status === 'completed') {
+                            completedTrainingsForGroup.add(session.trainingId);
+                        }
+                    });
+                    totalCompletedForService += completedTrainingsForGroup.size;
+                    totalPossibleForService += totalTrainings;
                  });
-                 
-                 const progressPercent = totalPossibleForService > 0 ? Math.round((totalCompletedForService / totalPossibleForService) * 100) : 0;
+
+                 // If a service has multiple groups, the percentage could exceed 100% using the above logic.
+                 // Alternative: Average percentage across groups in the service
+                 let serviceCompletionSum = 0;
+                 let groupCount = 0;
+                 serviceGroups.forEach(group => {
+                     const completedTrainingsForGroup = new Set();
+                     data.sessions.forEach(session => {
+                         if (session.groupId === group.id && session.status === 'completed') {
+                             completedTrainingsForGroup.add(session.trainingId);
+                         }
+                     });
+                     serviceCompletionSum += (totalTrainings > 0 ? (completedTrainingsForGroup.size / totalTrainings) * 100 : 0);
+                     groupCount++;
+                 });
+                 const progressPercent = groupCount > 0 ? Math.round(serviceCompletionSum / groupCount) : 0;
+
+
+                 // // Original simpler logic: count completed sessions vs total trainings * groups
+                 // const totalCompletedSessionsForService = data.sessions.filter(s => s.groupService === service && s.status === 'completed').length;
+                 // const totalPossibleSessionsForService = serviceGroups.length * totalTrainings;
+                 // const progressPercent = totalPossibleSessionsForService > 0 ? Math.round((totalCompletedSessionsForService / totalPossibleSessionsForService) * 100) : 0;
+
                  html += `
                     <div class="mb-3">
                         <div class="d-flex justify-content-between">
@@ -442,13 +777,13 @@
                             <span>${progressPercent}%</span>
                         </div>
                         <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-anecoop" role="progressbar" style="width: ${progressPercent}%;" 
+                            <div class="progress-bar" role="progressbar" style="width: ${progressPercent}%; background-color: var(--primary);"
                                  aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>`;
              });
-             
-             progressContainer.innerHTML = html || '<p>Aucun service trouvé.</p>';
+
+             progressContainer.innerHTML = html || '<p>Aucun service trouvé ou aucune progression à afficher.</p>';
         }
 
         function renderSessions() {
@@ -461,124 +796,131 @@
             if (confirmedBody) {
                 removeLoadingPlaceholder('confirmedSessionsTableBody');
                 const confirmedSessions = data.sessions.filter(s => s.status === 'confirmed')
-                    .sort((a,b) => (a.confirmedDate.toDate ? a.confirmedDate.toDate() : new Date(a.confirmedDate)) - 
-                                  (b.confirmedDate.toDate ? b.confirmedDate.toDate() : new Date(b.confirmedDate)));
-                
+                    .sort((a,b) => (a.confirmedDate?.toDate ? a.confirmedDate.toDate() : new Date(a.confirmedDate || 0)) -
+                                  (b.confirmedDate?.toDate ? b.confirmedDate.toDate() : new Date(b.confirmedDate || 0)));
+
                 if (confirmedSessions.length > 0) {
                     confirmedBody.innerHTML = confirmedSessions.map(s => {
                         const currentP = s.participants || 0;
                         const maxP = s.maxParticipants || data.settings.maxGroupSize || 12;
                         const isFull = currentP >= maxP;
                         const isBooked = s.bookedBy && currentUserId ? s.bookedBy.includes(currentUserId) : false;
-                        
+
                         let actionButton = '';
-                        if (isFull) {
-                            actionButton = '<span class="session-full">Complet</span>';
-                        } else if (isBooked) {
-                            actionButton = `<button class="btn btn-sm btn-outline-secondary btn-cancel-booking" data-session-id="${s.id}">Inscrit</button>`;
+                        // Only allow booking/cancelling if not anonymous OR if admin is logged in
+                        if (!isAnonymousUser || adminLoggedIn) {
+                            if (isFull && !isBooked) {
+                                actionButton = '<span class="session-full fst-italic text-muted">Complet</span>';
+                            } else if (isBooked) {
+                                actionButton = `<button class="btn btn-sm btn-outline-secondary btn-cancel-booking" data-session-id="${s.id}">Inscrit <i class="fas fa-times-circle ms-1"></i></button>`;
+                            } else {
+                                actionButton = `<button class="btn btn-sm btn-success btn-book-session" data-session-id="${s.id}"><i class="fas fa-check-circle me-1"></i> Réserver</button>`;
+                            }
                         } else {
-                            actionButton = `<button class="btn btn-sm btn-success btn-book-session" data-session-id="${s.id}">Réserver</button>`;
+                             actionButton = isFull ? '<span class="session-full fst-italic text-muted">Complet</span>' : '<span class="text-muted small">Connexion requise</span>';
                         }
-                        
+
+
                         return `<tr>
-                            <td>${s.trainingName}</td>
-                            <td>${s.groupName}</td>
+                            <td>${s.trainingName || 'N/A'}</td>
+                            <td>${s.groupName || 'N/A'}</td>
                             <td>${formatDate(s.confirmedDate)}</td>
-                            <td>${s.confirmedStartTime}</td>
+                            <td>${s.confirmedStartTime || 'N/A'}</td>
                             <td>${s.location || 'N/A'}</td>
                             <td>${currentP}/${maxP}</td>
                             <td>${actionButton}</td>
                         </tr>`;
                     }).join('');
                 } else {
-                    confirmedBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucune session confirmée.</td></tr>';
+                    confirmedBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Aucune session confirmée pour le moment.</td></tr>';
                 }
             }
-            
+
             if (proposedBody) {
                 removeLoadingPlaceholder('proposedSessionsTableBody');
                 const proposedSessions = data.sessions.filter(s => s.status === 'proposed')
-                    .sort((a,b) => (a.proposedDate > b.proposedDate ? 1 : -1));
-                
+                     .sort((a,b) => (a.proposedDate?.toDate ? a.proposedDate.toDate() : new Date(a.proposedDate || 0)) -
+                                   (b.proposedDate?.toDate ? b.proposedDate.toDate() : new Date(b.proposedDate || 0)));
+
                 if (proposedSessions.length > 0) {
                     proposedBody.innerHTML = proposedSessions.map(s => `
                         <tr>
-                            <td>${s.trainingName}</td>
-                            <td>${s.groupName}</td>
+                            <td>${s.trainingName || 'N/A'}</td>
+                            <td>${s.groupName || 'N/A'}</td>
                             <td>${formatDate(s.proposedDate)}</td>
-                            <td>${s.proposedStartTime}</td>
+                            <td>${s.proposedStartTime || 'N/A'}</td>
                             <td>${getUserDisplayName(s.proposedBy)}</td>
-                            <td>${s.notes || ''}</td>
-                            <td class="admin-only" style="display:none;">
-                                <span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}" 
-                                      title="Confirmer"><i class="fas fa-check-circle"></i></span>
-                                <span class="admin-action-edit me-2" data-action="edit-proposal" data-id="${s.id}" 
-                                      title="Modifier"><i class="fas fa-edit"></i></span>
-                                <span class="admin-action-reject" data-action="reject-session" data-id="${s.id}" 
-                                      title="Rejeter"><i class="fas fa-times-circle"></i></span>
+                            <td class="small">${s.notes || ''}</td>
+                            <td class="admin-only text-nowrap" style="display:none;">
+                                <span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}"
+                                      title="Confirmer"><i class="fas fa-check-circle fa-lg"></i></span>
+                                <span class="admin-action-edit me-2" data-action="edit-proposal" data-id="${s.id}"
+                                      title="Modifier Proposition"><i class="fas fa-edit fa-lg"></i></span>
+                                <span class="admin-action-reject" data-action="reject-session" data-id="${s.id}"
+                                      title="Rejeter"><i class="fas fa-times-circle fa-lg"></i></span>
                             </td>
                         </tr>
                     `).join('');
                 } else {
-                    proposedBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucune session proposée.</td></tr>';
+                    proposedBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Aucune session en cours de proposition.</td></tr>';
                 }
             }
-            
+
             if (allBody) {
                 removeLoadingPlaceholder('allSessionsTableBody');
                 if (adminLoggedIn) { // Remplir seulement si admin
-                     const allSessions = data.sessions.sort((a,b) => { 
-                         const dateA = a.confirmedDate || a.proposedDate; 
-                         const dateB = b.confirmedDate || b.proposedDate; 
-                         const d1 = dateA?.toDate ? dateA.toDate() : new Date(dateA || 0); 
-                         const d2 = dateB?.toDate ? dateB.toDate() : new Date(dateB || 0); 
-                         return d1 - d2; 
+                     const allSessions = data.sessions.sort((a,b) => {
+                         const dateA = a.confirmedDate || a.proposedDate;
+                         const dateB = b.confirmedDate || b.proposedDate;
+                         const d1 = dateA?.toDate ? dateA.toDate() : new Date(dateA || 0);
+                         const d2 = dateB?.toDate ? dateB.toDate() : new Date(dateB || 0);
+                         return d1 - d2;
                      });
-                     
+
                      if (allSessions.length > 0) {
                          allBody.innerHTML = allSessions.map(s => {
-                             const date = s.status === 'confirmed' || s.status === 'completed' ? 
+                             const date = s.status === 'confirmed' || s.status === 'completed' ?
                                           formatDate(s.confirmedDate) : formatDate(s.proposedDate);
-                             const time = s.status === 'confirmed' || s.status === 'completed' ? 
+                             const time = s.status === 'confirmed' || s.status === 'completed' ?
                                           s.confirmedStartTime : s.proposedStartTime;
-                             const places = (s.status === 'confirmed' || s.status === 'completed') ? 
+                             const places = (s.status === 'confirmed' || s.status === 'completed') ?
                                            `${s.participants || 0}/${s.maxParticipants || data.settings.maxGroupSize || 12}` : 'N/A';
-                             
+
                              let actions = '';
                              if (s.status === 'proposed') {
                                  actions = `
-                                     <span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}" 
-                                           title="Confirmer"><i class="fas fa-check-circle"></i></span>
-                                     <span class="admin-action-edit me-2" data-action="edit-proposal" data-id="${s.id}" 
-                                           title="Modifier Proposition"><i class="fas fa-edit"></i></span>
-                                     <span class="admin-action-reject" data-action="reject-session" data-id="${s.id}" 
-                                           title="Rejeter"><i class="fas fa-times-circle"></i></span>`;
-                             } else {
+                                     <span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}"
+                                           title="Confirmer"><i class="fas fa-check-circle fa-lg"></i></span>
+                                     <span class="admin-action-edit me-2" data-action="edit-proposal" data-id="${s.id}"
+                                           title="Modifier Proposition"><i class="fas fa-edit fa-lg"></i></span>
+                                     <span class="admin-action-reject" data-action="reject-session" data-id="${s.id}"
+                                           title="Rejeter"><i class="fas fa-times-circle fa-lg"></i></span>`;
+                             } else { // confirmed, completed, cancelled
                                  actions = `
-                                     <span class="admin-action-edit me-2" data-action="edit-session" data-id="${s.id}" 
-                                           title="Modifier Session"><i class="fas fa-edit"></i></span>
-                                     <span class="admin-action-delete" data-action="delete-session" data-id="${s.id}" 
-                                           title="Supprimer Session"><i class="fas fa-trash"></i></span>`;
+                                     <span class="admin-action-edit me-2" data-action="edit-session" data-id="${s.id}"
+                                           title="Modifier Session"><i class="fas fa-edit fa-lg"></i></span>
+                                     <span class="admin-action-delete" data-action="delete-session" data-id="${s.id}"
+                                           title="Supprimer Session"><i class="fas fa-trash fa-lg"></i></span>`;
                              }
-                             
+
                              return `<tr>
-                                 <td>${s.trainingName}</td>
-                                 <td>${s.groupName}</td>
+                                 <td>${s.trainingName || 'N/A'}</td>
+                                 <td>${s.groupName || 'N/A'}</td>
                                  <td>${date}</td>
                                  <td>${time || 'N/A'}</td>
                                  <td>${getStatusBadge(s.status)}</td>
                                  <td>${places}</td>
-                                 <td>${actions}</td>
+                                 <td class="text-nowrap">${actions}</td>
                              </tr>`;
                          }).join('');
                      } else {
-                         allBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucune session.</td></tr>';
+                         allBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Aucune session trouvée.</td></tr>';
                      }
                 } else {
-                    allBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Accès réservé administrateur.</td></tr>';
+                    allBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Accès réservé administrateur.</td></tr>';
                 }
             }
-            
+
             updateAdminUI(adminLoggedIn);
         }
 
@@ -586,7 +928,7 @@
             if (!dataLoadedSuccessfully) return;
             const data = getData();
             const tableBody = document.getElementById('groupsTableBody');
-            
+
             if (tableBody) {
                 removeLoadingPlaceholder('groupsTableBody');
                 if (data.groups.length > 0) {
@@ -595,20 +937,20 @@
                         return `<tr>
                             <td>${g.name}</td>
                             <td>${g.service}</td>
-                            <td>${g.minSize || 'N/A'}/${g.maxSize || 'N/A'}</td>
+                            <td>${g.minSize || 'N/A'} / ${g.maxSize || 'N/A'}</td>
                             <td>${currentParticipants}</td>
-                            <td class="admin-only" style="display:none;">
-                                <span class="admin-action-edit me-2" data-action="edit-group" data-id="${g.id}" 
-                                      title="Modifier"><i class="fas fa-edit"></i></span>
-                                <span class="admin-action-delete" data-action="delete-group" data-id="${g.id}" 
-                                      title="Supprimer"><i class="fas fa-trash"></i></span>
+                            <td class="admin-only text-nowrap" style="display:none;">
+                                <span class="admin-action-edit me-2" data-action="edit-group" data-id="${g.id}"
+                                      title="Modifier"><i class="fas fa-edit fa-lg"></i></span>
+                                <span class="admin-action-delete" data-action="delete-group" data-id="${g.id}"
+                                      title="Supprimer"><i class="fas fa-trash fa-lg"></i></span>
                             </td>
                         </tr>`;
                     }).join('');
                 } else {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Aucun groupe défini.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Aucun groupe défini. Ajoutez-en un !</td></tr>';
                 }
-                
+
                 updateAdminUI(adminLoggedIn);
             }
         }
@@ -617,7 +959,7 @@
              if (!dataLoadedSuccessfully) return;
              const data = getData();
              const tableBody = document.getElementById('participantsTableBody');
-             
+
              if (tableBody) {
                  removeLoadingPlaceholder('participantsTableBody');
                  if (data.participants.length > 0) {
@@ -626,91 +968,132 @@
                              <td>${p.name}</td>
                              <td>${p.email}</td>
                              <td>${p.service}</td>
-                             <td>${data.groups.find(g => g.id === p.groupId)?.name || 'Non assigné'}</td>
-                             <td class="admin-only" style="display:none;">
-                                 <span class="admin-action-edit me-2" data-action="edit-participant" data-id="${p.id}" 
-                                       title="Modifier"><i class="fas fa-edit"></i></span>
-                                 <span class="admin-action-delete" data-action="delete-participant" data-id="${p.id}" 
-                                       title="Supprimer"><i class="fas fa-trash"></i></span>
+                             <td>${data.groups.find(g => g.id === p.groupId)?.name || '<em class="text-muted">Non assigné</em>'}</td>
+                             <td class="admin-only text-nowrap" style="display:none;">
+                                 <span class="admin-action-edit me-2" data-action="edit-participant" data-id="${p.id}"
+                                       title="Modifier"><i class="fas fa-edit fa-lg"></i></span>
+                                 <span class="admin-action-delete" data-action="delete-participant" data-id="${p.id}"
+                                       title="Supprimer"><i class="fas fa-trash fa-lg"></i></span>
                              </td>
                          </tr>`).join('');
                  } else {
-                     tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Aucun participant enregistré.</td></tr>';
+                     tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Aucun participant enregistré. Ajoutez-en un !</td></tr>';
                  }
-                 
+
                  updateAdminUI(adminLoggedIn);
              }
          }
 
-        function renderCalendar() { /* Placeholder */ }
+        function renderCalendar() {
+            const calendarPage = document.getElementById('calendarPage');
+            if (calendarPage && !calendarPage.querySelector('.alert')) {
+                 calendarPage.innerHTML = '<h2 class="mb-4">Calendrier</h2><div class="alert alert-info">Fonctionnalité Calendrier en cours de développement.</div>';
+            }
+         }
 
         function renderReports() {
             if (!dataLoadedSuccessfully) return;
             const data = getData();
             const pendingList = document.getElementById('pendingConfirmationList');
-            
+
             if (pendingList) {
                 removeLoadingPlaceholder('pendingConfirmationList');
-                const pendingSessions = data.sessions.filter(s => s.status === 'proposed');
-                
+                const pendingSessions = data.sessions.filter(s => s.status === 'proposed')
+                                           .sort((a,b) => (a.proposedDate?.toDate ? a.proposedDate.toDate() : new Date(a.proposedDate || 0)) -
+                                                         (b.proposedDate?.toDate ? b.proposedDate.toDate() : new Date(b.proposedDate || 0)));
+
+
                 if (pendingSessions.length > 0) {
-                    pendingList.innerHTML = pendingSessions.map(s => 
-                        `<li class="list-group-item">${s.trainingName} - ${s.groupName} (Proposé: ${formatDate(s.proposedDate)})</li>`
+                    pendingList.innerHTML = pendingSessions.map(s =>
+                        `<li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>${s.trainingName} - ${s.groupName} (Proposé: ${formatDate(s.proposedDate)})</span>
+                            ${adminLoggedIn ? `
+                                <span class="admin-only text-nowrap" style="display:none;">
+                                    <span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}" title="Confirmer"><i class="fas fa-check-circle text-success"></i></span>
+                                    <span class="admin-action-reject" data-action="reject-session" data-id="${s.id}" title="Rejeter"><i class="fas fa-times-circle text-danger"></i></span>
+                                </span>
+                            ` : ''}
+                         </li>`
                     ).join('');
                 } else {
-                    pendingList.innerHTML = '<li class="list-group-item">Aucune session en attente.</li>';
+                    pendingList.innerHTML = '<li class="list-group-item text-muted">Aucune session en attente de confirmation.</li>';
                 }
+                updateAdminUI(adminLoggedIn); // Make sure buttons visibility is updated
             }
-            
+
             const fillRateReport = document.getElementById('fillRateReport');
             if (fillRateReport) {
                 removeLoadingPlaceholder('fillRateReport');
-                const confirmedSessions = data.sessions.filter(s => s.status === 'confirmed' || s.status === 'completed');
-                let reportHtml = '<ul class="list-unstyled">';
-                
-                if (confirmedSessions.length > 0) {
-                    confirmedSessions.forEach(s => {
-                        const currentP = s.participants || 0; 
+                const relevantSessions = data.sessions.filter(s => s.status === 'confirmed' || s.status === 'completed')
+                                            .sort((a,b) => (a.confirmedDate?.toDate ? a.confirmedDate.toDate() : new Date(a.confirmedDate || 0)) -
+                                                          (b.confirmedDate?.toDate ? b.confirmedDate.toDate() : new Date(b.confirmedDate || 0)));
+
+                let reportHtml = '<ul class="list-unstyled" style="max-height: 300px; overflow-y: auto;">';
+
+                if (relevantSessions.length > 0) {
+                    relevantSessions.forEach(s => {
+                        const currentP = s.participants || 0;
                         const maxP = s.maxParticipants || data.settings.maxGroupSize || 12;
                         const fillPercent = maxP > 0 ? Math.round((currentP / maxP) * 100) : 0;
-                        reportHtml += `<li>${s.trainingName} (${s.groupName}) - ${formatDate(s.confirmedDate)}: 
-                                          ${currentP}/${maxP} (${fillPercent}%)</li>`;
+                        const statusBadge = s.status === 'completed' ? getStatusBadge('completed') : '';
+                        reportHtml += `<li class="mb-2 pb-2 border-bottom">
+                                          ${s.trainingName} (${s.groupName}) - ${formatDate(s.confirmedDate)} ${statusBadge}
+                                          <div class="progress mt-1" style="height: 8px;">
+                                              <div class="progress-bar ${fillPercent > 80 ? 'bg-success' : fillPercent > 50 ? 'bg-warning' : 'bg-secondary'}"
+                                                   role="progressbar" style="width: ${fillPercent}%;"
+                                                   aria-valuenow="${fillPercent}" aria-valuemin="0" aria-valuemax="100"
+                                                   title="${currentP}/${maxP} (${fillPercent}%)"></div>
+                                          </div>
+                                          <small class="text-muted">${currentP}/${maxP} participants (${fillPercent}%)</small>
+                                       </li>`;
                     });
-                } else { 
-                    reportHtml += '<li>Aucune session confirmée/terminée.</li>'; 
+                } else {
+                    reportHtml += '<li class="text-muted">Aucune session confirmée ou terminée pour afficher le taux de remplissage.</li>';
                 }
-                
+
                 fillRateReport.innerHTML = reportHtml + '</ul>';
             }
-            
+
             const groupCompletionReport = document.getElementById('groupCompletionReport');
-            if (groupCompletionReport) {
-                 removeLoadingPlaceholder('groupCompletionReport');
-                 if (data.groups.length > 0 && data.trainings.length > 0) {
-                     let reportHtml = '<div class="row">';
-                     data.groups.forEach(g => {
-                         const completedForGroup = data.sessions.filter(s => s.groupId === g.id && s.status === 'completed').length;
-                         const totalTrainings = data.trainings.length;
-                         const completionPercent = totalTrainings > 0 ? 
-                                                  Math.round((completedForGroup / totalTrainings) * 100) : 0;
-                         reportHtml += `<div class="col-md-4 mb-3">
-                                           <strong>${g.name}:</strong> ${completedForGroup}/${totalTrainings} 
-                                           (${completionPercent}%)
-                                        </div>`;
-                     });
-                     groupCompletionReport.innerHTML = reportHtml + '</div>';
-                 } else { 
-                     groupCompletionReport.innerHTML = '<p>Données insuffisantes.</p>'; 
-                 }
-            }
+             if (groupCompletionReport) {
+                  removeLoadingPlaceholder('groupCompletionReport');
+                  if (data.groups.length > 0 && data.trainings.length > 0) {
+                      let reportHtml = '<div class="row">';
+                      data.groups.forEach(g => {
+                          const completedTrainingsForGroup = new Set();
+                          data.sessions.forEach(session => {
+                              if (session.groupId === g.id && session.status === 'completed') {
+                                  completedTrainingsForGroup.add(session.trainingId);
+                              }
+                          });
+                          const completedCount = completedTrainingsForGroup.size;
+                          const totalTrainings = data.trainings.length;
+                          const completionPercent = totalTrainings > 0 ?
+                                                   Math.round((completedCount / totalTrainings) * 100) : 0;
+
+                          reportHtml += `<div class="col-md-6 col-lg-4 mb-3">
+                                            <strong>${g.name}:</strong>
+                                            <div class="progress mt-1" style="height: 8px;">
+                                                <div class="progress-bar" role="progressbar" style="width: ${completionPercent}%; background-color: var(--primary);"
+                                                     aria-valuenow="${completionPercent}" aria-valuemin="0" aria-valuemax="100"
+                                                     title="${completedCount}/${totalTrainings} (${completionPercent}%)"></div>
+                                            </div>
+                                            <small class="text-muted">${completedCount}/${totalTrainings} formations (${completionPercent}%)</small>
+                                         </div>`;
+                      });
+                      groupCompletionReport.innerHTML = reportHtml + '</div>';
+                  } else {
+                      groupCompletionReport.innerHTML = '<p class="text-muted">Données insuffisantes pour générer le rapport (groupes et formations requis).</p>';
+                  }
+             }
         }
 
         function renderSettings() {
-            if (!adminLoggedIn) { 
-                navigateTo('dashboard', false); 
-                return; 
+            if (!adminLoggedIn) {
+                navigateTo('dashboard', false);
+                return;
             }
-            
+
             const settings = getData().settings;
             document.getElementById('companyName').value = settings.companyName || 'Anecoop-France';
             document.getElementById('siteLocation').value = settings.siteLocation || 'Anecoop';
@@ -724,11 +1107,11 @@
             console.log(`Navigating to ${page}${reloadData ? ' (reload data)' : ''}`);
             currentActivePage = page;
 
-            document.querySelectorAll('.page-content').forEach(p => { 
-                p.classList.remove('active', 'animate__animated', 'animate__fadeIn'); 
-                p.style.display = 'none'; 
+            document.querySelectorAll('.page-content').forEach(p => {
+                p.classList.remove('active', 'animate__animated', 'animate__fadeIn');
+                p.style.display = 'none';
             });
-            
+
             const targetPage = document.getElementById(page + 'Page');
             if (targetPage) {
                 targetPage.style.display = 'block';
@@ -739,12 +1122,22 @@
                  showNotification(`Erreur: Page '${page}' introuvable.`, 'danger');
                  document.getElementById('dashboardPage').style.display = 'block';
                  document.getElementById('dashboardPage').classList.add('active');
-                 currentActivePage = 'dashboard'; 
+                 currentActivePage = 'dashboard';
                  page = 'dashboard'; // Fallback
             }
-            
+
             document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
             document.querySelector(`.sidebar .nav-link[data-page="${page}"]`)?.classList.add('active');
+
+            // Fermer le menu déroulant utilisateur s'il est ouvert (sur mobile par exemple)
+            const userDropdown = document.getElementById('userDropdown');
+            if (userDropdown) {
+                const bsDropdown = bootstrap.Dropdown.getInstance(userDropdown);
+                if (bsDropdown) {
+                    bsDropdown.hide();
+                }
+            }
+
 
             if (reloadData) {
                 loadDataAndRenderUI();
@@ -759,68 +1152,80 @@
                     case 'settings': renderSettings(); break;
                 }
                 updateAdminUI(adminLoggedIn); // Ensure admin elements are correct
-                hideLoading(); // Hide loading if not reloading data
+                // hideLoading(); // Hide loading if not reloading data - Peut être caché trop tôt si le rendu est long
             } else {
                  console.warn("Skipping render because data hasn't loaded successfully.");
                  // Display an error message within the page container
                  if(targetPage) {
                      targetPage.innerHTML = `
-                         <div class="alert alert-danger">
+                         <div class="alert alert-danger mt-4">
                              <h4 class="alert-heading mb-2">Erreur de chargement des données</h4>
-                             <p>Impossible de charger les données pour cette page.</p>
-                             <button id="retryPageLoadBtn" class="btn btn-danger btn-sm">
-                                <i class="fas fa-sync-alt me-1"></i> Réessayer
+                             <p>Impossible de charger les données nécessaires pour afficher cette page. Veuillez vérifier votre connexion ou réessayez.</p>
+                             <button id="retryPageLoadBtn_${page}" class="btn btn-danger btn-sm">
+                                <i class="fas fa-sync-alt me-1"></i> Réessayer de charger les données
                              </button>
                          </div>`;
-                     
+
                      // Ajouter un listener pour le bouton de retentative
-                     document.getElementById('retryPageLoadBtn')?.addEventListener('click', () => {
+                     const retryBtn = document.getElementById(`retryPageLoadBtn_${page}`);
+                     retryBtn?.addEventListener('click', () => {
+                        retryBtn.disabled = true;
+                        retryBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Chargement...';
                          loadDataAndRenderUI();
-                     });
+                     }, { once: true }); // Listener unique pour éviter multiples clics
                  }
-                 
-                 hideLoading();
+
+                 // hideLoading(); // Cacher le loading si l'affichage de l'erreur doit se faire
             }
         }
 
         // --- Logique Métier ---
         function openProposeModal(trainingId = '', trainingName = '', sessionToEdit = null) {
-            if (!currentUserId) { 
-                showNotification("Veuillez patienter, connexion en cours...", "info"); 
-                return; 
+            if (!currentUserId) {
+                showNotification("Veuillez patienter, connexion en cours...", "info");
+                return;
             } // Prevent opening if not connected
-            
+
             const modalEl = document.getElementById('proposeSessionModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            const form = document.getElementById('proposeSessionForm'); 
+            const form = document.getElementById('proposeSessionForm');
             form.reset();
-            
-            document.getElementById('proposeSessionModalTitle').textContent = 
+
+            document.getElementById('proposeSessionModalTitle').textContent =
                 sessionToEdit ? 'Modifier Proposition' : 'Proposer une Session';
             document.getElementById('proposeSessionId').value = sessionToEdit ? sessionToEdit.id : '';
             document.getElementById('proposeTrainingId').value = sessionToEdit ? sessionToEdit.trainingId : trainingId;
             document.getElementById('proposeTrainingName').value = sessionToEdit ? sessionToEdit.trainingName : trainingName;
+
+            // Repopulate group options just in case
+            populateProposeModalOptions();
             document.getElementById('proposeGroupId').value = sessionToEdit ? sessionToEdit.groupId : '';
-            
+
             // Afficher l'information pour utilisateur anonyme si nécessaire
             const anonymousInfo = document.getElementById('anonymousProposalInfo');
             if (anonymousInfo) {
-                anonymousInfo.style.display = isAnonymousUser ? 'block' : 'none';
+                anonymousInfo.style.display = isAnonymousUser && !adminLoggedIn ? 'block' : 'none';
             }
-            
+
             // Handle date conversion from potential Timestamp
             let proposedDateStr = '';
             if (sessionToEdit?.proposedDate) {
-                 const date = sessionToEdit.proposedDate.toDate ? 
+                 const date = sessionToEdit.proposedDate.toDate ?
                              sessionToEdit.proposedDate.toDate() : new Date(sessionToEdit.proposedDate);
                  if (!isNaN(date.getTime())) proposedDateStr = date.toISOString().split('T')[0];
+            } else {
+                // Set default date to tomorrow if creating new
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                proposedDateStr = tomorrow.toISOString().split('T')[0];
             }
-            
+
+
             document.getElementById('proposeDate').value = proposedDateStr;
-            document.getElementById('proposeTime').value = sessionToEdit ? sessionToEdit.proposedStartTime || '' : '';
+            document.getElementById('proposeTime').value = sessionToEdit ? sessionToEdit.proposedStartTime || '' : '09:00'; // Default time
             document.getElementById('proposeLocation').value = sessionToEdit ? sessionToEdit.location || '' : '';
             document.getElementById('proposeNotes').value = sessionToEdit ? sessionToEdit.notes || '' : '';
-            
+
             modal.show();
         }
 
@@ -828,19 +1233,26 @@
             const groupSelect = document.getElementById('proposeGroupId');
             if (!groupSelect || !window.appData || !window.appData.groups) return;
             const data = getData();
+            const currentSelectedValue = groupSelect.value; // Preserve selection if possible
             groupSelect.innerHTML = '<option value="">Sélectionnez un groupe...</option>';
-            data.groups.forEach(g => { 
-                groupSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`; 
+            data.groups.forEach(g => {
+                groupSelect.innerHTML += `<option value="${g.id}">${g.name} (${g.service})</option>`;
             });
+            groupSelect.value = currentSelectedValue; // Restore selection
         }
 
         async function handleProposeSubmit(event) {
             event.preventDefault();
-            if (!useFirebase || !auth.currentUser) { 
-                showNotification("Problème connexion.", "warning"); 
-                return; 
+            if (!useFirebase || !auth.currentUser) {
+                showNotification("Problème connexion. Rechargez la page.", "warning");
+                return;
             }
-            
+
+            const proposeButton = event.target.querySelector('button[type="submit"]');
+            proposeButton.disabled = true;
+            proposeButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Soumission...';
+
+
             const sessionId = document.getElementById('proposeSessionId').value;
             const trainingId = document.getElementById('proposeTrainingId').value;
             const trainingName = document.getElementById('proposeTrainingName').value;
@@ -850,15 +1262,19 @@
             const location = document.getElementById('proposeLocation').value;
             const notes = document.getElementById('proposeNotes').value;
 
-            if (!trainingId || !groupId || !proposedDate || !proposedStartTime) { 
-                showNotification("Champs obligatoires manquants.", "warning"); 
-                return; 
+            if (!trainingId || !groupId || !proposedDate || !proposedStartTime) {
+                showNotification("Champs Formation, Groupe, Date et Heure obligatoires.", "warning");
+                proposeButton.disabled = false;
+                proposeButton.textContent = 'Soumettre Proposition';
+                return;
             }
-            
+
             const group = getData().groups.find(g => g.id === groupId);
-            if (!group) { 
-                showNotification("Groupe invalide.", "danger"); 
-                return; 
+            if (!group) {
+                showNotification("Groupe sélectionné invalide.", "danger");
+                 proposeButton.disabled = false;
+                 proposeButton.textContent = 'Soumettre Proposition';
+                return;
             }
 
             // Convertir la date string en Date
@@ -867,143 +1283,160 @@
                 // Créer une date locale à partir des parties de la date
                 const dateParts = proposedDate.split('-');
                 if (dateParts.length === 3) {
-                    const localDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-                    if (!isNaN(localDate.getTime())) {
-                        proposedTimestamp = firebase.firestore.Timestamp.fromDate(localDate);
+                    // Check if date is valid (avoids issues with Feb 31st etc.)
+                    const d = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                    if (d && d.getFullYear() == dateParts[0] && d.getMonth() + 1 == dateParts[1] && d.getDate() == dateParts[2]) {
+                         proposedTimestamp = firebase.firestore.Timestamp.fromDate(d);
                     }
                 }
-            } catch (e) { 
-                console.error("Error creating timestamp from date", e); 
+            } catch (e) {
+                console.error("Error creating timestamp from date", e);
             }
 
             if (!proposedTimestamp) {
-                showNotification("Format de date invalide.", "warning");
+                showNotification("Format de date invalide ou date incorrecte.", "warning");
+                proposeButton.disabled = false;
+                proposeButton.textContent = 'Soumettre Proposition';
                 return;
             }
 
             const sessionData = {
-                trainingId, 
-                trainingName, 
-                groupId, 
+                trainingId,
+                trainingName,
+                groupId,
                 groupName: group.name,
+                groupService: group.service,
                 proposedDate: proposedTimestamp,
-                proposedStartTime, 
-                location: location || '', 
+                proposedStartTime,
+                location: location || '',
                 notes: notes || '',
-                status: 'proposed', 
+                status: 'proposed',
                 proposedBy: auth.currentUser.uid,
-                participants: 0, 
+                participants: 0,
                 maxParticipants: group.maxSize || getData().settings.maxGroupSize || 12,
-                bookedBy: [], 
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                bookedBy: [],
+                // createdAt: firebase.firestore.FieldValue.serverTimestamp(), // Added conditionally below
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-            
+
             // Retirer les champs non pertinents pour une proposition initiale
-            delete sessionData.confirmedDate; 
-            delete sessionData.confirmedStartTime; 
-            delete sessionData.confirmedBy; 
+            delete sessionData.confirmedDate;
+            delete sessionData.confirmedStartTime;
+            delete sessionData.confirmedBy;
             delete sessionData.adminNotes;
 
-            showLoading();
+            // showLoading(); // Let button indicate loading
             const modal = bootstrap.Modal.getInstance(document.getElementById('proposeSessionModal'));
-            
+
             try {
                 if (sessionId) { // Modification
                      // Ne mettre à jour que les champs modifiables de la proposition
-                     const updateData = { 
-                         groupId, 
-                         groupName: group.name, 
-                         proposedDate: proposedTimestamp, 
-                         proposedStartTime, 
-                         location: location || '', 
-                         notes: notes || '', 
-                         updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                     const updateData = {
+                         groupId,
+                         groupName: group.name,
+                         groupService: group.service,
+                         proposedDate: proposedTimestamp,
+                         proposedStartTime,
+                         location: location || '',
+                         notes: notes || '',
+                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                         // Ne pas écraser proposedBy ou createdAt
                      };
-                    
+
                     await db.collection('sessions').doc(sessionId).update(updateData);
-                    showNotification("Proposition mise à jour.", "success");
+                    showNotification("Proposition mise à jour avec succès.", "success");
                 } else { // Ajout
+                    sessionData.createdAt = firebase.firestore.FieldValue.serverTimestamp(); // Add createdAt only for new proposals
                     await db.collection('sessions').add(sessionData);
-                    showNotification("Proposition soumise.", "success");
+                    showNotification("Proposition soumise avec succès pour validation.", "success");
                 }
-                
+
                 modal.hide();
                 await loadDataAndRenderUI(); // Recharger les données et rafraîchir l'UI
-            } catch (error) { 
-                console.error("Erreur proposition:", error); 
-                showNotification("Erreur soumission: " + (error.message || error), "danger"); 
-            } finally { 
-                hideLoading(); 
+            } catch (error) {
+                console.error("Erreur proposition:", error);
+                showNotification("Erreur soumission: " + (error.message || error), "danger");
+            } finally {
+                // hideLoading();
+                proposeButton.disabled = false;
+                proposeButton.textContent = 'Soumettre Proposition';
             }
         }
 
         function openConfirmModal(sessionId) {
             if (!adminLoggedIn) return;
-            
+
             const session = getData().sessions.find(s => s.id === sessionId);
-            if (!session || session.status !== 'proposed') { 
-                showNotification("Session invalide.", "warning"); 
-                return; 
+            if (!session || session.status !== 'proposed') {
+                showNotification("Impossible de confirmer : session non trouvée ou déjà traitée.", "warning");
+                return;
             }
-            
+
             const modalEl = document.getElementById('confirmSessionModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            
+
             document.getElementById('confirmSessionId').value = sessionId;
             document.getElementById('confirmSessionDetails').textContent = `${session.trainingName} - ${session.groupName}`;
             document.getElementById('confirmProposedDate').textContent = `${formatDate(session.proposedDate)} ${session.proposedStartTime}`;
-            
+
             // Convertir le timestamp en string date pour l'input date
             let proposedDateStr = '';
             if (session.proposedDate) {
-                const date = session.proposedDate.toDate ? 
+                const date = session.proposedDate.toDate ?
                             session.proposedDate.toDate() : new Date(session.proposedDate);
                 if (!isNaN(date.getTime())) {
                     proposedDateStr = date.toISOString().split('T')[0];
                 }
             }
-            
-            document.getElementById('confirmDate').value = proposedDateStr || ''; // Pré-remplir
-            document.getElementById('confirmTime').value = session.proposedStartTime || ''; // Pré-remplir
+
+            document.getElementById('confirmDate').value = proposedDateStr || ''; // Pré-remplir avec date proposée
+            document.getElementById('confirmTime').value = session.proposedStartTime || ''; // Pré-remplir avec heure proposée
             document.getElementById('confirmLocation').value = session.location || getData().settings.siteLocation || ''; // Lieu proposé ou défaut
-            document.getElementById('confirmNotes').value = session.adminNotes || session.notes || ''; // Notes admin ou proposition
-            
+            document.getElementById('confirmNotes').value = session.adminNotes || session.notes || ''; // Notes admin ou notes de la proposition initiale
+
             modal.show();
         }
 
         async function handleConfirmSubmit(event) {
             event.preventDefault();
             if (!adminLoggedIn) return;
-            
+
+            const confirmButton = event.target.querySelector('button[type="submit"]');
+            confirmButton.disabled = true;
+            confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Confirmation...';
+
             const sessionId = document.getElementById('confirmSessionId').value;
-            const confirmedDate = document.getElementById('confirmDate').value;
+            const confirmedDateStr = document.getElementById('confirmDate').value;
             const confirmedStartTime = document.getElementById('confirmTime').value;
             const location = document.getElementById('confirmLocation').value;
             const adminNotes = document.getElementById('confirmNotes').value;
-            
-            if (!sessionId || !confirmedDate || !confirmedStartTime) { 
-                showNotification("Date/Heure confirmées requises.", "warning"); 
-                return; 
+
+            if (!sessionId || !confirmedDateStr || !confirmedStartTime) {
+                showNotification("Date et Heure confirmées sont requises.", "warning");
+                confirmButton.disabled = false;
+                confirmButton.textContent = 'Confirmer Session';
+                return;
             }
 
             // Convertir la date string en Timestamp Firebase pour tri correct
              let confirmedTimestamp = null;
              try {
                  // Créer une date locale et la convertir en timestamp
-                 const dateParts = confirmedDate.split('-');
+                 const dateParts = confirmedDateStr.split('-');
                  if (dateParts.length === 3) {
-                      const localDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-                      if (!isNaN(localDate.getTime())) {
+                      const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                      if (localDate && localDate.getFullYear() == dateParts[0] && localDate.getMonth() + 1 == dateParts[1] && localDate.getDate() == dateParts[2]) {
                           confirmedTimestamp = firebase.firestore.Timestamp.fromDate(localDate);
                       }
                  }
-             } catch (e) { 
-                console.error("Error creating timestamp from date", e); 
+             } catch (e) {
+                console.error("Error creating timestamp from date", e);
              }
 
              if (!confirmedTimestamp) {
-                 showNotification("Format de date invalide.", "warning");
+                 showNotification("Format de date invalide ou date incorrecte.", "warning");
+                 confirmButton.disabled = false;
+                 confirmButton.textContent = 'Confirmer Session';
                  return;
              }
 
@@ -1014,459 +1447,1321 @@
                 location: location || '',
                 adminNotes: adminNotes || '',
                 confirmedBy: auth.currentUser.uid,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                // Garder proposedDate/Time/By pour historique si besoin, ou les supprimer:
+                // proposedDate: firebase.firestore.FieldValue.delete(),
+                // proposedStartTime: firebase.firestore.FieldValue.delete(),
+                // proposedBy: firebase.firestore.FieldValue.delete(),
             };
 
-            showLoading();
+            // showLoading();
             const modal = bootstrap.Modal.getInstance(document.getElementById('confirmSessionModal'));
-            
+
             try {
                 await db.collection('sessions').doc(sessionId).update(updateData);
-                showNotification("Session confirmée.", "success");
+                showNotification("Session confirmée avec succès.", "success");
                 modal.hide();
                 await loadDataAndRenderUI();
-            } catch (error) { 
-                console.error("Erreur confirmation:", error); 
-                showNotification("Erreur confirmation: " + (error.message || error), "danger"); 
-            } finally { 
-                hideLoading(); 
+            } catch (error) {
+                console.error("Erreur confirmation:", error);
+                showNotification("Erreur confirmation: " + (error.message || error), "danger");
+            } finally {
+                // hideLoading();
+                 confirmButton.disabled = false;
+                 confirmButton.textContent = 'Confirmer Session';
             }
         }
 
         async function handleRejectSession(sessionId) {
-             if (!adminLoggedIn || !confirm("Rejeter cette proposition ?")) return;
-             
+             if (!adminLoggedIn || !confirm("Êtes-vous sûr de vouloir rejeter cette proposition de session ?")) return;
+
              showLoading();
              try {
-                 await db.collection('sessions').doc(sessionId).update({ 
-                     status: 'cancelled', 
-                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(), 
-                     cancelledBy: auth.currentUser.uid 
+                 await db.collection('sessions').doc(sessionId).update({
+                     status: 'cancelled', // Utiliser 'cancelled' ou un autre statut pertinent
+                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                     cancelledBy: auth.currentUser.uid
                  });
-                 
-                 showNotification("Proposition rejetée.", "success");
+
+                 showNotification("Proposition de session rejetée.", "success");
                  await loadDataAndRenderUI();
-             } catch (error) { 
-                 console.error("Erreur rejet:", error); 
-                 showNotification("Erreur rejet: " + (error.message || error), "danger"); 
-             } finally { 
-                 hideLoading(); 
+             } catch (error) {
+                 console.error("Erreur rejet:", error);
+                 showNotification("Erreur lors du rejet: " + (error.message || error), "danger");
+             } finally {
+                 hideLoading();
              }
          }
 
         async function handleBooking(sessionId) {
-            if (!useFirebase || !auth.currentUser) { 
-                showNotification("Problème connexion. Essayez de recharger la page.", "warning"); 
-                return; 
+            if (!useFirebase || !auth.currentUser) {
+                showNotification("Connexion requise pour réserver. Rechargez la page si besoin.", "warning");
+                return;
             }
-            
+            if (isAnonymousUser && !adminLoggedIn) {
+                showNotification("Vous devez être connecté avec un compte non-anonyme pour réserver.", "warning");
+                return;
+            }
+
+
             const userId = auth.currentUser.uid;
             const sessionRef = db.collection('sessions').doc(sessionId);
-            
-            showLoading();
+
+            showLoading(); // Indiquer l'action en cours
             try {
                 await db.runTransaction(async (transaction) => {
                     const sessionDoc = await transaction.get(sessionRef);
-                    if (!sessionDoc.exists) throw "Session non trouvée !";
-                    
+                    if (!sessionDoc.exists) throw new Error("Session non trouvée !");
+
                     const s = sessionDoc.data();
-                    if (s.status !== 'confirmed') throw "Réservation impossible (session non confirmée).";
-                    
+                    if (s.status !== 'confirmed') throw new Error("Réservation impossible (session non confirmée).");
+
                     const currentP = s.participants || 0;
                     const maxP = s.maxParticipants || getData().settings.maxGroupSize || 12;
                     const bookedBy = s.bookedBy || [];
-                    
-                    if (currentP >= maxP) throw "Session complète !";
-                    if (bookedBy.includes(userId)) throw "Déjà inscrit.";
-                    
-                    transaction.update(sessionRef, { 
-                        participants: firebase.firestore.FieldValue.increment(1), 
-                        bookedBy: firebase.firestore.FieldValue.arrayUnion(userId), 
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+
+                    if (bookedBy.includes(userId)) throw new Error("Vous êtes déjà inscrit à cette session.");
+                    if (currentP >= maxP) throw new Error("Cette session est malheureusement complète !");
+
+
+                    transaction.update(sessionRef, {
+                        participants: firebase.firestore.FieldValue.increment(1),
+                        bookedBy: firebase.firestore.FieldValue.arrayUnion(userId),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 });
-                
-                showNotification("Réservation enregistrée !", "success");
-                await loadDataAndRenderUI();
-            } catch (error) { 
-                console.error("Booking failed:", error); 
-                showNotification(`Erreur réservation: ${error}`, "danger"); 
-            } finally { 
-                hideLoading(); 
-            }
-        }
 
-        async function handleCancelBooking(sessionId) {
-             if (!useFirebase || !auth.currentUser) { 
-                showNotification("Problème connexion. Essayez de recharger la page.", "warning"); 
-                return; 
-             }
-             
-             const userId = auth.currentUser.uid;
-             const sessionRef = db.collection('sessions').doc(sessionId);
-             
-             showLoading();
-             try {
-                 await db.runTransaction(async (transaction) => {
-                     const sessionDoc = await transaction.get(sessionRef);
-                     if (!sessionDoc.exists) throw "Session non trouvée !";
-                     
-                     const s = sessionDoc.data();
-                     if (s.status !== 'confirmed') throw "Annulation impossible.";
-                     
-                     const bookedBy = s.bookedBy || [];
-                     if (!bookedBy.includes(userId)) throw "Vous n'étiez pas inscrit.";
-                     
-                     transaction.update(sessionRef, { 
-                         participants: firebase.firestore.FieldValue.increment(-1), 
-                         bookedBy: firebase.firestore.FieldValue.arrayRemove(userId), 
-                         updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
-                     });
-                 });
-                 
-                 showNotification("Réservation annulée.", "success");
-                 await loadDataAndRenderUI();
-             } catch (error) { 
-                 console.error("Cancel failed:", error); 
-                 showNotification(`Erreur annulation: ${error}`, "danger"); 
-             } finally { 
-                 hideLoading(); 
-             }
-         }
-
-        async function handleDelete(collection, id, itemName = 'élément') {
-            if (!adminLoggedIn || !confirm(`Supprimer cet ${itemName} (${id}) ?`)) return;
-            
-            showLoading();
-            try {
-                await db.collection(collection).doc(id).delete();
-                showNotification(`${itemName} supprimé.`, "success");
-                await loadDataAndRenderUI();
-            } catch (error) { 
-                console.error(`Delete error:`, error); 
-                showNotification(`Erreur suppression: ${error.message || error}`, "danger"); 
-            } finally { 
-                hideLoading(); 
-            }
-        }
-
-        // --- Authentification ---
-        function updateAdminUI(isLoggedIn, userEmail = null) {
-            adminLoggedIn = isLoggedIn;
-            document.querySelectorAll('.admin-only').forEach(el => 
-                el.style.display = isLoggedIn ? '' : 'none');
-            document.querySelectorAll('.admin-action').forEach(el => 
-                el.style.display = isLoggedIn ? '' : 'none');
-                
-            const userNameSpan = document.getElementById('userName');
-            // Vérifier si l'email existe avant d'appeler split (pour éviter l'erreur avec users anonymes)
-            if (userNameSpan) userNameSpan.textContent = userEmail ? userEmail.split('@')[0] : 'Utilisateur';
-            
-             // Mettre à jour visibilité colonnes Actions dans les tables
-             document.querySelectorAll('#groupsTableBody .admin-only, #participantsTableBody .admin-only, #proposedSessionsTableBody .admin-only, #allSessionsTableBody .admin-only').forEach(el => 
-                el.style.display = isLoggedIn ? 'table-cell' : 'none'); // Utiliser table-cell pour les td/th
-                
-             document.querySelectorAll('#groupsTable thead .admin-only, #participantsTable thead .admin-only, #proposedSessionsTable thead .admin-only, #allSessionsTable thead .admin-only').forEach(el => 
-                el.style.display = isLoggedIn ? 'table-cell' : 'none');
-        }
-
-        async function handleAdminLogin() {
-            const emailInput = document.getElementById('email'); 
-            const passwordInput = document.getElementById('password');
-            
-            if (!emailInput || !passwordInput) return;
-            
-            const email = emailInput.value; 
-            const password = passwordInput.value;
-            
-            if (!email || !password) { 
-                showNotification('Email/Mot de passe requis.', 'warning'); 
-                return; 
-            }
-            
-            showLoading();
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                const adminModalEl = document.getElementById('adminLoginModal');
-                const adminModal = bootstrap.Modal.getInstance(adminModalEl);
-                
-                if (adminModal) adminModal.hide();
-                
-                showNotification('Connecté en tant qu\'administrateur.', 'success');
-                isAnonymousUser = false;
-                updateConnectionStatus(true, "Connecté (admin)");
-                
-                // onAuthStateChanged gérera la mise à jour UI et le rechargement
-            } catch (error) { 
-                console.error("Admin login failed:", error); 
-                showNotification('Échec connexion: ' + (error.message || error), 'danger'); 
-                hideLoading(); 
-            }
-        }
-
-        async function handleAdminLogout() {
-            if (!auth) return; 
-            
-            showLoading();
-            try { 
-                await auth.signOut(); 
-                showNotification('Déconnecté.', 'info'); 
-                
-                // Reconnexion anonyme automatique après déconnexion admin
-                try {
-                    await auth.signInAnonymously();
-                    isAnonymousUser = true;
-                    updateConnectionStatus(true, "Connecté (anonyme)");
-                } catch (error) {
-                    console.error("Anonymous sign-in after logout failed:", error);
-                    updateConnectionStatus(false, "Erreur reconnexion");
-                }
-            } catch (error) { 
-                console.error("Admin logout failed:", error); 
-                showNotification('Erreur déconnexion: ' + (error.message || error), 'danger'); 
+                showNotification("Réservation enregistrée avec succès !", "success");
+                await loadDataAndRenderUI(); // Recharger pour voir la place mise à jour
+            } catch (error) {
+                console.error("Booking failed:", error);
+                showNotification(`Erreur lors de la réservation: ${error.message}`, "danger");
             } finally {
                 hideLoading();
             }
         }
 
+        async function handleCancelBooking(sessionId) {
+             if (!useFirebase || !auth.currentUser) {
+                showNotification("Connexion requise pour annuler. Rechargez la page si besoin.", "warning");
+                return;
+             }
+              if (isAnonymousUser && !adminLoggedIn) {
+                 showNotification("Vous devez être connecté avec un compte non-anonyme pour annuler.", "warning");
+                 return;
+             }
+
+             if (!confirm("Êtes-vous sûr de vouloir annuler votre inscription à cette session ?")) return;
+
+
+             const userId = auth.currentUser.uid;
+             const sessionRef = db.collection('sessions').doc(sessionId);
+
+             showLoading();
+             try {
+                 await db.runTransaction(async (transaction) => {
+                     const sessionDoc = await transaction.get(sessionRef);
+                     if (!sessionDoc.exists) throw new Error("Session non trouvée !");
+
+                     const s = sessionDoc.data();
+                     // Autoriser l'annulation même si terminée ? Peut-être pas.
+                     if (s.status !== 'confirmed') throw new Error("Annulation impossible (session non confirmée ou terminée).");
+
+                     const bookedBy = s.bookedBy || [];
+                     if (!bookedBy.includes(userId)) throw new Error("Vous n'étiez pas inscrit à cette session.");
+
+                     transaction.update(sessionRef, {
+                         participants: firebase.firestore.FieldValue.increment(-1),
+                         bookedBy: firebase.firestore.FieldValue.arrayRemove(userId),
+                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                     });
+                 });
+
+                 showNotification("Votre réservation a été annulée.", "success");
+                 await loadDataAndRenderUI();
+             } catch (error) {
+                 console.error("Cancel booking failed:", error);
+                 showNotification(`Erreur lors de l'annulation: ${error.message}`, "danger");
+             } finally {
+                 hideLoading();
+             }
+         }
+
+        async function handleDelete(collection, id, itemName = 'élément') {
+            if (!adminLoggedIn || !confirm(`Êtes-vous sûr de vouloir supprimer définitivement cet ${itemName} (${id}) ? Cette action est irréversible.`)) return;
+
+            showLoading();
+            try {
+                // TODO: Ajouter des vérifications avant suppression si nécessaire
+                // Par exemple, ne pas supprimer un groupe s'il a encore des participants ou des sessions liées ?
+                if (collection === 'groups') {
+                    const participantsInGroup = getData().participants.some(p => p.groupId === id);
+                    const sessionsForGroup = getData().sessions.some(s => s.groupId === id);
+                    if (participantsInGroup || sessionsForGroup) {
+                        throw new Error(`Impossible de supprimer : ce groupe a encore des participants ou des sessions associés.`);
+                    }
+                }
+                 if (collection === 'participants') {
+                    const sessionsBooked = getData().sessions.some(s => s.bookedBy?.includes(id)); // bookedBy contient des user IDs, pas participant IDs
+                    // Il faudrait lier participant ID à User ID si on veut vérifier ça.
+                    // Ou juste permettre la suppression.
+                 }
+
+
+                await db.collection(collection).doc(id).delete();
+                showNotification(`${itemName.charAt(0).toUpperCase() + itemName.slice(1)} supprimé avec succès.`, "success");
+                await loadDataAndRenderUI();
+            } catch (error) {
+                console.error(`Delete error (${collection}/${id}):`, error);
+                showNotification(`Erreur lors de la suppression: ${error.message || error}`, "danger");
+            } finally {
+                hideLoading();
+            }
+        }
+
+
+        // --- Fonctions supplémentaires pour la gestion des participants, groupes et sessions (Admin) ---
+
+        // Gestion des participants
+        function openParticipantModal(participantId = null) {
+            if (!adminLoggedIn) return;
+
+            const modalEl = document.getElementById('participantModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            const form = document.getElementById('participantForm');
+            form.reset();
+
+            document.getElementById('participantModalTitle').textContent = participantId ? 'Modifier le Participant' : 'Ajouter un Participant';
+
+            // Pré-remplir le dropdown des groupes
+            const groupSelect = document.getElementById('participantGroupId');
+            const currentGroupValue = participantId ? getData().participants.find(p => p.id === participantId)?.groupId : '';
+            groupSelect.innerHTML = '<option value="">Sélectionnez un groupe...</option>'; // Start with default
+             getData().groups.forEach(group => {
+                groupSelect.innerHTML += `<option value="${group.id}">${group.name} (${group.service})</option>`;
+            });
+            groupSelect.value = currentGroupValue || ''; // Set value after populating
+
+             // Pré-remplir le dropdown des services
+            const serviceSelect = document.getElementById('participantService');
+            const currentServiceValue = participantId ? getData().participants.find(p => p.id === participantId)?.service : '';
+            // Garder les options définies dans le HTML mais sélectionner la valeur
+             serviceSelect.value = currentServiceValue || '';
+
+
+            if (participantId) {
+                // Édition d'un participant existant
+                const participant = getData().participants.find(p => p.id === participantId);
+                if (!participant) {
+                    showNotification("Participant non trouvé", "warning");
+                    modal.hide(); // Hide modal if participant not found
+                    return;
+                }
+
+                document.getElementById('participantId').value = participantId;
+                document.getElementById('participantName').value = participant.name || '';
+                document.getElementById('participantEmail').value = participant.email || '';
+                // Service and Group are handled above by setting the select value
+                document.getElementById('participantNotes').value = participant.notes || '';
+            } else {
+                // Ajout d'un nouveau participant
+                document.getElementById('participantId').value = '';
+                 // Reset selects to default
+                 groupSelect.value = '';
+                 serviceSelect.value = '';
+            }
+
+            modal.show();
+        }
+
+        async function handleParticipantSubmit(event) {
+            event.preventDefault();
+            if (!adminLoggedIn) return;
+
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Enregistrement...';
+
+
+            const participantId = document.getElementById('participantId').value;
+            const name = document.getElementById('participantName').value.trim();
+            const email = document.getElementById('participantEmail').value.trim();
+            const service = document.getElementById('participantService').value;
+            const groupId = document.getElementById('participantGroupId').value; // Can be ""
+            const notes = document.getElementById('participantNotes').value.trim();
+
+            if (!name || !email || !service) {
+                showNotification("Veuillez remplir le Nom, l'Email et le Service.", "warning");
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enregistrer';
+                return;
+            }
+
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showNotification("Format d'email invalide.", "warning");
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enregistrer';
+                return;
+            }
+
+
+            // Données du participant
+            const participantData = {
+                name,
+                email,
+                service,
+                groupId: groupId || null, // Store null if no group selected
+                notes: notes || '',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (!participantId) {
+                // Ajout - ajouter la date de création
+                participantData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
+
+            // showLoading(); // Use button state
+            const modal = bootstrap.Modal.getInstance(document.getElementById('participantModal'));
+
+            try {
+                if (participantId) {
+                    // Mise à jour
+                    await db.collection('participants').doc(participantId).update(participantData);
+                    showNotification("Participant mis à jour avec succès", "success");
+                } else {
+                    // Ajout
+                    // Optionnel: Vérifier si un participant avec cet email existe déjà ?
+                    const existing = await db.collection('participants').where('email', '==', email).limit(1).get();
+                    if (!existing.empty) {
+                        showNotification(`Un participant avec l'email ${email} existe déjà.`, "warning");
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Enregistrer';
+                        return; // Empêcher l'ajout
+                    }
+                    await db.collection('participants').add(participantData);
+                    showNotification("Participant ajouté avec succès", "success");
+                }
+
+                modal.hide();
+                await loadDataAndRenderUI();
+            } catch (error) {
+                console.error("Erreur participant:", error);
+                showNotification("Erreur: " + (error.message || error), "danger");
+                // hideLoading();
+            } finally {
+                 submitButton.disabled = false;
+                 submitButton.textContent = 'Enregistrer';
+            }
+        }
+
+        // Gestion des groupes
+        function openGroupModal(groupId = null) {
+            if (!adminLoggedIn) return;
+
+            const modalEl = document.getElementById('groupModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            const form = document.getElementById('groupForm');
+            form.reset();
+
+            document.getElementById('groupModalTitle').textContent = groupId ? 'Modifier le Groupe' : 'Ajouter un Groupe';
+
+             // Pré-remplir le dropdown des services
+            const serviceSelect = document.getElementById('groupService');
+            const currentServiceValue = groupId ? getData().groups.find(g => g.id === groupId)?.service : '';
+             serviceSelect.value = currentServiceValue || '';
+
+
+            if (groupId) {
+                // Édition d'un groupe existant
+                const group = getData().groups.find(g => g.id === groupId);
+                if (!group) {
+                    showNotification("Groupe non trouvé", "warning");
+                    modal.hide();
+                    return;
+                }
+
+                document.getElementById('groupId').value = groupId;
+                document.getElementById('groupName').value = group.name || '';
+                // Service handled above
+                document.getElementById('groupMinSize').value = group.minSize || getData().settings.minGroupSize || 8;
+                document.getElementById('groupMaxSize').value = group.maxSize || getData().settings.maxGroupSize || 12;
+                document.getElementById('groupNotes').value = group.notes || '';
+            } else {
+                // Ajout
+                document.getElementById('groupId').value = '';
+                 serviceSelect.value = ''; // Reset service
+
+                // Valeurs par défaut depuis les settings globaux
+                document.getElementById('groupMinSize').value = getData().settings.minGroupSize || 8;
+                document.getElementById('groupMaxSize').value = getData().settings.maxGroupSize || 12;
+            }
+
+            modal.show();
+        }
+
+        async function handleGroupSubmit(event) {
+            event.preventDefault();
+            if (!adminLoggedIn) return;
+
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Enregistrement...';
+
+
+            const groupId = document.getElementById('groupId').value;
+            const name = document.getElementById('groupName').value.trim();
+            const service = document.getElementById('groupService').value;
+            const minSize = parseInt(document.getElementById('groupMinSize').value) || 0; // Default to 0 if invalid
+            const maxSize = parseInt(document.getElementById('groupMaxSize').value) || 1; // Default to 1 if invalid
+            const notes = document.getElementById('groupNotes').value.trim();
+
+            if (!name || !service) {
+                showNotification("Veuillez remplir le Nom et le Service du groupe.", "warning");
+                 submitButton.disabled = false;
+                 submitButton.textContent = 'Enregistrer';
+                return;
+            }
+
+            if (minSize < 0 || maxSize <= 0) {
+                 showNotification("Les tailles min/max doivent être des nombres positifs.", "warning");
+                 submitButton.disabled = false;
+                 submitButton.textContent = 'Enregistrer';
+                 return;
+            }
+
+            if (minSize > maxSize) {
+                showNotification("La taille minimale ne peut pas être supérieure à la taille maximale.", "warning");
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enregistrer';
+                return;
+            }
+
+            // Données du groupe
+            const groupData = {
+                name,
+                service,
+                minSize,
+                maxSize,
+                notes: notes || '',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (!groupId) {
+                // Ajout - ajouter la date de création
+                groupData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
+
+            // showLoading();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('groupModal'));
+
+            try {
+                if (groupId) {
+                    // Mise à jour
+                    await db.collection('groups').doc(groupId).update(groupData);
+                    showNotification("Groupe mis à jour avec succès", "success");
+                } else {
+                    // Ajout
+                     // Optionnel: Vérifier si un groupe avec ce nom existe déjà ?
+                    const existing = await db.collection('groups').where('name', '==', name).limit(1).get();
+                    if (!existing.empty) {
+                        showNotification(`Un groupe nommé "${name}" existe déjà.`, "warning");
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Enregistrer';
+                        return; // Empêcher l'ajout
+                    }
+                    await db.collection('groups').add(groupData);
+                    showNotification("Groupe ajouté avec succès", "success");
+                }
+
+                modal.hide();
+                await loadDataAndRenderUI();
+            } catch (error) {
+                console.error("Erreur groupe:", error);
+                showNotification("Erreur: " + (error.message || error), "danger");
+                // hideLoading();
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enregistrer';
+            }
+        }
+
+        // Gestion des sessions manuelles (Admin)
+        function openSessionManualModal(sessionId = null) {
+            if (!adminLoggedIn) return;
+
+            const modalEl = document.getElementById('sessionManualModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            const form = document.getElementById('sessionManualForm');
+            form.reset();
+
+            document.getElementById('sessionManualModalTitle').textContent = sessionId ? 'Modifier la Session' : 'Ajouter une Session';
+
+            // Pré-remplir les dropdowns
+            const trainingSelect = document.getElementById('sessionManualTrainingId');
+            const groupSelect = document.getElementById('sessionManualGroupId');
+
+            trainingSelect.innerHTML = '<option value="">Sélectionnez une formation...</option>';
+            getData().trainings.forEach(training => {
+                trainingSelect.innerHTML += `<option value="${training.id}" data-name="${training.name}">${training.name}</option>`;
+            });
+
+            groupSelect.innerHTML = '<option value="">Sélectionnez un groupe...</option>';
+            getData().groups.forEach(group => {
+                groupSelect.innerHTML += `<option value="${group.id}" data-name="${group.name}" data-service="${group.service}">${group.name} (${group.service})</option>`;
+            });
+
+            if (sessionId) {
+                // Édition d'une session existante
+                const session = getData().sessions.find(s => s.id === sessionId);
+                if (!session) {
+                    showNotification("Session non trouvée", "warning");
+                     modal.hide();
+                    return;
+                }
+
+                document.getElementById('sessionManualId').value = sessionId;
+                trainingSelect.value = session.trainingId || '';
+                groupSelect.value = session.groupId || '';
+
+                // Convertir les timestamps en dates pour les inputs
+                 let dateValue = '';
+                 let timeValue = '';
+                 // Prioritize confirmed date/time if available
+                 if (session.confirmedDate) {
+                     const date = session.confirmedDate.toDate ? session.confirmedDate.toDate() : new Date(session.confirmedDate);
+                     if (!isNaN(date.getTime())) {
+                         dateValue = date.toISOString().split('T')[0];
+                         timeValue = session.confirmedStartTime || '';
+                     }
+                 } else if (session.proposedDate) { // Fallback to proposed
+                     const date = session.proposedDate.toDate ? session.proposedDate.toDate() : new Date(session.proposedDate);
+                     if (!isNaN(date.getTime())) {
+                         dateValue = date.toISOString().split('T')[0];
+                         timeValue = session.proposedStartTime || '';
+                     }
+                 }
+                 document.getElementById('sessionManualDate').value = dateValue;
+                 document.getElementById('sessionManualTime').value = timeValue;
+
+
+                document.getElementById('sessionManualLocation').value = session.location || '';
+                document.getElementById('sessionManualStatus').value = session.status || 'confirmed'; // Default to confirmed if status missing
+                document.getElementById('sessionManualNotes').value = session.adminNotes || session.notes || ''; // Prefer admin notes
+            } else {
+                // Ajout
+                document.getElementById('sessionManualId').value = '';
+                trainingSelect.value = '';
+                groupSelect.value = '';
+
+                // Date par défaut (aujourd'hui)
+                const today = new Date();
+                document.getElementById('sessionManualDate').value = today.toISOString().split('T')[0];
+                document.getElementById('sessionManualTime').value = '09:00'; // Default time
+                document.getElementById('sessionManualStatus').value = 'confirmed'; // Default status
+            }
+
+            modal.show();
+        }
+
+        async function handleSessionManualSubmit(event) {
+            event.preventDefault();
+            if (!adminLoggedIn) return;
+
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Enregistrement...';
+
+            const sessionId = document.getElementById('sessionManualId').value;
+            const trainingId = document.getElementById('sessionManualTrainingId').value;
+            const groupId = document.getElementById('sessionManualGroupId').value;
+            const dateStr = document.getElementById('sessionManualDate').value;
+            const time = document.getElementById('sessionManualTime').value;
+            const location = document.getElementById('sessionManualLocation').value.trim();
+            const status = document.getElementById('sessionManualStatus').value;
+            const notes = document.getElementById('sessionManualNotes').value.trim();
+
+            if (!trainingId || !groupId || !dateStr || !time || !status) {
+                showNotification("Veuillez remplir Formation, Groupe, Date, Heure et Statut.", "warning");
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enregistrer';
+                return;
+            }
+
+            // Récupérer les noms depuis les options sélectionnées
+            const trainingOption = document.querySelector(`#sessionManualTrainingId option[value="${trainingId}"]`);
+            const groupOption = document.querySelector(`#sessionManualGroupId option[value="${groupId}"]`);
+
+            if (!trainingOption || !groupOption) {
+                showNotification("Erreur: Formation ou Groupe invalide.", "danger");
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enregistrer';
+                return;
+            }
+
+            const trainingName = trainingOption.dataset.name || trainingOption.textContent;
+            const groupName = groupOption.dataset.name || groupOption.textContent.split('(')[0].trim();
+            const groupService = groupOption.dataset.service || '';
+
+
+            // Convertir la date en Timestamp Firebase
+            let dateTimestamp = null;
+            try {
+                const dateParts = dateStr.split('-');
+                if (dateParts.length === 3) {
+                     const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                     if (localDate && localDate.getFullYear() == dateParts[0] && localDate.getMonth() + 1 == dateParts[1] && localDate.getDate() == dateParts[2]) {
+                        dateTimestamp = firebase.firestore.Timestamp.fromDate(localDate);
+                    }
+                }
+            } catch (e) {
+                console.error("Error creating timestamp from date", e);
+            }
+
+            if (!dateTimestamp) {
+                showNotification("Format de date invalide ou date incorrecte.", "warning");
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enregistrer';
+                return;
+            }
+
+            // Trouver la taille maximale du groupe
+            const group = getData().groups.find(g => g.id === groupId);
+            const maxSize = group ? (group.maxSize || getData().settings.maxGroupSize || 12) : (getData().settings.maxGroupSize || 12);
+
+            // Données de la session - Start with common fields
+            const sessionData = {
+                trainingId,
+                trainingName,
+                groupId,
+                groupName,
+                groupService,
+                status,
+                location: location || '',
+                adminNotes: notes || '', // Use adminNotes for manually added/edited notes
+                // participants: 0, // Handled below for existing sessions
+                maxParticipants: maxSize,
+                // bookedBy: [], // Handled below for existing sessions
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Ajouter les champs spécifiques au statut (date/heure)
+            if (status === 'confirmed' || status === 'completed') {
+                sessionData.confirmedDate = dateTimestamp;
+                sessionData.confirmedStartTime = time;
+                sessionData.confirmedBy = auth.currentUser.uid; // Record who confirmed/created it
+                // Ensure proposed fields are removed if switching status
+                sessionData.proposedDate = firebase.firestore.FieldValue.delete();
+                sessionData.proposedStartTime = firebase.firestore.FieldValue.delete();
+                sessionData.proposedBy = firebase.firestore.FieldValue.delete();
+            } else { // proposed status
+                sessionData.proposedDate = dateTimestamp;
+                sessionData.proposedStartTime = time;
+                sessionData.proposedBy = auth.currentUser.uid; // Record who proposed/created it
+                 // Ensure confirmed fields are removed if switching status
+                 sessionData.confirmedDate = firebase.firestore.FieldValue.delete();
+                 sessionData.confirmedStartTime = firebase.firestore.FieldValue.delete();
+                 sessionData.confirmedBy = firebase.firestore.FieldValue.delete();
+            }
+
+            // showLoading();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('sessionManualModal'));
+
+            try {
+                if (sessionId) {
+                    // Mise à jour: Ne pas écraser participants/bookedBy
+                    // On récupère les valeurs existantes pour ne pas les écraser par erreur
+                    const existingSession = getData().sessions.find(s => s.id === sessionId);
+                    if (existingSession) {
+                        sessionData.participants = existingSession.participants || 0;
+                        sessionData.bookedBy = existingSession.bookedBy || [];
+                    } else {
+                         // Should not happen if modal opened correctly, but as fallback:
+                         sessionData.participants = 0;
+                         sessionData.bookedBy = [];
+                    }
+                    await db.collection('sessions').doc(sessionId).update(sessionData);
+                    showNotification("Session mise à jour avec succès", "success");
+                } else {
+                    // Ajout: Initialiser participants/bookedBy
+                    sessionData.participants = 0;
+                    sessionData.bookedBy = [];
+                    sessionData.createdAt = firebase.firestore.FieldValue.serverTimestamp(); // Add creation date
+                    await db.collection('sessions').add(sessionData);
+                    showNotification("Session ajoutée avec succès", "success");
+                }
+
+                modal.hide();
+                await loadDataAndRenderUI();
+            } catch (error) {
+                console.error("Erreur session:", error);
+                showNotification("Erreur: " + (error.message || error), "danger");
+                // hideLoading();
+            } finally {
+                 submitButton.disabled = false;
+                 submitButton.textContent = 'Enregistrer';
+            }
+        }
+
+        // Export du planning
+        function openExportPlanningModal() {
+             if (!adminLoggedIn) return;
+
+            const modalEl = document.getElementById('exportPlanningModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+             // Populate service filter options dynamically
+             const filterSelect = document.getElementById('exportFilterService');
+             const services = [...new Set(getData().groups.map(g => g.service))].sort();
+             filterSelect.innerHTML = '<option value="">Tous les services</option>';
+             services.forEach(service => {
+                 filterSelect.innerHTML += `<option value="${service}">${service}</option>`;
+             });
+
+            modal.show();
+        }
+
+        function handleExportPlanning() {
+             if (!adminLoggedIn) return;
+
+             const exportButton = document.getElementById('exportPlanningBtn');
+             exportButton.disabled = true;
+             exportButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Exportation...';
+
+
+            const format = document.getElementById('exportFormat').value;
+            const includeProposed = document.getElementById('includeProposed').checked;
+            const includeConfirmed = document.getElementById('includeConfirmed').checked;
+            const includeCompleted = document.getElementById('includeCompleted').checked;
+            const filterService = document.getElementById('exportFilterService').value;
+
+            // Filtrer les sessions
+            let sessionsToExport = getData().sessions.filter(s => {
+                const statusIncluded = (includeProposed && s.status === 'proposed') ||
+                                       (includeConfirmed && s.status === 'confirmed') ||
+                                       (includeCompleted && s.status === 'completed');
+                if (!statusIncluded) return false;
+                if (filterService && s.groupService !== filterService) return false;
+                return true;
+            });
+
+            if (sessionsToExport.length === 0) {
+                showNotification("Aucune session à exporter avec les filtres sélectionnés.", "warning");
+                exportButton.disabled = false;
+                exportButton.textContent = 'Exporter';
+                return;
+            }
+
+
+            // Trier par date
+            sessionsToExport.sort((a, b) => {
+                const dateA = a.confirmedDate || a.proposedDate;
+                const dateB = b.confirmedDate || b.proposedDate;
+                const d1 = dateA?.toDate ? dateA.toDate() : new Date(dateA || 0);
+                const d2 = dateB?.toDate ? dateB.toDate() : new Date(dateB || 0);
+                return d1 - d2;
+            });
+
+            // Créer le contenu
+            let content = '';
+            const period = getData().settings.planningPeriod || new Date().getFullYear(); // Use setting or current year
+            const title = `Planning des formations - ${period}`;
+
+            if (format === 'html') {
+                content = `
+                <!DOCTYPE html>
+                <html lang="fr">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${title}</title>
+                    <style>
+                        body { font-family: Segoe UI, Arial, sans-serif; margin: 20px; font-size: 14px; }
+                        h1 { color: #2D7D46; border-bottom: 2px solid #2D7D46; padding-bottom: 5px; }
+                        p.export-info { font-size: 12px; color: #555; margin-bottom: 20px; }
+                        table { border-collapse: collapse; width: 100%; margin-top: 20px; border: 1px solid #ccc; }
+                        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; }
+                        th { background-color: #f2f2f2; color: #333; font-weight: 600; }
+                        tr:nth-child(even) { background-color: #f9f9f9; }
+                        .proposed { /* background-color: #e3f2fd; */ }
+                        .confirmed { /* background-color: #e8f5e9; */ }
+                        .completed { background-color: #f5f5f5; color: #666; }
+                        .status-proposed { font-weight: bold; color: #17a2b8; }
+                        .status-confirmed { font-weight: bold; color: #28a745; }
+                        .status-completed { font-weight: bold; color: #6c757d; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${title}</h1>
+                    <p class="export-info">Date d'export: ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR')}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Formation</th>
+                                <th>Groupe (Service)</th>
+                                <th>Date</th>
+                                <th>Heure</th>
+                                <th>Lieu</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                sessionsToExport.forEach(s => {
+                    const date = s.status === 'confirmed' || s.status === 'completed' ?
+                                formatDate(s.confirmedDate) : formatDate(s.proposedDate);
+                    const time = s.status === 'confirmed' || s.status === 'completed' ?
+                                s.confirmedStartTime : s.proposedStartTime;
+                    let statusText = 'N/A';
+                    let statusClass = '';
+                     switch(s.status) {
+                         case 'proposed': statusText = 'Proposée'; statusClass = 'status-proposed'; break;
+                         case 'confirmed': statusText = 'Confirmée'; statusClass = 'status-confirmed'; break;
+                         case 'completed': statusText = 'Terminée'; statusClass = 'status-completed'; break;
+                         default: statusText = s.status;
+                     }
+
+                    content += `
+                        <tr class="${s.status}">
+                            <td>${s.trainingName || 'N/A'}</td>
+                            <td>${s.groupName || 'N/A'} ${s.groupService ? `(${s.groupService})` : ''}</td>
+                            <td>${date}</td>
+                            <td>${time || 'N/A'}</td>
+                            <td>${s.location || 'À définir'}</td>
+                            <td class="${statusClass}">${statusText}</td>
+                        </tr>
+                    `;
+                });
+
+                content += `
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+                `;
+            } else { // Format texte
+                content = `${title}\n`;
+                content += `Date d'export: ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR')}\n`;
+                content += `Filtres: Statuts (${[includeProposed ? 'Proposées':'', includeConfirmed ? 'Confirmées':'', includeCompleted ? 'Terminées':''].filter(Boolean).join('/') || 'Aucun'}) - Service (${filterService || 'Tous'})\n\n`;
+                content += "--------------------------------------------------\n\n";
+
+
+                sessionsToExport.forEach(s => {
+                    const date = s.status === 'confirmed' || s.status === 'completed' ?
+                                formatDate(s.confirmedDate) : formatDate(s.proposedDate);
+                    const time = s.status === 'confirmed' || s.status === 'completed' ?
+                                s.confirmedStartTime : s.proposedStartTime;
+                    let statusText = 'N/A';
+                     switch(s.status) {
+                         case 'proposed': statusText = 'Proposée'; break;
+                         case 'confirmed': statusText = 'Confirmée'; break;
+                         case 'completed': statusText = 'Terminée'; break;
+                         default: statusText = s.status;
+                     }
+
+                    content += `Formation: ${s.trainingName || 'N/A'}\n`;
+                    content += `Groupe:    ${s.groupName || 'N/A'} ${s.groupService ? `(${s.groupService})` : ''}\n`;
+                    content += `Date:      ${date} ${time ? `à ${time}` : '(heure N/A)'}\n`;
+                    content += `Lieu:      ${s.location || 'À définir'}\n`;
+                    content += `Statut:    ${statusText}\n\n`;
+                    content += "--------------------------------------------------\n\n";
+                });
+            }
+
+            // Créer un lien de téléchargement
+            const blob = new Blob([content], { type: format === 'html' ? 'text/html;charset=utf-8' : 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const filename = `planning_formations_${new Date().toISOString().split('T')[0]}.${format === 'html' ? 'html' : 'txt'}`;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Fermer le modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('exportPlanningModal'));
+            modal.hide();
+
+            showNotification(`Export du planning (${filename}) réussi`, "success");
+
+             exportButton.disabled = false;
+             exportButton.textContent = 'Exporter';
+        }
+
+
+        // --- Authentification ---
+        function updateAdminUI(isLoggedIn, userEmail = null) {
+            adminLoggedIn = isLoggedIn;
+            const adminElements = document.querySelectorAll('.admin-only');
+            const displayStyle = isLoggedIn ? '' : 'none'; // Use '' for default display (block, inline, etc.)
+
+            adminElements.forEach(el => {
+                 // Special handling for table cells/headers
+                 if (el.tagName === 'TD' || el.tagName === 'TH') {
+                    el.style.display = isLoggedIn ? 'table-cell' : 'none';
+                } else {
+                    el.style.display = displayStyle;
+                }
+            });
+
+
+            // Update username in dropdown
+            const userNameSpan = document.getElementById('userName');
+            if (userNameSpan) {
+                userNameSpan.textContent = userEmail ? userEmail.split('@')[0] : 'Utilisateur';
+            }
+
+             // Update notification area visibility based on login status? (Optional)
+             const notificationDropdown = document.querySelector('.admin-only .dropdown'); // Adjust selector if needed
+             if (notificationDropdown) {
+                 // notificationDropdown.style.display = displayStyle; // Already handled by .admin-only
+             }
+
+            // Update visibility of Add buttons based on current page AND login status
+             const addGroupBtn = document.getElementById('addGroupBtn');
+             const addParticipantBtn = document.getElementById('addParticipantBtn');
+             const addSessionBtn = document.getElementById('addSessionBtnManual');
+
+             if (addGroupBtn) addGroupBtn.style.display = (isLoggedIn && currentActivePage === 'groups') ? '' : 'none';
+             if (addParticipantBtn) addParticipantBtn.style.display = (isLoggedIn && currentActivePage === 'participants') ? '' : 'none';
+             if (addSessionBtn) addSessionBtn.style.display = (isLoggedIn && currentActivePage === 'sessions') ? '' : 'none';
+
+
+        }
+
+        async function handleAdminLogin() {
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const loginButton = document.getElementById('loginBtn');
+
+            if (!emailInput || !passwordInput || !loginButton) return;
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showNotification('Email et Mot de passe sont requis.', 'warning');
+                return;
+            }
+
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Connexion...';
+            // showLoading(); // Button state is enough
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                // onAuthStateChanged will handle the rest (UI update, data reload)
+
+                const adminModalEl = document.getElementById('adminLoginModal');
+                const adminModal = bootstrap.Modal.getInstance(adminModalEl);
+                if (adminModal) adminModal.hide();
+
+                showNotification('Connecté en tant qu\'administrateur.', 'success');
+                isAnonymousUser = false; // Explicitly set false
+                // updateConnectionStatus(true, "Connecté (admin)"); // Handled by onAuthStateChanged
+
+
+            } catch (error) {
+                console.error("Admin login failed:", error);
+                 let message = 'Échec de la connexion.';
+                 if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                     message = 'Email ou mot de passe incorrect.';
+                 } else {
+                     message = 'Erreur: ' + (error.message || error);
+                 }
+                showNotification(message, 'danger');
+                // hideLoading();
+                passwordInput.value = ''; // Clear password field on failure
+                loginButton.disabled = false;
+                loginButton.textContent = 'Se connecter';
+            }
+        }
+
+        async function handleAdminLogout() {
+            if (!auth || !adminLoggedIn) return;
+
+            if (!confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) return;
+
+            showLoading(); // Indicate logout process
+            try {
+                await auth.signOut();
+                showNotification('Déconnexion réussie.', 'info');
+                 isAnonymousUser = true; // Assume we fall back to anonymous
+                 adminLoggedIn = false; // Update state immediately
+
+                 // Reconnexion anonyme automatique après déconnexion admin
+                 // onAuthStateChanged should handle this automatically if configured correctly
+                 // try {
+                 //     await auth.signInAnonymously();
+                 //     console.log("Re-signed in anonymously after admin logout.");
+                 //     // updateConnectionStatus(true, "Connecté (anonyme)"); // Handled by onAuthStateChanged
+                 // } catch (error) {
+                 //     console.error("Anonymous sign-in after logout failed:", error);
+                 //     updateConnectionStatus(false, "Erreur reconnexion");
+                 // }
+            } catch (error) {
+                console.error("Admin logout failed:", error);
+                showNotification('Erreur lors de la déconnexion: ' + (error.message || error), 'danger');
+            } finally {
+                hideLoading(); // Hide loading after logout attempt
+                // UI update and potential data reload is handled by onAuthStateChanged
+                navigateTo('dashboard', false); // Go back to dashboard after logout
+            }
+        }
+
         // --- Initialisation Firebase ---
         async function initializeFirebase(isRetry = false) {
-            if (typeof firebase === 'undefined') {
-                console.error("Firebase lib not loaded!");
+            if (typeof firebase === 'undefined' || typeof firebase.app !== 'function') {
+                console.error("Firebase library not loaded correctly!");
                 showNotification("Bibliothèque Firebase non disponible.", "danger");
-                updateConnectionStatus(false, "Firebase non disponible");
+                updateConnectionStatus(false, "Firebase indisponible");
                 hideLoading();
                 return false;
             }
-            
+
             try {
-                // Réinitialiser l'app si on a déjà tenté une fois
-                if (isRetry && firebaseApp) {
-                    console.log("Réinitialisation de l'application Firebase...");
-                    // Certaines versions Firebase ne supportent pas .delete()
-                    try { await firebaseApp.delete(); } catch (e) { console.log("Impossible de supprimer l'app", e); }
+                // Use getApps to check if already initialized
+                if (firebase.apps.length === 0) {
+                    console.log("Initializing Firebase App...");
+                    firebaseApp = firebase.initializeApp(firebaseConfig);
+                } else {
+                    console.log("Firebase App already initialized.");
+                    firebaseApp = firebase.app(); // Get default app
                 }
-                
-                firebaseApp = firebase.initializeApp(firebaseConfig);
+
                 db = firebase.firestore();
                 auth = firebase.auth();
-                useFirebase = true; 
-                
-                console.log("Firebase initialisé.");
-                
-                // Définir la tentative de connexion anonyme comme promesse pour pouvoir attendre
-                const anonymousAuthPromise = new Promise((resolve, reject) => {
-                    auth.onAuthStateChanged(async user => {
+                useFirebase = true;
+
+                 // Enable offline persistence (optional, but good for resilience)
+                 // Do this only ONCE, preferably before any other Firestore operations.
+                 // Note: This might cause a delay on initial load if data needs migration.
+                 try {
+                     await firebase.firestore().enablePersistence({ synchronizeTabs: true });
+                     console.log("Firestore offline persistence enabled.");
+                     updateConnectionStatus(true, "Prêt (hors ligne)"); // Initial status
+                 } catch (err) {
+                     if (err.code == 'failed-precondition') {
+                         console.warn("Persistence failed: Multiple tabs open?");
+                         // Multiple tabs open, persistence can only be enabled in one.
+                         // Silently ignore or inform user.
+                     } else if (err.code == 'unimplemented') {
+                         console.warn("Persistence failed: Browser does not support offline persistence.");
+                         // The current browser does not support all of the
+                         // features required to enable persistence
+                     } else {
+                         console.error("Firestore persistence error:", err);
+                     }
+                 }
+
+
+                console.log("Firebase initialized. Setting up Auth listener...");
+
+                // Set up Auth State Listener (runs immediately and on changes)
+                return new Promise((resolve, reject) => {
+                    const unsubscribe = auth.onAuthStateChanged(async user => {
+                        // Unsubscribe needed? Usually not if it's the main app listener
+                        // unsubscribe(); // Maybe not needed here if it runs continuously
+
                         currentUserId = user ? user.uid : null;
+                        const wasAdmin = adminLoggedIn; // Track previous admin state
                         isAnonymousUser = user ? user.isAnonymous : false;
-                        
+                        adminLoggedIn = user ? !user.isAnonymous : false; // Update admin state based on anon status
+
                         if (user) {
-                            console.log("Auth state: User OK.", user.uid, "Anon:", user.isAnonymous);
-                            
-                            // Correction du problème avec email null pour utilisateurs anonymes
-                            const userEmail = user.isAnonymous ? null : user.email;
-                            updateAdminUI(!user.isAnonymous, userEmail);
-                            updateConnectionStatus(true, user.isAnonymous ? "Connecté (anonyme)" : "Connecté");
-                            
-                            if (!dataLoadedSuccessfully) { // Charger données seulement si pas déjà fait
-                                await loadDataAndRenderUI(false); // Ne pas tenter de retentative ici
+                            console.log("Auth state changed: User logged in.", user.uid, "Anon:", isAnonymousUser);
+                             const userEmail = isAnonymousUser ? null : user.email;
+                             updateAdminUI(adminLoggedIn, userEmail); // Update UI based on new status
+
+                            // Load data IF
+                            // 1. It hasn't been loaded successfully yet
+                            // OR 2. The user just logged in as admin (wasAdmin === false && adminLoggedIn === true) - Ensures admin sees all data
+                            if (!dataLoadedSuccessfully || (!wasAdmin && adminLoggedIn)) {
+                                console.log("Loading data due to auth change or initial load.");
+                                await loadDataAndRenderUI(false); // Don't retry from here, initial attempt handled it
                                 resolve(true);
                             } else {
-                                 // Données déjà chargées, juste rafraîchir l'UI si l'état admin a changé
-                                 navigateTo(currentActivePage, false);
-                                 hideLoading(); // Cacher si on ne recharge pas
-                                 resolve(true);
+                                console.log("Auth changed, but data already loaded. Refreshing UI.");
+                                navigateTo(currentActivePage, false); // Just refresh the current view
+                                hideLoading(); // Hide loading if we didn't reload data
+                                resolve(true);
                             }
                         } else {
-                            console.log("Auth state: Signed out. Signing in anon...");
-                            updateAdminUI(false); // Mettre à jour UI avant connexion anonyme
-                            
-                            try { 
-                                await auth.signInAnonymously(); 
-                                isAnonymousUser = true;
-                                console.log("Anonymous auth successful");
-                                resolve(true);
-                            } catch (error) { 
-                                console.error("Anon sign-in failed:", error); 
-                                showNotification("Erreur connexion anonyme: " + (error.message || error), "danger"); 
+                            console.log("Auth state changed: User logged out. Attempting anonymous sign-in...");
+                             updateAdminUI(false); // Update UI immediately to non-admin state
+                             adminLoggedIn = false;
+                             isAnonymousUser = true;
+
+                            try {
+                                await auth.signInAnonymously();
+                                console.log("Anonymous sign-in successful after logout.");
+                                // The listener will trigger again with the anonymous user, loading data if needed.
+                                resolve(true); // Resolve after successful anonymous sign-in attempt
+                            } catch (error) {
+                                console.error("Anonymous sign-in failed after logout:", error);
+                                showNotification("Erreur connexion anonyme: " + (error.message || error), "danger");
                                 updateConnectionStatus(false, "Erreur connexion");
                                 reject(error);
-                                hideLoading(); 
+                                hideLoading();
                             }
                         }
+                    }, error => {
+                         // Handle errors during auth listener setup/execution
+                         console.error("Auth listener error:", error);
+                         showNotification("Erreur d'authentification: " + error.message, "danger");
+                         updateConnectionStatus(false, "Erreur Auth");
+                         reject(error);
+                         hideLoading();
                     });
                 });
-                
-                // Attendre la connexion anonyme
-                await anonymousAuthPromise;
-                
-                return true;
-            } catch (error) { 
-                console.error("Firebase Init failed:", error); 
-                showNotification("Init App échouée: " + (error.message || error), "danger"); 
+
+            } catch (error) {
+                console.error("Firebase Init failed:", error);
+                showNotification("Initialisation Firebase échouée: " + (error.message || error), "danger");
                 updateConnectionStatus(false, "Échec initialisation");
-                useFirebase = false; 
-                hideLoading(); 
-                return false;
+                useFirebase = false;
+                hideLoading();
+                return false; // Return false directly on init failure
             }
         }
+
 
         // --- Setup Événements ---
         function setupEventListeners() {
             // Sidebar Nav
-            document.querySelectorAll('.sidebar .nav-link').forEach(link => 
-                link.addEventListener('click', (e) => { 
-                    e.preventDefault(); 
-                    navigateTo(link.dataset.page, false); 
+            document.querySelectorAll('.sidebar .nav-link').forEach(link =>
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (link.id === 'exportPlanningLink') {
+                        openExportPlanningModal();
+                    } else {
+                        const page = link.dataset.page;
+                        if (page) {
+                            navigateTo(page, false);
+                        }
+                    }
                 })
-            ); // Ne pas recharger par défaut
-            
+            );
+
             // Admin Badge
-            document.getElementById('adminBadge')?.addEventListener('click', () => 
+            document.getElementById('adminBadge')?.addEventListener('click', () =>
                 bootstrap.Modal.getOrCreateInstance(document.getElementById('adminLoginModal')).show()
             );
-            
+
             // Login/Logout
             document.getElementById('loginBtn')?.addEventListener('click', handleAdminLogin);
             document.getElementById('logoutBtn')?.addEventListener('click', handleAdminLogout);
-            
-            // Settings Link
-            document.getElementById('settingsMenuLink')?.addEventListener('click', (e) => { 
-                e.preventDefault(); 
-                navigateTo('settings', false); 
-                bootstrap.Dropdown.getInstance(document.getElementById('userDropdown'))?.hide(); 
+            // Allow Enter key in password field to trigger login
+            document.getElementById('password')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Prevent form submission if it were a form
+                    handleAdminLogin();
+                }
             });
-            
+
+
+            // Settings Link in Dropdown
+            document.getElementById('settingsMenuLink')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigateTo('settings', false);
+                // Close dropdown - find the button triggering the dropdown
+                const dropdownToggle = document.getElementById('userDropdown');
+                const bsDropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
+                if (bsDropdown) {
+                    bsDropdown.hide();
+                }
+            });
+
             // Refresh Button
             document.getElementById('refreshBtn')?.addEventListener('click', () => loadDataAndRenderUI());
-            
+
             // Retry Connection Button
             document.getElementById('retryConnectionBtn')?.addEventListener('click', () => {
                 connectionAttempts = 0; // Réinitialiser le compteur
                 retryConnectionBtn.style.display = 'none'; // Cacher le bouton
                 showNotification("Tentative de reconnexion...", "info");
-                initializeFirebase(true);
+                initializeFirebase(true); // Attempt full re-init
             });
-            
-            // Form Submissions
+
+            // Form Submissions (Modals)
             document.getElementById('proposeSessionForm')?.addEventListener('submit', handleProposeSubmit);
             document.getElementById('confirmSessionForm')?.addEventListener('submit', handleConfirmSubmit);
-            document.getElementById('settingsForm')?.addEventListener('submit', async (e) => { 
+            document.getElementById('participantForm')?.addEventListener('submit', handleParticipantSubmit);
+            document.getElementById('groupForm')?.addEventListener('submit', handleGroupSubmit);
+            document.getElementById('sessionManualForm')?.addEventListener('submit', handleSessionManualSubmit);
+            document.getElementById('exportPlanningBtn')?.addEventListener('click', handleExportPlanning);
+
+
+            document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!adminLoggedIn) return;
-                
-                showLoading();
+
+                 const saveButton = e.target.querySelector('button[type="submit"]');
+                 saveButton.disabled = true;
+                 saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Enregistrement...';
+                // showLoading(); // Use button state
+
                 try {
                     const settingsData = {
-                        companyName: document.getElementById('companyName').value || 'Anecoop-France',
-                        siteLocation: document.getElementById('siteLocation').value || 'Anecoop',
+                        companyName: document.getElementById('companyName').value.trim() || 'Anecoop-France',
+                        siteLocation: document.getElementById('siteLocation').value.trim() || 'Anecoop',
                         minGroupSize: parseInt(document.getElementById('minGroupSize').value) || 8,
                         maxGroupSize: parseInt(document.getElementById('maxGroupSize').value) || 12,
                         defaultDuration: parseInt(document.getElementById('defaultDuration').value) || 90,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
-                    
-                    await db.collection('settings').doc('app_settings').set(settingsData, { merge: true });
-                    showNotification("Paramètres enregistrés", "success");
+                     // Add planningPeriod if it exists in the form
+                     const planningPeriodInput = document.getElementById('planningPeriod'); // Assuming you might add this
+                     if (planningPeriodInput) {
+                         settingsData.planningPeriod = planningPeriodInput.value.trim() || 'Année en cours';
+                     }
+
+
+                    await db.collection('settings').doc('app_settings').set(settingsData, { merge: true }); // Use set with merge to create/update
+                    showNotification("Paramètres enregistrés avec succès.", "success");
+                    // Reload data to reflect potential changes (like default group sizes)
                     await loadDataAndRenderUI();
                 } catch (error) {
                     console.error("Settings save error:", error);
                     showNotification("Erreur sauvegarde paramètres: " + (error.message || error), "danger");
-                    hideLoading();
+                    // hideLoading();
+                } finally {
+                     saveButton.disabled = false;
+                     saveButton.textContent = 'Enregistrer';
                 }
             });
 
-            // Event Delegation pour boutons dynamiques
+            // Event Delegation for dynamically added buttons/actions
             document.body.addEventListener('click', function(event) {
-                const button = event.target.closest('button'); // Clic sur un bouton ?
-                const card = event.target.closest('.training-card'); // Ou sur une carte formation ?
-                const actionElement = event.target.closest('[data-action]'); // Ou sur un span/i avec data-action ?
+                const target = event.target;
+                const button = target.closest('button'); // Click on a button or its icon?
+                const card = target.closest('.training-card'); // Click on a training card?
+                const actionElement = target.closest('[data-action]'); // Click on an element with data-action?
 
-                if (button?.classList.contains('btn-propose-session')) {
-                    openProposeModal(button.dataset.trainingId, button.dataset.trainingName);
-                } else if (card?.dataset.trainingId) {
+                 // --- Actions triggered by buttons ---
+                 if (button) {
+                     if (button.classList.contains('btn-propose-session')) {
+                         openProposeModal(button.dataset.trainingId, button.dataset.trainingName);
+                     } else if (button.classList.contains('btn-book-session')) {
+                         handleBooking(button.dataset.sessionId);
+                     } else if (button.classList.contains('btn-cancel-booking')) {
+                         handleCancelBooking(button.dataset.sessionId);
+                     } else if (button.id === 'addSessionBtnManual') {
+                         openSessionManualModal(); // Open modal for adding new session
+                     } else if (button.id === 'addGroupBtn') {
+                         openGroupModal(); // Open modal for adding new group
+                     } else if (button.id === 'addParticipantBtn') {
+                         openParticipantModal(); // Open modal for adding new participant
+                     }
+                 }
+                 // --- Actions triggered by clicking training card ---
+                 else if (card?.dataset.trainingId) {
                     openProposeModal(card.dataset.trainingId, card.dataset.trainingName);
-                } else if (button?.classList.contains('btn-book-session')) {
-                    handleBooking(button.dataset.sessionId);
-                } else if (button?.classList.contains('btn-cancel-booking')) {
-                    handleCancelBooking(button.dataset.sessionId);
-                } else if (actionElement) { // Gérer les actions admin via data-action
+                 }
+                 // --- Actions triggered by elements with data-action (usually admin icons) ---
+                 else if (actionElement) {
                     const action = actionElement.dataset.action;
                     const id = actionElement.dataset.id;
-                    if (!id) return;
+                    if (!id) return; // Need an ID to perform action
 
                     switch(action) {
+                        // Session Actions
                         case 'confirm-session': openConfirmModal(id); break;
                         case 'reject-session': handleRejectSession(id); break;
-                        case 'edit-proposal':
+                        case 'edit-proposal': {
                             const sessionP = getData().sessions.find(s => s.id === id);
-                            if (sessionP) openProposeModal(sessionP.trainingId, sessionP.trainingName, sessionP);
+                            if (sessionP && sessionP.status === 'proposed') {
+                                openProposeModal(sessionP.trainingId, sessionP.trainingName, sessionP);
+                            } else {
+                                showNotification("Impossible de modifier : session non trouvée ou non modifiable.", "warning");
+                            }
                             break;
-                        case 'edit-session': // TODO: Créer un modal d'édition pour session confirmée
-                            showNotification(`Modification session ${id} (à implémenter)`, 'info'); break;
+                        }
+                        case 'edit-session': openSessionManualModal(id); break; // Use manual modal for editing any session
                         case 'delete-session': handleDelete('sessions', id, 'session'); break;
-                        case 'edit-group': // TODO: Modal édition groupe
-                            showNotification(`Modification groupe ${id} (à implémenter)`, 'info'); break;
+
+                         // Group Actions
+                        case 'edit-group': openGroupModal(id); break;
                         case 'delete-group': handleDelete('groups', id, 'groupe'); break;
-                        case 'edit-participant': // TODO: Modal édition participant
-                             showNotification(`Modification participant ${id} (à implémenter)`, 'info'); break;
+
+                         // Participant Actions
+                        case 'edit-participant': openParticipantModal(id); break;
                         case 'delete-participant': handleDelete('participants', id, 'participant'); break;
+
+                         default: console.warn("Unknown action:", action);
                     }
                 }
-                 // Gérer les boutons Ajouter Manuellement (Admin)
-                 else if (button?.id === 'addSessionBtnManual') {
-                     // Peut-être ouvrir le modal de proposition mais avec plus d'options ?
-                     // Ou un modal dédié à l'admin pour créer une session confirmée direct ?
-                     showNotification("Ajout manuel admin (à implémenter)", "info");
-                 } else if (button?.id === 'addGroupBtn') {
-                     showNotification("Ajout groupe (à implémenter)", "info");
-                 } else if (button?.id === 'addParticipantBtn') {
-                     showNotification("Ajout participant (à implémenter)", "info");
-                 }
             });
-            
+
             // Écouter les événements de connexion réseau
             window.addEventListener('online', () => {
-                showNotification("Connexion réseau rétablie", "success");
-                connectionAttempts = 0;
-                if (!dataLoadedSuccessfully) {
-                    initializeFirebase(true);
-                }
+                 if (!useFirebase) { // If Firebase wasn't even available initially
+                     showNotification("Connexion réseau détectée. Tentative d'initialisation...", "info");
+                     initializeFirebase(true); // Try init again
+                 } else if (!dataLoadedSuccessfully) { // If init was ok but data failed
+                     showNotification("Connexion réseau rétablie. Tentative de chargement des données...", "success");
+                     connectionAttempts = 0;
+                     loadDataAndRenderUI(true); // Retry loading data
+                 } else { // If everything was fine
+                     showNotification("Connexion réseau rétablie.", "success");
+                     updateConnectionStatus(true, adminLoggedIn ? (isAnonymousUser ? "Connecté (anonyme)" : "Connecté") : "Connecté");
+                 }
             });
-            
+
             window.addEventListener('offline', () => {
-                showNotification("Connexion réseau perdue", "warning");
+                showNotification("Connexion réseau perdue. Mode hors ligne activé si possible.", "warning");
                 updateConnectionStatus(false, "Hors ligne");
             });
         }
 
         // --- Initialisation ---
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM chargé. Initialisation...");
-            showLoading();
-            setupEventListeners(); // Attacher les listeners statiques
+            console.log("DOM chargé. Initialisation de l'application...");
+            showLoading(); // Show loading immediately
+            setupEventListeners(); // Attach listeners to static elements
 
             // Démarrer l'initialisation Firebase
             initializeFirebase().then(success => {
-                if (!success) {
-                    // Afficher un message si l'initialisation a échoué
-                    document.querySelectorAll('.page-content').forEach(page => {
-                        if (page.classList.contains('active')) {
-                            page.innerHTML = `
-                                <div class="alert alert-danger">
-                                    <h4 class="alert-heading">Erreur de connexion</h4>
-                                    <p>L'application n'a pas pu se connecter à la base de données. Veuillez vérifier votre connexion Internet et recharger la page.</p>
-                                    <button class="btn btn-danger" onclick="location.reload()">
-                                        <i class="fas fa-sync-alt me-1"></i> Recharger la page
-                                    </button>
-                                </div>
-                            `;
-                        }
-                    });
-                    hideLoading();
+                if (success) {
+                    console.log("Initialisation Firebase réussie.");
+                    // Data loading and initial render are handled within initializeFirebase/onAuthStateChanged
+                } else {
+                    console.error("Échec de l'initialisation Firebase initiale.");
+                    // Afficher un message d'erreur persistant si l'initialisation échoue complètement
+                     const activePage = document.querySelector('.page-content.active') || document.getElementById('dashboardPage');
+                     if (activePage) {
+                        activePage.innerHTML = `
+                            <div class="alert alert-danger mt-4">
+                                <h4 class="alert-heading">Erreur Critique de Connexion</h4>
+                                <p>Impossible d'initialiser la connexion à la base de données. L'application ne peut pas fonctionner.</p>
+                                <p>Veuillez vérifier votre connexion Internet, les paramètres Firebase, et assurez-vous que le domaine est autorisé.</p>
+                                <button class="btn btn-danger" onclick="location.reload()">
+                                    <i class="fas fa-sync-alt me-1"></i> Recharger la page
+                                </button>
+                            </div>
+                        `;
+                     }
+                     hideLoading(); // Hide loading after showing error
                 }
             }).catch(error => {
-                console.error("Initialization error:", error);
+                // Catch potential unhandled promise rejections from initializeFirebase
+                console.error("Erreur non gérée lors de l'initialisation:", error);
+                 const activePage = document.querySelector('.page-content.active') || document.getElementById('dashboardPage');
+                 if (activePage) {
+                        activePage.innerHTML = `
+                            <div class="alert alert-danger mt-4">
+                                <h4 class="alert-heading">Erreur Inattendue</h4>
+                                <p>Une erreur inattendue s'est produite lors du démarrage de l'application.</p>
+                                <pre>${error.message || error}</pre>
+                                <button class="btn btn-danger" onclick="location.reload()">
+                                    <i class="fas fa-sync-alt me-1"></i> Recharger la page
+                                </button>
+                            </div>
+                        `;
+                 }
                 hideLoading();
             });
         });
