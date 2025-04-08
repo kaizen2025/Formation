@@ -18,6 +18,30 @@
             --warning: #ffc107;
             --info: #17a2b8;
         }
+        
+        /* Admin badge style */
+        .admin-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1050;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-badge:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -178,26 +202,35 @@
         <div class="spinner"></div>
     </div>
 
-    <!-- Login Screen -->
-    <div id="loginScreen" class="login-container" style="display: none;">
-        <div class="card login-card">
-            <div class="card-body">
-                <div class="login-logo">Anecoop-France</div>
-                <h5 class="card-title text-center mb-4">Système de réservation de formations</h5>
-                
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Mot de passe</label>
-                        <input type="password" class="form-control" id="password" required>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <button type="button" id="loginBtn" class="btn btn-anecoop">Se connecter</button>
-                    </div>
-                </form>
+    <!-- Admin Button (Flottant) -->
+    <div class="admin-badge" id="adminBadge" title="Connexion administrateur">
+        <i class="fas fa-lock"></i>
+    </div>
+    
+    <!-- Admin Login Modal -->
+    <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminLoginModalLabel">Connexion administrateur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" value="kbivia@anecoop-france.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="password">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" id="loginBtn" class="btn btn-anecoop">Se connecter</button>
+                </div>
             </div>
         </div>
     </div>
@@ -278,7 +311,7 @@
                                     <li><a class="dropdown-item text-center small" href="#">Voir toutes les notifications</a></li>
                                 </ul>
                             </div>
-                            <div class="dropdown ms-3">
+                            <div class="dropdown ms-3" id="userMenu" style="display: none;">
                                 <button class="btn btn-sm btn-light" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-user-circle"></i> <span id="userName">Admin</span>
                                 </button>
@@ -950,7 +983,58 @@
 
         // Initialize the application when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            UI.init();
+            // Initialiser l'application sans attendre l'authentification
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            
+            // Configurer Firebase
+            firebase.initializeApp(firebaseConfig);
+            DB.init();
+            
+            // Charger le tableau de bord
+            UI.loadDashboard();
+            
+            // Configurer les événements UI
+            UI.setupEventListeners();
+            
+            // Configurer le bouton admin
+            document.getElementById('adminBadge').addEventListener('click', function() {
+                const adminModal = new bootstrap.Modal(document.getElementById('adminLoginModal'));
+                adminModal.show();
+            });
+            
+            // Configurer le bouton de connexion
+            document.getElementById('loginBtn').addEventListener('click', async function() {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    UI.showNotification('Veuillez remplir tous les champs', 'danger');
+                    return;
+                }
+                
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                
+                try {
+                    await firebase.auth().signInWithEmailAndPassword(email, password);
+                    
+                    // Montrer les éléments d'admin
+                    document.getElementById('adminNotifications').style.display = 'block';
+                    document.getElementById('settingsNavItem').style.display = 'block';
+                    document.getElementById('userName').textContent = email.split('@')[0];
+                    
+                    UI.showNotification('Connecté en tant qu\'administrateur', 'success');
+                    
+                    // Fermer le modal
+                    const adminModal = bootstrap.Modal.getInstance(document.getElementById('adminLoginModal'));
+                    adminModal.hide();
+                } catch (error) {
+                    console.error('Erreur de connexion:', error);
+                    UI.showNotification('Email ou mot de passe incorrect', 'danger');
+                }
+                
+                document.getElementById('loadingOverlay').style.display = 'none';
+            });
         });
     </script>
 </body>
