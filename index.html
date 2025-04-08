@@ -47,6 +47,12 @@
         .loading-placeholder::after { content: "Chargement..."; color: #6c757d; font-style: italic; display: block; text-align: center; padding: 1rem; }
         .admin-only { /* Sera géré par JS */ }
         .table th, .table td { vertical-align: middle; }
+        .anonymous-info { padding: 6px 10px; background-color: rgba(0,0,0,0.05); border-radius: 4px; margin-top: 4px; font-size: 0.85rem; color: #555; }
+        .btn-retry-connection { padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-left: 0.5rem; }
+        .connection-status { display: inline-flex; align-items: center; font-size: 0.8rem; color: #666; margin-right: 1rem; }
+        .connection-status i { margin-right: 0.25rem; }
+        .connection-status.online i { color: var(--success); }
+        .connection-status.offline i { color: var(--danger); }
     </style>
 </head>
 <body>
@@ -61,7 +67,7 @@
         <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="adminLoginModalLabel">Connexion administrateur</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body"><form id="loginForm"><div class="mb-3"><label for="email" class="form-label">Email</label><input type="email" class="form-control" id="email" value="kbivia@anecoop-france.com"></div><div class="mb-3"><label for="password" class="form-label">Mot de passe</label><input type="password" class="form-control" id="password"></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="button" id="loginBtn" class="btn btn-anecoop">Se connecter</button></div></div></div>
     </div>
     <div class="modal fade" id="proposeSessionModal" tabindex="-1" aria-labelledby="proposeSessionModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="proposeSessionModalTitle">Proposer une Session</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><form id="proposeSessionForm"><div class="modal-body"><input type="hidden" id="proposeSessionId"><input type="hidden" id="proposeTrainingId"><div class="mb-3"><label class="form-label">Formation</label><input type="text" id="proposeTrainingName" class="form-control" readonly></div><div class="mb-3"><label for="proposeGroupId" class="form-label">Groupe Concerné</label><select id="proposeGroupId" class="form-select" required><option value="">Sélectionnez un groupe...</option></select></div><div class="row"><div class="col-md-6 mb-3"><label for="proposeDate" class="form-label">Date Proposée</label><input type="date" id="proposeDate" class="form-control" required></div><div class="col-md-6 mb-3"><label for="proposeTime" class="form-label">Heure Début Proposée</label><input type="time" id="proposeTime" class="form-control" required></div></div><div class="mb-3"><label for="proposeLocation" class="form-label">Lieu (optionnel)</label><input type="text" id="proposeLocation" class="form-control" placeholder="Ex: Salle A, Teams..."></div><div class="mb-3"><label for="proposeNotes" class="form-label">Notes / Commentaires</label><textarea id="proposeNotes" class="form-control" rows="2"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="submit" class="btn btn-anecoop">Soumettre Proposition</button></div></form></div></div>
+        <div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="proposeSessionModalTitle">Proposer une Session</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><form id="proposeSessionForm"><div class="modal-body"><input type="hidden" id="proposeSessionId"><input type="hidden" id="proposeTrainingId"><div class="mb-3"><label class="form-label">Formation</label><input type="text" id="proposeTrainingName" class="form-control" readonly></div><div class="mb-3"><label for="proposeGroupId" class="form-label">Groupe Concerné</label><select id="proposeGroupId" class="form-select" required><option value="">Sélectionnez un groupe...</option></select></div><div class="row"><div class="col-md-6 mb-3"><label for="proposeDate" class="form-label">Date Proposée</label><input type="date" id="proposeDate" class="form-control" required></div><div class="col-md-6 mb-3"><label for="proposeTime" class="form-label">Heure Début Proposée</label><input type="time" id="proposeTime" class="form-control" required></div></div><div class="mb-3"><label for="proposeLocation" class="form-label">Lieu (optionnel)</label><input type="text" id="proposeLocation" class="form-control" placeholder="Ex: Salle A, Teams..."></div><div class="mb-3"><label for="proposeNotes" class="form-label">Notes / Commentaires</label><textarea id="proposeNotes" class="form-control" rows="2"></textarea></div><div class="anonymous-info" id="anonymousProposalInfo" style="display: none;"><i class="fas fa-info-circle"></i> Vous êtes connecté en mode anonyme. Votre proposition sera enregistrée, mais pensez à noter les détails car vous ne pourrez pas les modifier ultérieurement.</div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="submit" class="btn btn-anecoop">Soumettre Proposition</button></div></form></div></div>
     </div>
     <div class="modal fade" id="confirmSessionModal" tabindex="-1" aria-labelledby="confirmSessionModalLabel" aria-hidden="true">
          <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="confirmSessionModalLabel">Confirmer la Session</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><form id="confirmSessionForm"><div class="modal-body"><input type="hidden" id="confirmSessionId"><p>Confirmer: <strong id="confirmSessionDetails"></strong></p><p>Proposé: <span id="confirmProposedDate"></span></p><div class="mb-3"><label for="confirmDate" class="form-label">Date Confirmée</label><input type="date" id="confirmDate" class="form-control" required></div><div class="mb-3"><label for="confirmTime" class="form-label">Heure Confirmée</label><input type="time" id="confirmTime" class="form-control" required></div><div class="mb-3"><label for="confirmLocation" class="form-label">Lieu Confirmé</label><input type="text" id="confirmLocation" class="form-control"></div><div class="mb-3"><label for="confirmNotes" class="form-label">Notes Admin</label><textarea id="confirmNotes" class="form-control" rows="2"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="submit" class="btn btn-success">Confirmer Session</button></div></form></div></div>
@@ -88,6 +94,13 @@
         <nav class="navbar navbar-expand-lg navbar-light top-navbar">
              <div class="container-fluid d-flex justify-content-end">
                  <div class="d-flex align-items-center">
+                    <div class="connection-status offline" id="connectionStatus">
+                        <i class="fas fa-circle"></i> 
+                        <span id="connectionStatusText">Non connecté</span>
+                        <button class="btn btn-sm btn-outline-secondary btn-retry-connection" id="retryConnectionBtn" style="display: none;">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
                     <button class="btn btn-sm btn-light me-2" type="button" id="refreshBtn" title="Actualiser les données"><i class="fas fa-sync-alt"></i></button>
                     <div class="dropdown admin-only" style="display: none;"><button class="btn btn-sm btn-light position-relative" type="button" data-bs-toggle="dropdown"><i class="fas fa-bell"></i><span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span></button><ul class="dropdown-menu dropdown-menu-end"><li><h6 class="dropdown-header">Notifications</h6></li><div id="notificationList"><li><a class="dropdown-item" href="#">Aucune</a></li></div></ul></div>
                     <div class="dropdown ms-3 admin-only" style="display: none;"><button class="btn btn-sm btn-light" type="button" id="userDropdown" data-bs-toggle="dropdown"><i class="fas fa-user-circle"></i> <span id="userName">Admin</span></button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profil</a></li><li><a class="dropdown-item" href="#" data-page="settings" id="settingsMenuLink"><i class="fas fa-cog me-2"></i> Paramètres</a></li><li><hr class="dropdown-divider"></li><li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li></ul></div>
@@ -137,27 +150,62 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCrcpvq1sz1IVVq7MiNOhj_Fj4dtd9YVyA",
-  authDomain: "anecoop-formations.firebaseapp.com",
-  projectId: "anecoop-formations",
-  storageBucket: "anecoop-formations.firebasestorage.app",
-  messagingSenderId: "81893594187",
-  appId: "1:81893594187:web:ee0a07c0b5e7a1844569ce",
-  measurementId: "G-2TMQMNC7KW"
-};
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyCrcpvq1sz1IVVq7MiNOhj_Fj4dtd9YVyA",
+          authDomain: "anecoop-formations.firebaseapp.com",
+          projectId: "anecoop-formations",
+          storageBucket: "anecoop-formations.firebasestorage.app",
+          messagingSenderId: "81893594187",
+          appId: "1:81893594187:web:ee0a07c0b5e7a1844569ce",
+          measurementId: "G-2TMQMNC7KW"
+        };
 
         // --- Variables Globales ---
         let firebaseApp, db, auth, useFirebase = false, adminLoggedIn = false, currentUserId = null;
+        let isAnonymousUser = false; // Flag pour suivre si l'utilisateur est anonyme
+        let connectionAttempts = 0; // Compteur de tentatives de connexion
+        let maxConnectionAttempts = 3; // Nombre maximum de tentatives
         window.appData = { sessions: [], groups: [], participants: [], trainings: [], settings: {} };
         let currentActivePage = 'dashboard';
         let dataLoadedSuccessfully = false; // Flag pour savoir si les données sont chargées
 
         // --- Fonctions Utilitaires ---
         const loadingOverlay = document.getElementById('loadingOverlay');
-        function showLoading() { loadingOverlay.style.opacity = '1'; loadingOverlay.style.visibility = 'visible'; }
-        function hideLoading() { loadingOverlay.style.opacity = '0'; loadingOverlay.style.visibility = 'hidden'; }
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionStatusText = document.getElementById('connectionStatusText');
+        const retryConnectionBtn = document.getElementById('retryConnectionBtn');
+
+        function showLoading() { 
+            loadingOverlay.style.opacity = '1'; 
+            loadingOverlay.style.visibility = 'visible'; 
+        }
+        
+        function hideLoading() { 
+            loadingOverlay.style.opacity = '0'; 
+            setTimeout(() => {
+                loadingOverlay.style.visibility = 'hidden';
+            }, 300);
+        }
+
+        function updateConnectionStatus(isConnected, message) {
+            if (isConnected) {
+                connectionStatus.classList.remove('offline');
+                connectionStatus.classList.add('online');
+                connectionStatusText.textContent = message || 'Connecté';
+                retryConnectionBtn.style.display = 'none';
+            } else {
+                connectionStatus.classList.remove('online');
+                connectionStatus.classList.add('offline');
+                connectionStatusText.textContent = message || 'Non connecté';
+                
+                // Afficher le bouton de retry si on a épuisé les tentatives automatiques
+                if (connectionAttempts >= maxConnectionAttempts) {
+                    retryConnectionBtn.style.display = 'inline-block';
+                }
+            }
+        }
 
         function showNotification(message, type = 'info') {
             const template = document.getElementById('notificationTemplate');
@@ -166,7 +214,11 @@ const firebaseConfig = {
             notification.querySelector('.notification-content').textContent = message;
             notification.className = 'notification';
             let bgColor = 'var(--info)';
-            switch (type) { case 'success': bgColor = 'var(--success)'; break; case 'danger': bgColor = 'var(--danger)'; break; case 'warning': bgColor = 'var(--warning)'; break; }
+            switch (type) { 
+                case 'success': bgColor = 'var(--success)'; break; 
+                case 'danger': bgColor = 'var(--danger)'; break; 
+                case 'warning': bgColor = 'var(--warning)'; break; 
+            }
             notification.style.backgroundColor = bgColor;
             document.body.appendChild(notification);
             setTimeout(() => { notification.remove(); }, 4100);
@@ -209,7 +261,12 @@ const firebaseConfig = {
         }
 
         function getUserDisplayName(uid) {
-            if (adminLoggedIn && auth.currentUser && uid === auth.currentUser.uid) return auth.currentUser.email.split('@')[0];
+            if (adminLoggedIn && auth.currentUser && uid === auth.currentUser.uid) {
+                return auth.currentUser.email.split('@')[0];
+            }
+            if (uid === currentUserId && isAnonymousUser) {
+                return 'Utilisateur Anonyme';
+            }
             // Ici, on pourrait chercher dans une collection 'users' si on stockait les noms
             return 'Utilisateur'; // Pour les anonymes
         }
@@ -224,15 +281,21 @@ const firebaseConfig = {
         }
 
         // --- Gestion des Données (Firebase) ---
-        function getData() { return window.appData || { sessions: [], groups: [], participants: [], trainings: [], settings: {} }; }
+        function getData() { 
+            return window.appData || { sessions: [], groups: [], participants: [], trainings: [], settings: {} }; 
+        }
 
-        async function loadDataAndRenderUI() {
+        async function loadDataAndRenderUI(attemptRetry = true) {
             if (!useFirebase || !db) {
                 showNotification("Connexion base de données échouée.", "danger");
-                hideLoading(); return;
+                updateConnectionStatus(false, "Erreur de connexion");
+                hideLoading(); 
+                return;
             }
+            
             console.log("Chargement/Rafraîchissement données Firebase...");
             showLoading();
+            
             try {
                 const [sessionsSnap, groupsSnap, participantsSnap, trainingsSnap, settingsSnap] = await Promise.all([
                     db.collection('sessions').get(),
@@ -249,7 +312,11 @@ const firebaseConfig = {
                     trainings: trainingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     settings: settingsSnap.exists ? settingsSnap.data() : { minGroupSize: 8, maxGroupSize: 12, defaultDuration: 90 }
                 };
+                
                 dataLoadedSuccessfully = true; // Marquer que les données sont chargées
+                updateConnectionStatus(true, isAnonymousUser ? "Connecté (anonyme)" : "Connecté");
+                connectionAttempts = 0; // Réinitialiser le compteur si réussi
+                
                 console.log("Données chargées:", window.appData);
 
                 populateProposeModalOptions();
@@ -259,11 +326,24 @@ const firebaseConfig = {
                 console.error("Erreur chargement données Firebase:", error);
                 showNotification("Erreur de chargement des données.", "danger");
                 dataLoadedSuccessfully = false;
-                // Afficher un état d'erreur sur la page ?
+                updateConnectionStatus(false, "Erreur de chargement");
+                
+                // Tentative automatique de reconnexion
+                if (attemptRetry && connectionAttempts < maxConnectionAttempts) {
+                    connectionAttempts++;
+                    showNotification(`Tentative de reconnexion (${connectionAttempts}/${maxConnectionAttempts})...`, "warning");
+                    setTimeout(() => {
+                        initializeFirebase(true);
+                    }, 2000); // Attendre 2 secondes avant de réessayer
+                } else if (attemptRetry) {
+                    showNotification("Impossible de charger les données après plusieurs tentatives.", "danger");
+                }
+                
                 hideLoading();
+            } finally {
+                 // Cacher le loading seulement après la tentative de chargement et le premier rendu
+                 hideLoading();
             }
-            // Cacher le loading seulement après la tentative de chargement et le premier rendu
-             hideLoading();
         }
 
         // --- Rendu UI ---
@@ -273,10 +353,27 @@ const firebaseConfig = {
             const trainingsListEl = document.getElementById('availableTrainingsList');
             if (trainingsListEl) {
                 removeLoadingPlaceholder('availableTrainingsList');
-                trainingsListEl.innerHTML = data.trainings.length > 0 ? data.trainings.map(t => `
-                    <div class="col-md-6 col-lg-3 mb-3 d-flex"> <div class="card training-card h-100 w-100" data-training-id="${t.id}" data-training-name="${t.name}"> <div class="card-body text-center d-flex flex-column justify-content-between"> <div><h5 class="card-title mb-2">${t.name}</h5> <p class="card-text small text-muted mb-3">Durée: ${t.duration || 'N/A'} min</p></div> <button class="btn btn-sm btn-outline-primary btn-propose-session mt-auto" data-training-id="${t.id}" data-training-name="${t.name}"> <i class="fas fa-calendar-plus me-1"></i> Proposer </button> </div> </div> </div>
-                `).join('') : '<div class="col-12"><p>Aucune formation de base trouvée dans la base de données.</p></div>';
+                if (data.trainings.length > 0) {
+                    trainingsListEl.innerHTML = data.trainings.map(t => `
+                        <div class="col-md-6 col-lg-3 mb-3 d-flex"> 
+                            <div class="card training-card h-100 w-100" data-training-id="${t.id}" data-training-name="${t.name}"> 
+                                <div class="card-body text-center d-flex flex-column justify-content-between"> 
+                                    <div>
+                                        <h5 class="card-title mb-2">${t.name}</h5> 
+                                        <p class="card-text small text-muted mb-3">Durée: ${t.duration || 'N/A'} min</p>
+                                    </div> 
+                                    <button class="btn btn-sm btn-outline-primary btn-propose-session mt-auto" data-training-id="${t.id}" data-training-name="${t.name}"> 
+                                        <i class="fas fa-calendar-plus me-1"></i> Proposer 
+                                    </button> 
+                                </div> 
+                            </div> 
+                        </div>
+                    `).join('');
+                } else {
+                    trainingsListEl.innerHTML = '<div class="col-12"><p>Aucune formation de base trouvée dans la base de données.</p></div>';
+                }
             }
+            
             const upcomingList = document.getElementById('upcomingSessionsList');
             if (upcomingList) {
                 removeLoadingPlaceholder('upcomingSessionsList');
@@ -285,14 +382,27 @@ const firebaseConfig = {
                     .filter(s => s.status === 'confirmed' && s.confirmedDate && (s.confirmedDate.toDate ? s.confirmedDate.toDate() >= today : new Date(s.confirmedDate) >= today))
                     .sort((a, b) => (a.confirmedDate.toDate ? a.confirmedDate.toDate() : new Date(a.confirmedDate)) - (b.confirmedDate.toDate ? b.confirmedDate.toDate() : new Date(b.confirmedDate)))
                     .slice(0, 5);
-                upcomingList.innerHTML = upcomingSessions.length > 0 ? upcomingSessions.map(s => `
-                    <li class="list-group-item d-flex justify-content-between align-items-center"> <div><h6 class="mb-0">${s.trainingName || 'N/A'}</h6><small class="text-muted">${s.groupName || 'N/A'} - ${formatDate(s.confirmedDate)} ${s.confirmedStartTime || ''}</small></div> <span class="badge bg-success">Confirmée</span> </li>`).join('') : '<li class="list-group-item">Aucune session confirmée à venir.</li>';
+                
+                if (upcomingSessions.length > 0) {
+                    upcomingList.innerHTML = upcomingSessions.map(s => `
+                        <li class="list-group-item d-flex justify-content-between align-items-center"> 
+                            <div>
+                                <h6 class="mb-0">${s.trainingName || 'N/A'}</h6>
+                                <small class="text-muted">${s.groupName || 'N/A'} - ${formatDate(s.confirmedDate)} ${s.confirmedStartTime || ''}</small>
+                            </div> 
+                            <span class="badge bg-success">Confirmée</span> 
+                        </li>`).join('');
+                } else {
+                    upcomingList.innerHTML = '<li class="list-group-item">Aucune session confirmée à venir.</li>';
+                }
             }
+            
             const serviceProgressContainer = document.getElementById('serviceProgressContainer');
             if (serviceProgressContainer) {
                 removeLoadingPlaceholder('serviceProgressContainer');
                 renderServiceProgress();
             }
+            
             document.getElementById('completedSessionsCount').textContent = data.sessions.filter(s => s.status === 'completed').length;
             document.getElementById('totalParticipantsCount').textContent = data.participants.length;
         }
@@ -300,22 +410,44 @@ const firebaseConfig = {
         function renderServiceProgress() {
              const data = getData();
              const progressContainer = document.getElementById('serviceProgressContainer');
-             if (!progressContainer || !data.groups || !data.trainings || !data.sessions) { if (progressContainer) progressContainer.innerHTML = '<p>Données indisponibles.</p>'; return; }
+             if (!progressContainer || !data.groups || !data.trainings || !data.sessions) { 
+                 if (progressContainer) progressContainer.innerHTML = '<p>Données indisponibles.</p>'; 
+                 return; 
+             }
+             
              const services = [...new Set(data.groups.map(g => g.service).filter(s => s))];
              const totalTrainings = data.trainings.length;
-             if (totalTrainings === 0) { progressContainer.innerHTML = '<p>Aucune formation définie.</p>'; return; }
+             
+             if (totalTrainings === 0) { 
+                 progressContainer.innerHTML = '<p>Aucune formation définie.</p>'; 
+                 return; 
+             }
+             
              let html = '';
              services.forEach(service => {
                  const serviceGroups = data.groups.filter(g => g.service === service);
                  let totalCompletedForService = 0;
                  let totalPossibleForService = 0;
+                 
                  serviceGroups.forEach(group => {
                      totalCompletedForService += data.sessions.filter(s => s.groupId === group.id && s.status === 'completed').length;
                      totalPossibleForService += totalTrainings;
                  });
+                 
                  const progressPercent = totalPossibleForService > 0 ? Math.round((totalCompletedForService / totalPossibleForService) * 100) : 0;
-                 html += `<div class="mb-3"><div class="d-flex justify-content-between"><span>${service}</span><span>${progressPercent}%</span></div><div class="progress" style="height: 10px;"><div class="progress-bar bg-anecoop" role="progressbar" style="width: ${progressPercent}%;" aria-valuenow="${progressPercent}"></div></div></div>`;
+                 html += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>${service}</span>
+                            <span>${progressPercent}%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-anecoop" role="progressbar" style="width: ${progressPercent}%;" 
+                                 aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>`;
              });
+             
              progressContainer.innerHTML = html || '<p>Aucun service trouvé.</p>';
         }
 
@@ -328,39 +460,125 @@ const firebaseConfig = {
 
             if (confirmedBody) {
                 removeLoadingPlaceholder('confirmedSessionsTableBody');
-                confirmedBody.innerHTML = data.sessions.filter(s => s.status === 'confirmed').sort((a,b) => (a.confirmedDate.toDate ? a.confirmedDate.toDate() : new Date(a.confirmedDate)) - (b.confirmedDate.toDate ? b.confirmedDate.toDate() : new Date(b.confirmedDate))).map(s => {
-                    const currentP = s.participants || 0;
-                    const maxP = s.maxParticipants || data.settings.maxGroupSize || 12;
-                    const isFull = currentP >= maxP;
-                    const isBooked = s.bookedBy && currentUserId ? s.bookedBy.includes(currentUserId) : false;
-                    return `<tr><td>${s.trainingName}</td><td>${s.groupName}</td><td>${formatDate(s.confirmedDate)}</td><td>${s.confirmedStartTime}</td><td>${s.location || 'N/A'}</td><td>${currentP}/${maxP}</td><td>${isFull ? '<span class="session-full">Complet</span>' : (isBooked ? '<button class="btn btn-sm btn-outline-secondary btn-cancel-booking" data-session-id="${s.id}">Inscrit</button>' : '<button class="btn btn-sm btn-success btn-book-session" data-session-id="${s.id}">Réserver</button>')}</td></tr>`;
-                }).join('') || '<tr><td colspan="7" class="text-center">Aucune session confirmée.</td></tr>';
+                const confirmedSessions = data.sessions.filter(s => s.status === 'confirmed')
+                    .sort((a,b) => (a.confirmedDate.toDate ? a.confirmedDate.toDate() : new Date(a.confirmedDate)) - 
+                                  (b.confirmedDate.toDate ? b.confirmedDate.toDate() : new Date(b.confirmedDate)));
+                
+                if (confirmedSessions.length > 0) {
+                    confirmedBody.innerHTML = confirmedSessions.map(s => {
+                        const currentP = s.participants || 0;
+                        const maxP = s.maxParticipants || data.settings.maxGroupSize || 12;
+                        const isFull = currentP >= maxP;
+                        const isBooked = s.bookedBy && currentUserId ? s.bookedBy.includes(currentUserId) : false;
+                        
+                        let actionButton = '';
+                        if (isFull) {
+                            actionButton = '<span class="session-full">Complet</span>';
+                        } else if (isBooked) {
+                            actionButton = `<button class="btn btn-sm btn-outline-secondary btn-cancel-booking" data-session-id="${s.id}">Inscrit</button>`;
+                        } else {
+                            actionButton = `<button class="btn btn-sm btn-success btn-book-session" data-session-id="${s.id}">Réserver</button>`;
+                        }
+                        
+                        return `<tr>
+                            <td>${s.trainingName}</td>
+                            <td>${s.groupName}</td>
+                            <td>${formatDate(s.confirmedDate)}</td>
+                            <td>${s.confirmedStartTime}</td>
+                            <td>${s.location || 'N/A'}</td>
+                            <td>${currentP}/${maxP}</td>
+                            <td>${actionButton}</td>
+                        </tr>`;
+                    }).join('');
+                } else {
+                    confirmedBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucune session confirmée.</td></tr>';
+                }
             }
+            
             if (proposedBody) {
                 removeLoadingPlaceholder('proposedSessionsTableBody');
-                proposedBody.innerHTML = data.sessions.filter(s => s.status === 'proposed').sort((a,b) => (a.proposedDate > b.proposedDate ? 1 : -1)).map(s => `
-                    <tr><td>${s.trainingName}</td><td>${s.groupName}</td><td>${formatDate(s.proposedDate)}</td><td>${s.proposedStartTime}</td><td>${getUserDisplayName(s.proposedBy)}</td><td>${s.notes || ''}</td><td class="admin-only" style="display:none;"><span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}" title="Confirmer"><i class="fas fa-check-circle"></i></span><span class="admin-action-edit me-2" data-action="edit-proposal" data-id="${s.id}" title="Modifier"><i class="fas fa-edit"></i></span><span class="admin-action-reject" data-action="reject-session" data-id="${s.id}" title="Rejeter"><i class="fas fa-times-circle"></i></span></td></tr>
-                `).join('') || '<tr><td colspan="7" class="text-center">Aucune session proposée.</td></tr>';
+                const proposedSessions = data.sessions.filter(s => s.status === 'proposed')
+                    .sort((a,b) => (a.proposedDate > b.proposedDate ? 1 : -1));
+                
+                if (proposedSessions.length > 0) {
+                    proposedBody.innerHTML = proposedSessions.map(s => `
+                        <tr>
+                            <td>${s.trainingName}</td>
+                            <td>${s.groupName}</td>
+                            <td>${formatDate(s.proposedDate)}</td>
+                            <td>${s.proposedStartTime}</td>
+                            <td>${getUserDisplayName(s.proposedBy)}</td>
+                            <td>${s.notes || ''}</td>
+                            <td class="admin-only" style="display:none;">
+                                <span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}" 
+                                      title="Confirmer"><i class="fas fa-check-circle"></i></span>
+                                <span class="admin-action-edit me-2" data-action="edit-proposal" data-id="${s.id}" 
+                                      title="Modifier"><i class="fas fa-edit"></i></span>
+                                <span class="admin-action-reject" data-action="reject-session" data-id="${s.id}" 
+                                      title="Rejeter"><i class="fas fa-times-circle"></i></span>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    proposedBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucune session proposée.</td></tr>';
+                }
             }
+            
             if (allBody) {
                 removeLoadingPlaceholder('allSessionsTableBody');
                 if (adminLoggedIn) { // Remplir seulement si admin
-                     allBody.innerHTML = data.sessions.sort((a,b) => { const dateA = a.confirmedDate || a.proposedDate; const dateB = b.confirmedDate || b.proposedDate; const d1 = dateA?.toDate ? dateA.toDate() : new Date(dateA || 0); const d2 = dateB?.toDate ? dateB.toDate() : new Date(dateB || 0); return d1 - d2; }).map(s => {
-                         const date = s.status === 'confirmed' || s.status === 'completed' ? formatDate(s.confirmedDate) : formatDate(s.proposedDate);
-                         const time = s.status === 'confirmed' || s.status === 'completed' ? s.confirmedStartTime : s.proposedStartTime;
-                         const places = (s.status === 'confirmed' || s.status === 'completed') ? `${s.participants || 0}/${s.maxParticipants || data.settings.maxGroupSize || 12}` : 'N/A';
-                         let actions = '';
-                         if (s.status === 'proposed') {
-                             actions = `<span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}" title="Confirmer"><i class="fas fa-check-circle"></i></span><span class="admin-action-edit me-2" data-action="edit-proposal" data-id="${s.id}" title="Modifier Proposition"><i class="fas fa-edit"></i></span><span class="admin-action-reject" data-action="reject-session" data-id="${s.id}" title="Rejeter"><i class="fas fa-times-circle"></i></span>`;
-                         } else {
-                             actions = `<span class="admin-action-edit me-2" data-action="edit-session" data-id="${s.id}" title="Modifier Session"><i class="fas fa-edit"></i></span><span class="admin-action-delete" data-action="delete-session" data-id="${s.id}" title="Supprimer Session"><i class="fas fa-trash"></i></span>`;
-                         }
-                         return `<tr><td>${s.trainingName}</td><td>${s.groupName}</td><td>${date}</td><td>${time || 'N/A'}</td><td>${getStatusBadge(s.status)}</td><td>${places}</td><td>${actions}</td></tr>`;
-                     }).join('') || '<tr><td colspan="7" class="text-center">Aucune session.</td></tr>';
+                     const allSessions = data.sessions.sort((a,b) => { 
+                         const dateA = a.confirmedDate || a.proposedDate; 
+                         const dateB = b.confirmedDate || b.proposedDate; 
+                         const d1 = dateA?.toDate ? dateA.toDate() : new Date(dateA || 0); 
+                         const d2 = dateB?.toDate ? dateB.toDate() : new Date(dateB || 0); 
+                         return d1 - d2; 
+                     });
+                     
+                     if (allSessions.length > 0) {
+                         allBody.innerHTML = allSessions.map(s => {
+                             const date = s.status === 'confirmed' || s.status === 'completed' ? 
+                                          formatDate(s.confirmedDate) : formatDate(s.proposedDate);
+                             const time = s.status === 'confirmed' || s.status === 'completed' ? 
+                                          s.confirmedStartTime : s.proposedStartTime;
+                             const places = (s.status === 'confirmed' || s.status === 'completed') ? 
+                                           `${s.participants || 0}/${s.maxParticipants || data.settings.maxGroupSize || 12}` : 'N/A';
+                             
+                             let actions = '';
+                             if (s.status === 'proposed') {
+                                 actions = `
+                                     <span class="admin-action-confirm me-2" data-action="confirm-session" data-id="${s.id}" 
+                                           title="Confirmer"><i class="fas fa-check-circle"></i></span>
+                                     <span class="admin-action-edit me-2" data-action="edit-proposal" data-id="${s.id}" 
+                                           title="Modifier Proposition"><i class="fas fa-edit"></i></span>
+                                     <span class="admin-action-reject" data-action="reject-session" data-id="${s.id}" 
+                                           title="Rejeter"><i class="fas fa-times-circle"></i></span>`;
+                             } else {
+                                 actions = `
+                                     <span class="admin-action-edit me-2" data-action="edit-session" data-id="${s.id}" 
+                                           title="Modifier Session"><i class="fas fa-edit"></i></span>
+                                     <span class="admin-action-delete" data-action="delete-session" data-id="${s.id}" 
+                                           title="Supprimer Session"><i class="fas fa-trash"></i></span>`;
+                             }
+                             
+                             return `<tr>
+                                 <td>${s.trainingName}</td>
+                                 <td>${s.groupName}</td>
+                                 <td>${date}</td>
+                                 <td>${time || 'N/A'}</td>
+                                 <td>${getStatusBadge(s.status)}</td>
+                                 <td>${places}</td>
+                                 <td>${actions}</td>
+                             </tr>`;
+                         }).join('');
+                     } else {
+                         allBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucune session.</td></tr>';
+                     }
                 } else {
                     allBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Accès réservé administrateur.</td></tr>';
                 }
             }
+            
             updateAdminUI(adminLoggedIn);
         }
 
@@ -368,12 +586,29 @@ const firebaseConfig = {
             if (!dataLoadedSuccessfully) return;
             const data = getData();
             const tableBody = document.getElementById('groupsTableBody');
+            
             if (tableBody) {
                 removeLoadingPlaceholder('groupsTableBody');
-                tableBody.innerHTML = data.groups.map(g => {
-                    const currentParticipants = data.participants.filter(p => p.groupId === g.id).length;
-                    return `<tr><td>${g.name}</td><td>${g.service}</td><td>${g.minSize || 'N/A'}/${g.maxSize || 'N/A'}</td><td>${currentParticipants}</td><td class="admin-only" style="display:none;"><span class="admin-action-edit me-2" data-action="edit-group" data-id="${g.id}" title="Modifier"><i class="fas fa-edit"></i></span><span class="admin-action-delete" data-action="delete-group" data-id="${g.id}" title="Supprimer"><i class="fas fa-trash"></i></span></td></tr>`;
-                }).join('') || '<tr><td colspan="5" class="text-center">Aucun groupe défini.</td></tr>';
+                if (data.groups.length > 0) {
+                    tableBody.innerHTML = data.groups.map(g => {
+                        const currentParticipants = data.participants.filter(p => p.groupId === g.id).length;
+                        return `<tr>
+                            <td>${g.name}</td>
+                            <td>${g.service}</td>
+                            <td>${g.minSize || 'N/A'}/${g.maxSize || 'N/A'}</td>
+                            <td>${currentParticipants}</td>
+                            <td class="admin-only" style="display:none;">
+                                <span class="admin-action-edit me-2" data-action="edit-group" data-id="${g.id}" 
+                                      title="Modifier"><i class="fas fa-edit"></i></span>
+                                <span class="admin-action-delete" data-action="delete-group" data-id="${g.id}" 
+                                      title="Supprimer"><i class="fas fa-trash"></i></span>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Aucun groupe défini.</td></tr>';
+                }
+                
                 updateAdminUI(adminLoggedIn);
             }
         }
@@ -382,9 +617,27 @@ const firebaseConfig = {
              if (!dataLoadedSuccessfully) return;
              const data = getData();
              const tableBody = document.getElementById('participantsTableBody');
+             
              if (tableBody) {
                  removeLoadingPlaceholder('participantsTableBody');
-                 tableBody.innerHTML = data.participants.map(p => `<tr><td>${p.name}</td><td>${p.email}</td><td>${p.service}</td><td>${data.groups.find(g => g.id === p.groupId)?.name || 'Non assigné'}</td><td class="admin-only" style="display:none;"><span class="admin-action-edit me-2" data-action="edit-participant" data-id="${p.id}" title="Modifier"><i class="fas fa-edit"></i></span><span class="admin-action-delete" data-action="delete-participant" data-id="${p.id}" title="Supprimer"><i class="fas fa-trash"></i></span></td></tr>`).join('') || '<tr><td colspan="5" class="text-center">Aucun participant enregistré.</td></tr>';
+                 if (data.participants.length > 0) {
+                     tableBody.innerHTML = data.participants.map(p => `
+                         <tr>
+                             <td>${p.name}</td>
+                             <td>${p.email}</td>
+                             <td>${p.service}</td>
+                             <td>${data.groups.find(g => g.id === p.groupId)?.name || 'Non assigné'}</td>
+                             <td class="admin-only" style="display:none;">
+                                 <span class="admin-action-edit me-2" data-action="edit-participant" data-id="${p.id}" 
+                                       title="Modifier"><i class="fas fa-edit"></i></span>
+                                 <span class="admin-action-delete" data-action="delete-participant" data-id="${p.id}" 
+                                       title="Supprimer"><i class="fas fa-trash"></i></span>
+                             </td>
+                         </tr>`).join('');
+                 } else {
+                     tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Aucun participant enregistré.</td></tr>';
+                 }
+                 
                  updateAdminUI(adminLoggedIn);
              }
          }
@@ -395,25 +648,41 @@ const firebaseConfig = {
             if (!dataLoadedSuccessfully) return;
             const data = getData();
             const pendingList = document.getElementById('pendingConfirmationList');
+            
             if (pendingList) {
                 removeLoadingPlaceholder('pendingConfirmationList');
                 const pendingSessions = data.sessions.filter(s => s.status === 'proposed');
-                pendingList.innerHTML = pendingSessions.length > 0 ? pendingSessions.map(s => `<li class="list-group-item">${s.trainingName} - ${s.groupName} (Proposé: ${formatDate(s.proposedDate)})</li>`).join('') : '<li class="list-group-item">Aucune session en attente.</li>';
+                
+                if (pendingSessions.length > 0) {
+                    pendingList.innerHTML = pendingSessions.map(s => 
+                        `<li class="list-group-item">${s.trainingName} - ${s.groupName} (Proposé: ${formatDate(s.proposedDate)})</li>`
+                    ).join('');
+                } else {
+                    pendingList.innerHTML = '<li class="list-group-item">Aucune session en attente.</li>';
+                }
             }
+            
             const fillRateReport = document.getElementById('fillRateReport');
             if (fillRateReport) {
                 removeLoadingPlaceholder('fillRateReport');
                 const confirmedSessions = data.sessions.filter(s => s.status === 'confirmed' || s.status === 'completed');
                 let reportHtml = '<ul class="list-unstyled">';
+                
                 if (confirmedSessions.length > 0) {
                     confirmedSessions.forEach(s => {
-                        const currentP = s.participants || 0; const maxP = s.maxParticipants || data.settings.maxGroupSize || 12;
+                        const currentP = s.participants || 0; 
+                        const maxP = s.maxParticipants || data.settings.maxGroupSize || 12;
                         const fillPercent = maxP > 0 ? Math.round((currentP / maxP) * 100) : 0;
-                        reportHtml += `<li>${s.trainingName} (${s.groupName}) - ${formatDate(s.confirmedDate)}: ${currentP}/${maxP} (${fillPercent}%)</li>`;
+                        reportHtml += `<li>${s.trainingName} (${s.groupName}) - ${formatDate(s.confirmedDate)}: 
+                                          ${currentP}/${maxP} (${fillPercent}%)</li>`;
                     });
-                } else { reportHtml += '<li>Aucune session confirmée/terminée.</li>'; }
+                } else { 
+                    reportHtml += '<li>Aucune session confirmée/terminée.</li>'; 
+                }
+                
                 fillRateReport.innerHTML = reportHtml + '</ul>';
             }
+            
             const groupCompletionReport = document.getElementById('groupCompletionReport');
             if (groupCompletionReport) {
                  removeLoadingPlaceholder('groupCompletionReport');
@@ -422,16 +691,26 @@ const firebaseConfig = {
                      data.groups.forEach(g => {
                          const completedForGroup = data.sessions.filter(s => s.groupId === g.id && s.status === 'completed').length;
                          const totalTrainings = data.trainings.length;
-                         const completionPercent = totalTrainings > 0 ? Math.round((completedForGroup / totalTrainings) * 100) : 0;
-                         reportHtml += `<div class="col-md-4 mb-3"><strong>${g.name}:</strong> ${completedForGroup}/${totalTrainings} (${completionPercent}%)</div>`;
+                         const completionPercent = totalTrainings > 0 ? 
+                                                  Math.round((completedForGroup / totalTrainings) * 100) : 0;
+                         reportHtml += `<div class="col-md-4 mb-3">
+                                           <strong>${g.name}:</strong> ${completedForGroup}/${totalTrainings} 
+                                           (${completionPercent}%)
+                                        </div>`;
                      });
                      groupCompletionReport.innerHTML = reportHtml + '</div>';
-                 } else { groupCompletionReport.innerHTML = '<p>Données insuffisantes.</p>'; }
+                 } else { 
+                     groupCompletionReport.innerHTML = '<p>Données insuffisantes.</p>'; 
+                 }
             }
         }
 
         function renderSettings() {
-            if (!adminLoggedIn) { navigateTo('dashboard', false); return; }
+            if (!adminLoggedIn) { 
+                navigateTo('dashboard', false); 
+                return; 
+            }
+            
             const settings = getData().settings;
             document.getElementById('companyName').value = settings.companyName || 'Anecoop-France';
             document.getElementById('siteLocation').value = settings.siteLocation || 'Anecoop';
@@ -445,19 +724,25 @@ const firebaseConfig = {
             console.log(`Navigating to ${page}${reloadData ? ' (reload data)' : ''}`);
             currentActivePage = page;
 
-            document.querySelectorAll('.page-content').forEach(p => { p.classList.remove('active', 'animate__animated', 'animate__fadeIn'); p.style.display = 'none'; });
+            document.querySelectorAll('.page-content').forEach(p => { 
+                p.classList.remove('active', 'animate__animated', 'animate__fadeIn'); 
+                p.style.display = 'none'; 
+            });
+            
             const targetPage = document.getElementById(page + 'Page');
             if (targetPage) {
                 targetPage.style.display = 'block';
-                void targetPage.offsetWidth;
+                void targetPage.offsetWidth; // Force reflow
                 targetPage.classList.add('active', 'animate__animated', 'animate__fadeIn');
             } else {
                  console.error(`Page element not found: ${page}Page`);
                  showNotification(`Erreur: Page '${page}' introuvable.`, 'danger');
                  document.getElementById('dashboardPage').style.display = 'block';
                  document.getElementById('dashboardPage').classList.add('active');
-                 currentActivePage = 'dashboard'; page = 'dashboard'; // Fallback
+                 currentActivePage = 'dashboard'; 
+                 page = 'dashboard'; // Fallback
             }
+            
             document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
             document.querySelector(`.sidebar .nav-link[data-page="${page}"]`)?.classList.add('active');
 
@@ -477,33 +762,65 @@ const firebaseConfig = {
                 hideLoading(); // Hide loading if not reloading data
             } else {
                  console.warn("Skipping render because data hasn't loaded successfully.");
-                 // Optionally display an error message within the page container
-                 if(targetPage) targetPage.innerHTML = '<div class="alert alert-danger">Impossible de charger les données pour cette page. Veuillez réessayer.</div>';
+                 // Display an error message within the page container
+                 if(targetPage) {
+                     targetPage.innerHTML = `
+                         <div class="alert alert-danger">
+                             <h4 class="alert-heading mb-2">Erreur de chargement des données</h4>
+                             <p>Impossible de charger les données pour cette page.</p>
+                             <button id="retryPageLoadBtn" class="btn btn-danger btn-sm">
+                                <i class="fas fa-sync-alt me-1"></i> Réessayer
+                             </button>
+                         </div>`;
+                     
+                     // Ajouter un listener pour le bouton de retentative
+                     document.getElementById('retryPageLoadBtn')?.addEventListener('click', () => {
+                         loadDataAndRenderUI();
+                     });
+                 }
+                 
                  hideLoading();
             }
         }
 
         // --- Logique Métier ---
         function openProposeModal(trainingId = '', trainingName = '', sessionToEdit = null) {
-            if (!currentUserId) { showNotification("Veuillez patienter, connexion en cours...", "info"); return; } // Prevent opening if not connected
+            if (!currentUserId) { 
+                showNotification("Veuillez patienter, connexion en cours...", "info"); 
+                return; 
+            } // Prevent opening if not connected
+            
             const modalEl = document.getElementById('proposeSessionModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            const form = document.getElementById('proposeSessionForm'); form.reset();
-            document.getElementById('proposeSessionModalTitle').textContent = sessionToEdit ? 'Modifier Proposition' : 'Proposer une Session';
+            const form = document.getElementById('proposeSessionForm'); 
+            form.reset();
+            
+            document.getElementById('proposeSessionModalTitle').textContent = 
+                sessionToEdit ? 'Modifier Proposition' : 'Proposer une Session';
             document.getElementById('proposeSessionId').value = sessionToEdit ? sessionToEdit.id : '';
             document.getElementById('proposeTrainingId').value = sessionToEdit ? sessionToEdit.trainingId : trainingId;
             document.getElementById('proposeTrainingName').value = sessionToEdit ? sessionToEdit.trainingName : trainingName;
             document.getElementById('proposeGroupId').value = sessionToEdit ? sessionToEdit.groupId : '';
+            
+            // Afficher l'information pour utilisateur anonyme si nécessaire
+            const anonymousInfo = document.getElementById('anonymousProposalInfo');
+            if (anonymousInfo) {
+                anonymousInfo.style.display = isAnonymousUser ? 'block' : 'none';
+            }
+            
             // Handle date conversion from potential Timestamp
             let proposedDateStr = '';
             if (sessionToEdit?.proposedDate) {
-                 const date = sessionToEdit.proposedDate.toDate ? sessionToEdit.proposedDate.toDate() : new Date(sessionToEdit.proposedDate);
+                 const date = sessionToEdit.proposedDate.toDate ? 
+                             sessionToEdit.proposedDate.toDate() : new Date(sessionToEdit.proposedDate);
                  if (!isNaN(date.getTime())) proposedDateStr = date.toISOString().split('T')[0];
             }
+            
             document.getElementById('proposeDate').value = proposedDateStr;
             document.getElementById('proposeTime').value = sessionToEdit ? sessionToEdit.proposedStartTime || '' : '';
             document.getElementById('proposeLocation').value = sessionToEdit ? sessionToEdit.location || '' : '';
             document.getElementById('proposeNotes').value = sessionToEdit ? sessionToEdit.notes || '' : '';
+            
             modal.show();
         }
 
@@ -512,12 +829,18 @@ const firebaseConfig = {
             if (!groupSelect || !window.appData || !window.appData.groups) return;
             const data = getData();
             groupSelect.innerHTML = '<option value="">Sélectionnez un groupe...</option>';
-            data.groups.forEach(g => { groupSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`; });
+            data.groups.forEach(g => { 
+                groupSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`; 
+            });
         }
 
         async function handleProposeSubmit(event) {
             event.preventDefault();
-            if (!useFirebase || !auth.currentUser) { showNotification("Problème connexion.", "warning"); return; }
+            if (!useFirebase || !auth.currentUser) { 
+                showNotification("Problème connexion.", "warning"); 
+                return; 
+            }
+            
             const sessionId = document.getElementById('proposeSessionId').value;
             const trainingId = document.getElementById('proposeTrainingId').value;
             const trainingName = document.getElementById('proposeTrainingName').value;
@@ -527,64 +850,142 @@ const firebaseConfig = {
             const location = document.getElementById('proposeLocation').value;
             const notes = document.getElementById('proposeNotes').value;
 
-            if (!trainingId || !groupId || !proposedDate || !proposedStartTime) { showNotification("Champs obligatoires manquants.", "warning"); return; }
+            if (!trainingId || !groupId || !proposedDate || !proposedStartTime) { 
+                showNotification("Champs obligatoires manquants.", "warning"); 
+                return; 
+            }
+            
             const group = getData().groups.find(g => g.id === groupId);
-            if (!group) { showNotification("Groupe invalide.", "danger"); return; }
+            if (!group) { 
+                showNotification("Groupe invalide.", "danger"); 
+                return; 
+            }
+
+            // Convertir la date string en Date
+            let proposedTimestamp = null;
+            try {
+                // Créer une date locale à partir des parties de la date
+                const dateParts = proposedDate.split('-');
+                if (dateParts.length === 3) {
+                    const localDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                    if (!isNaN(localDate.getTime())) {
+                        proposedTimestamp = firebase.firestore.Timestamp.fromDate(localDate);
+                    }
+                }
+            } catch (e) { 
+                console.error("Error creating timestamp from date", e); 
+            }
+
+            if (!proposedTimestamp) {
+                showNotification("Format de date invalide.", "warning");
+                return;
+            }
 
             const sessionData = {
-                trainingId, trainingName, groupId, groupName: group.name,
-                proposedDate, proposedStartTime, location: location || '', notes: notes || '',
-                status: 'proposed', proposedBy: auth.currentUser.uid,
-                participants: 0, maxParticipants: group.maxSize || getData().settings.maxGroupSize || 12,
-                bookedBy: [], createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                trainingId, 
+                trainingName, 
+                groupId, 
+                groupName: group.name,
+                proposedDate: proposedTimestamp,
+                proposedStartTime, 
+                location: location || '', 
+                notes: notes || '',
+                status: 'proposed', 
+                proposedBy: auth.currentUser.uid,
+                participants: 0, 
+                maxParticipants: group.maxSize || getData().settings.maxGroupSize || 12,
+                bookedBy: [], 
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
+            
             // Retirer les champs non pertinents pour une proposition initiale
-            delete sessionData.confirmedDate; delete sessionData.confirmedStartTime; delete sessionData.confirmedBy; delete sessionData.adminNotes;
+            delete sessionData.confirmedDate; 
+            delete sessionData.confirmedStartTime; 
+            delete sessionData.confirmedBy; 
+            delete sessionData.adminNotes;
 
             showLoading();
             const modal = bootstrap.Modal.getInstance(document.getElementById('proposeSessionModal'));
+            
             try {
                 if (sessionId) { // Modification
                      // Ne mettre à jour que les champs modifiables de la proposition
-                     const updateData = { groupId, groupName: group.name, proposedDate, proposedStartTime, location: location || '', notes: notes || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                     const updateData = { 
+                         groupId, 
+                         groupName: group.name, 
+                         proposedDate: proposedTimestamp, 
+                         proposedStartTime, 
+                         location: location || '', 
+                         notes: notes || '', 
+                         updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                     };
+                    
                     await db.collection('sessions').doc(sessionId).update(updateData);
                     showNotification("Proposition mise à jour.", "success");
                 } else { // Ajout
                     await db.collection('sessions').add(sessionData);
                     showNotification("Proposition soumise.", "success");
                 }
+                
                 modal.hide();
                 await loadDataAndRenderUI(); // Recharger les données et rafraîchir l'UI
-            } catch (error) { console.error("Erreur proposition:", error); showNotification("Erreur soumission.", "danger"); }
-            finally { hideLoading(); }
+            } catch (error) { 
+                console.error("Erreur proposition:", error); 
+                showNotification("Erreur soumission: " + (error.message || error), "danger"); 
+            } finally { 
+                hideLoading(); 
+            }
         }
 
         function openConfirmModal(sessionId) {
             if (!adminLoggedIn) return;
+            
             const session = getData().sessions.find(s => s.id === sessionId);
-            if (!session || session.status !== 'proposed') { showNotification("Session invalide.", "warning"); return; }
+            if (!session || session.status !== 'proposed') { 
+                showNotification("Session invalide.", "warning"); 
+                return; 
+            }
+            
             const modalEl = document.getElementById('confirmSessionModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            
             document.getElementById('confirmSessionId').value = sessionId;
             document.getElementById('confirmSessionDetails').textContent = `${session.trainingName} - ${session.groupName}`;
             document.getElementById('confirmProposedDate').textContent = `${formatDate(session.proposedDate)} ${session.proposedStartTime}`;
-            document.getElementById('confirmDate').value = session.proposedDate; // Pré-remplir
-            document.getElementById('confirmTime').value = session.proposedStartTime; // Pré-remplir
+            
+            // Convertir le timestamp en string date pour l'input date
+            let proposedDateStr = '';
+            if (session.proposedDate) {
+                const date = session.proposedDate.toDate ? 
+                            session.proposedDate.toDate() : new Date(session.proposedDate);
+                if (!isNaN(date.getTime())) {
+                    proposedDateStr = date.toISOString().split('T')[0];
+                }
+            }
+            
+            document.getElementById('confirmDate').value = proposedDateStr || ''; // Pré-remplir
+            document.getElementById('confirmTime').value = session.proposedStartTime || ''; // Pré-remplir
             document.getElementById('confirmLocation').value = session.location || getData().settings.siteLocation || ''; // Lieu proposé ou défaut
             document.getElementById('confirmNotes').value = session.adminNotes || session.notes || ''; // Notes admin ou proposition
+            
             modal.show();
         }
 
         async function handleConfirmSubmit(event) {
             event.preventDefault();
             if (!adminLoggedIn) return;
+            
             const sessionId = document.getElementById('confirmSessionId').value;
             const confirmedDate = document.getElementById('confirmDate').value;
             const confirmedStartTime = document.getElementById('confirmTime').value;
             const location = document.getElementById('confirmLocation').value;
             const adminNotes = document.getElementById('confirmNotes').value;
-            if (!sessionId || !confirmedDate || !confirmedStartTime) { showNotification("Date/Heure confirmées requises.", "warning"); return; }
+            
+            if (!sessionId || !confirmedDate || !confirmedStartTime) { 
+                showNotification("Date/Heure confirmées requises.", "warning"); 
+                return; 
+            }
 
             // Convertir la date string en Timestamp Firebase pour tri correct
              let confirmedTimestamp = null;
@@ -597,18 +998,18 @@ const firebaseConfig = {
                           confirmedTimestamp = firebase.firestore.Timestamp.fromDate(localDate);
                       }
                  }
-             } catch (e) { console.error("Error creating timestamp from date", e); }
+             } catch (e) { 
+                console.error("Error creating timestamp from date", e); 
+             }
 
              if (!confirmedTimestamp) {
                  showNotification("Format de date invalide.", "warning");
                  return;
              }
 
-
             const updateData = {
                 status: 'confirmed',
-                // confirmedDate: confirmedDate, // Stocker la string aussi ?
-                confirmedDate: confirmedTimestamp, // Stocker le Timestamp
+                confirmedDate: confirmedTimestamp,
                 confirmedStartTime: confirmedStartTime,
                 location: location || '',
                 adminNotes: adminNotes || '',
@@ -618,133 +1019,358 @@ const firebaseConfig = {
 
             showLoading();
             const modal = bootstrap.Modal.getInstance(document.getElementById('confirmSessionModal'));
+            
             try {
                 await db.collection('sessions').doc(sessionId).update(updateData);
                 showNotification("Session confirmée.", "success");
                 modal.hide();
                 await loadDataAndRenderUI();
-            } catch (error) { console.error("Erreur confirmation:", error); showNotification("Erreur confirmation.", "danger"); }
-            finally { hideLoading(); }
+            } catch (error) { 
+                console.error("Erreur confirmation:", error); 
+                showNotification("Erreur confirmation: " + (error.message || error), "danger"); 
+            } finally { 
+                hideLoading(); 
+            }
         }
 
         async function handleRejectSession(sessionId) {
              if (!adminLoggedIn || !confirm("Rejeter cette proposition ?")) return;
+             
              showLoading();
              try {
-                 await db.collection('sessions').doc(sessionId).update({ status: 'cancelled', updatedAt: firebase.firestore.FieldValue.serverTimestamp(), cancelledBy: auth.currentUser.uid });
+                 await db.collection('sessions').doc(sessionId).update({ 
+                     status: 'cancelled', 
+                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(), 
+                     cancelledBy: auth.currentUser.uid 
+                 });
+                 
                  showNotification("Proposition rejetée.", "success");
                  await loadDataAndRenderUI();
-             } catch (error) { console.error("Erreur rejet:", error); showNotification("Erreur rejet.", "danger"); }
-             finally { hideLoading(); }
+             } catch (error) { 
+                 console.error("Erreur rejet:", error); 
+                 showNotification("Erreur rejet: " + (error.message || error), "danger"); 
+             } finally { 
+                 hideLoading(); 
+             }
          }
 
         async function handleBooking(sessionId) {
-            if (!useFirebase || !auth.currentUser) { showNotification("Problème connexion.", "warning"); return; }
+            if (!useFirebase || !auth.currentUser) { 
+                showNotification("Problème connexion. Essayez de recharger la page.", "warning"); 
+                return; 
+            }
+            
             const userId = auth.currentUser.uid;
             const sessionRef = db.collection('sessions').doc(sessionId);
+            
             showLoading();
             try {
                 await db.runTransaction(async (transaction) => {
                     const sessionDoc = await transaction.get(sessionRef);
                     if (!sessionDoc.exists) throw "Session non trouvée !";
+                    
                     const s = sessionDoc.data();
                     if (s.status !== 'confirmed') throw "Réservation impossible (session non confirmée).";
+                    
                     const currentP = s.participants || 0;
                     const maxP = s.maxParticipants || getData().settings.maxGroupSize || 12;
                     const bookedBy = s.bookedBy || [];
+                    
                     if (currentP >= maxP) throw "Session complète !";
                     if (bookedBy.includes(userId)) throw "Déjà inscrit.";
-                    transaction.update(sessionRef, { participants: firebase.firestore.FieldValue.increment(1), bookedBy: firebase.firestore.FieldValue.arrayUnion(userId), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    
+                    transaction.update(sessionRef, { 
+                        participants: firebase.firestore.FieldValue.increment(1), 
+                        bookedBy: firebase.firestore.FieldValue.arrayUnion(userId), 
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
                 });
+                
                 showNotification("Réservation enregistrée !", "success");
                 await loadDataAndRenderUI();
-            } catch (error) { console.error("Booking failed:", error); showNotification(`Erreur réservation: ${error}`, "danger"); }
-            finally { hideLoading(); }
+            } catch (error) { 
+                console.error("Booking failed:", error); 
+                showNotification(`Erreur réservation: ${error}`, "danger"); 
+            } finally { 
+                hideLoading(); 
+            }
         }
 
         async function handleCancelBooking(sessionId) {
-             if (!useFirebase || !auth.currentUser) { showNotification("Problème connexion.", "warning"); return; }
+             if (!useFirebase || !auth.currentUser) { 
+                showNotification("Problème connexion. Essayez de recharger la page.", "warning"); 
+                return; 
+             }
+             
              const userId = auth.currentUser.uid;
              const sessionRef = db.collection('sessions').doc(sessionId);
+             
              showLoading();
              try {
                  await db.runTransaction(async (transaction) => {
                      const sessionDoc = await transaction.get(sessionRef);
                      if (!sessionDoc.exists) throw "Session non trouvée !";
+                     
                      const s = sessionDoc.data();
-                      if (s.status !== 'confirmed') throw "Annulation impossible.";
+                     if (s.status !== 'confirmed') throw "Annulation impossible.";
+                     
                      const bookedBy = s.bookedBy || [];
                      if (!bookedBy.includes(userId)) throw "Vous n'étiez pas inscrit.";
-                     transaction.update(sessionRef, { participants: firebase.firestore.FieldValue.increment(-1), bookedBy: firebase.firestore.FieldValue.arrayRemove(userId), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                     
+                     transaction.update(sessionRef, { 
+                         participants: firebase.firestore.FieldValue.increment(-1), 
+                         bookedBy: firebase.firestore.FieldValue.arrayRemove(userId), 
+                         updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                     });
                  });
+                 
                  showNotification("Réservation annulée.", "success");
                  await loadDataAndRenderUI();
-             } catch (error) { console.error("Cancel failed:", error); showNotification(`Erreur annulation: ${error}`, "danger"); }
-             finally { hideLoading(); }
+             } catch (error) { 
+                 console.error("Cancel failed:", error); 
+                 showNotification(`Erreur annulation: ${error}`, "danger"); 
+             } finally { 
+                 hideLoading(); 
+             }
          }
 
         async function handleDelete(collection, id, itemName = 'élément') {
             if (!adminLoggedIn || !confirm(`Supprimer cet ${itemName} (${id}) ?`)) return;
+            
             showLoading();
             try {
                 await db.collection(collection).doc(id).delete();
                 showNotification(`${itemName} supprimé.`, "success");
                 await loadDataAndRenderUI();
-            } catch (error) { console.error(`Delete error:`, error); showNotification(`Erreur suppression.`, "danger"); }
-            finally { hideLoading(); }
+            } catch (error) { 
+                console.error(`Delete error:`, error); 
+                showNotification(`Erreur suppression: ${error.message || error}`, "danger"); 
+            } finally { 
+                hideLoading(); 
+            }
         }
 
         // --- Authentification ---
         function updateAdminUI(isLoggedIn, userEmail = '') {
             adminLoggedIn = isLoggedIn;
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = isLoggedIn ? '' : 'none');
-            document.querySelectorAll('.admin-action').forEach(el => el.style.display = isLoggedIn ? '' : 'none');
+            document.querySelectorAll('.admin-only').forEach(el => 
+                el.style.display = isLoggedIn ? '' : 'none');
+            document.querySelectorAll('.admin-action').forEach(el => 
+                el.style.display = isLoggedIn ? '' : 'none');
+                
             const userNameSpan = document.getElementById('userName');
             if (userNameSpan) userNameSpan.textContent = userEmail.split('@')[0];
+            
              // Mettre à jour visibilité colonnes Actions dans les tables
-             document.querySelectorAll('#groupsTableBody .admin-only, #participantsTableBody .admin-only, #proposedSessionsTableBody .admin-only, #allSessionsTableBody .admin-only').forEach(el => el.style.display = isLoggedIn ? '' : 'table-cell'); // Utiliser table-cell pour les td/th
-             document.querySelectorAll('#groupsTable thead .admin-only, #participantsTable thead .admin-only, #proposedSessionsTable thead .admin-only, #allSessionsTable thead .admin-only').forEach(el => el.style.display = isLoggedIn ? '' : 'table-cell');
+             document.querySelectorAll('#groupsTableBody .admin-only, #participantsTableBody .admin-only, #proposedSessionsTableBody .admin-only, #allSessionsTableBody .admin-only').forEach(el => 
+                el.style.display = isLoggedIn ? 'table-cell' : 'none'); // Utiliser table-cell pour les td/th
+                
+             document.querySelectorAll('#groupsTable thead .admin-only, #participantsTable thead .admin-only, #proposedSessionsTable thead .admin-only, #allSessionsTable thead .admin-only').forEach(el => 
+                el.style.display = isLoggedIn ? 'table-cell' : 'none');
         }
 
         async function handleAdminLogin() {
-            const emailInput = document.getElementById('email'); const passwordInput = document.getElementById('password');
+            const emailInput = document.getElementById('email'); 
+            const passwordInput = document.getElementById('password');
+            
             if (!emailInput || !passwordInput) return;
-            const email = emailInput.value; const password = passwordInput.value;
-            if (!email || !password) { showNotification('Email/Mot de passe requis.', 'warning'); return; }
+            
+            const email = emailInput.value; 
+            const password = passwordInput.value;
+            
+            if (!email || !password) { 
+                showNotification('Email/Mot de passe requis.', 'warning'); 
+                return; 
+            }
+            
             showLoading();
             try {
                 await auth.signInWithEmailAndPassword(email, password);
                 const adminModalEl = document.getElementById('adminLoginModal');
                 const adminModal = bootstrap.Modal.getInstance(adminModalEl);
+                
                 if (adminModal) adminModal.hide();
+                
                 showNotification('Connecté en tant qu\'administrateur.', 'success');
+                isAnonymousUser = false;
+                updateConnectionStatus(true, "Connecté (admin)");
+                
                 // onAuthStateChanged gérera la mise à jour UI et le rechargement
-            } catch (error) { console.error("Admin login failed:", error); showNotification('Échec connexion.', 'danger'); hideLoading(); }
+            } catch (error) { 
+                console.error("Admin login failed:", error); 
+                showNotification('Échec connexion: ' + (error.message || error), 'danger'); 
+                hideLoading(); 
+            }
         }
 
         async function handleAdminLogout() {
-            if (!auth) return; showLoading();
-            try { await auth.signOut(); showNotification('Déconnecté.', 'info'); }
-            catch (error) { console.error("Admin logout failed:", error); showNotification('Erreur déconnexion.', 'danger'); hideLoading(); }
+            if (!auth) return; 
+            
+            showLoading();
+            try { 
+                await auth.signOut(); 
+                showNotification('Déconnecté.', 'info'); 
+                
+                // Reconnexion anonyme automatique après déconnexion admin
+                try {
+                    await auth.signInAnonymously();
+                    isAnonymousUser = true;
+                    updateConnectionStatus(true, "Connecté (anonyme)");
+                } catch (error) {
+                    console.error("Anonymous sign-in after logout failed:", error);
+                    updateConnectionStatus(false, "Erreur reconnexion");
+                }
+            } catch (error) { 
+                console.error("Admin logout failed:", error); 
+                showNotification('Erreur déconnexion: ' + (error.message || error), 'danger'); 
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- Initialisation Firebase ---
+        async function initializeFirebase(isRetry = false) {
+            if (typeof firebase === 'undefined') {
+                console.error("Firebase lib not loaded!");
+                showNotification("Bibliothèque Firebase non disponible.", "danger");
+                updateConnectionStatus(false, "Firebase non disponible");
+                hideLoading();
+                return false;
+            }
+            
+            try {
+                // Réinitialiser l'app si on a déjà tenté une fois
+                if (isRetry && firebaseApp) {
+                    console.log("Réinitialisation de l'application Firebase...");
+                    // Certaines versions Firebase ne supportent pas .delete()
+                    try { await firebaseApp.delete(); } catch (e) { console.log("Impossible de supprimer l'app", e); }
+                }
+                
+                firebaseApp = firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                auth = firebase.auth();
+                useFirebase = true; 
+                
+                console.log("Firebase initialisé.");
+                
+                // Définir la tentative de connexion anonyme comme promesse pour pouvoir attendre
+                const anonymousAuthPromise = new Promise((resolve, reject) => {
+                    auth.onAuthStateChanged(async user => {
+                        currentUserId = user ? user.uid : null;
+                        isAnonymousUser = user ? user.isAnonymous : false;
+                        
+                        if (user) {
+                            console.log("Auth state: User OK.", user.uid, "Anon:", user.isAnonymous);
+                            updateAdminUI(!user.isAnonymous, user.email);
+                            updateConnectionStatus(true, user.isAnonymous ? "Connecté (anonyme)" : "Connecté");
+                            
+                            if (!dataLoadedSuccessfully) { // Charger données seulement si pas déjà fait
+                                await loadDataAndRenderUI(false); // Ne pas tenter de retentative ici
+                                resolve(true);
+                            } else {
+                                 // Données déjà chargées, juste rafraîchir l'UI si l'état admin a changé
+                                 navigateTo(currentActivePage, false);
+                                 hideLoading(); // Cacher si on ne recharge pas
+                                 resolve(true);
+                            }
+                        } else {
+                            console.log("Auth state: Signed out. Signing in anon...");
+                            updateAdminUI(false); // Mettre à jour UI avant connexion anonyme
+                            
+                            try { 
+                                await auth.signInAnonymously(); 
+                                isAnonymousUser = true;
+                                console.log("Anonymous auth successful");
+                                resolve(true);
+                            } catch (error) { 
+                                console.error("Anon sign-in failed:", error); 
+                                showNotification("Erreur connexion anonyme: " + (error.message || error), "danger"); 
+                                updateConnectionStatus(false, "Erreur connexion");
+                                reject(error);
+                                hideLoading(); 
+                            }
+                        }
+                    });
+                });
+                
+                // Attendre la connexion anonyme
+                await anonymousAuthPromise;
+                
+                return true;
+            } catch (error) { 
+                console.error("Firebase Init failed:", error); 
+                showNotification("Init App échouée: " + (error.message || error), "danger"); 
+                updateConnectionStatus(false, "Échec initialisation");
+                useFirebase = false; 
+                hideLoading(); 
+                return false;
+            }
         }
 
         // --- Setup Événements ---
         function setupEventListeners() {
             // Sidebar Nav
-            document.querySelectorAll('.sidebar .nav-link').forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); navigateTo(link.dataset.page, false); })); // Ne pas recharger par défaut
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => 
+                link.addEventListener('click', (e) => { 
+                    e.preventDefault(); 
+                    navigateTo(link.dataset.page, false); 
+                })
+            ); // Ne pas recharger par défaut
+            
             // Admin Badge
-            document.getElementById('adminBadge')?.addEventListener('click', () => bootstrap.Modal.getOrCreateInstance(document.getElementById('adminLoginModal')).show());
+            document.getElementById('adminBadge')?.addEventListener('click', () => 
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('adminLoginModal')).show()
+            );
+            
             // Login/Logout
             document.getElementById('loginBtn')?.addEventListener('click', handleAdminLogin);
             document.getElementById('logoutBtn')?.addEventListener('click', handleAdminLogout);
+            
             // Settings Link
-            document.getElementById('settingsMenuLink')?.addEventListener('click', (e) => { e.preventDefault(); navigateTo('settings', false); bootstrap.Dropdown.getInstance(document.getElementById('userDropdown'))?.hide(); });
+            document.getElementById('settingsMenuLink')?.addEventListener('click', (e) => { 
+                e.preventDefault(); 
+                navigateTo('settings', false); 
+                bootstrap.Dropdown.getInstance(document.getElementById('userDropdown'))?.hide(); 
+            });
+            
             // Refresh Button
-            document.getElementById('refreshBtn')?.addEventListener('click', loadDataAndRenderUI); // Forcer rechargement
+            document.getElementById('refreshBtn')?.addEventListener('click', () => loadDataAndRenderUI());
+            
+            // Retry Connection Button
+            document.getElementById('retryConnectionBtn')?.addEventListener('click', () => {
+                connectionAttempts = 0; // Réinitialiser le compteur
+                retryConnectionBtn.style.display = 'none'; // Cacher le bouton
+                showNotification("Tentative de reconnexion...", "info");
+                initializeFirebase(true);
+            });
+            
             // Form Submissions
             document.getElementById('proposeSessionForm')?.addEventListener('submit', handleProposeSubmit);
             document.getElementById('confirmSessionForm')?.addEventListener('submit', handleConfirmSubmit);
-            document.getElementById('settingsForm')?.addEventListener('submit', async (e) => { /* ... Logique sauvegarde paramètres ... */ });
+            document.getElementById('settingsForm')?.addEventListener('submit', async (e) => { 
+                e.preventDefault();
+                if (!adminLoggedIn) return;
+                
+                showLoading();
+                try {
+                    const settingsData = {
+                        companyName: document.getElementById('companyName').value || 'Anecoop-France',
+                        siteLocation: document.getElementById('siteLocation').value || 'Anecoop',
+                        minGroupSize: parseInt(document.getElementById('minGroupSize').value) || 8,
+                        maxGroupSize: parseInt(document.getElementById('maxGroupSize').value) || 12,
+                        defaultDuration: parseInt(document.getElementById('defaultDuration').value) || 90,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    await db.collection('settings').doc('app_settings').set(settingsData, { merge: true });
+                    showNotification("Paramètres enregistrés", "success");
+                    await loadDataAndRenderUI();
+                } catch (error) {
+                    console.error("Settings save error:", error);
+                    showNotification("Erreur sauvegarde paramètres: " + (error.message || error), "danger");
+                    hideLoading();
+                }
+            });
 
             // Event Delegation pour boutons dynamiques
             document.body.addEventListener('click', function(event) {
@@ -788,7 +1414,25 @@ const firebaseConfig = {
                      // Peut-être ouvrir le modal de proposition mais avec plus d'options ?
                      // Ou un modal dédié à l'admin pour créer une session confirmée direct ?
                      showNotification("Ajout manuel admin (à implémenter)", "info");
-                 } // etc pour addGroupBtn, addParticipantBtn
+                 } else if (button?.id === 'addGroupBtn') {
+                     showNotification("Ajout groupe (à implémenter)", "info");
+                 } else if (button?.id === 'addParticipantBtn') {
+                     showNotification("Ajout participant (à implémenter)", "info");
+                 }
+            });
+            
+            // Écouter les événements de connexion réseau
+            window.addEventListener('online', () => {
+                showNotification("Connexion réseau rétablie", "success");
+                connectionAttempts = 0;
+                if (!dataLoadedSuccessfully) {
+                    initializeFirebase(true);
+                }
+            });
+            
+            window.addEventListener('offline', () => {
+                showNotification("Connexion réseau perdue", "warning");
+                updateConnectionStatus(false, "Hors ligne");
             });
         }
 
@@ -798,36 +1442,30 @@ const firebaseConfig = {
             showLoading();
             setupEventListeners(); // Attacher les listeners statiques
 
-            if (typeof firebase !== 'undefined') {
-                try {
-                    firebaseApp = firebase.initializeApp(firebaseConfig);
-                    db = firebase.firestore();
-                    auth = firebase.auth();
-                    useFirebase = true; console.log("Firebase initialisé.");
-
-                    auth.onAuthStateChanged(async user => {
-                        currentUserId = user ? user.uid : null;
-                        if (user) {
-                            console.log("Auth state: User OK.", user.uid, "Anon:", user.isAnonymous);
-                            updateAdminUI(!user.isAnonymous, user.email);
-                            if (!dataLoadedSuccessfully) { // Charger données seulement si pas déjà fait
-                                 await loadDataAndRenderUI();
-                            } else {
-                                 // Données déjà chargées, juste rafraîchir l'UI si l'état admin a changé
-                                 navigateTo(currentActivePage, false);
-                                 hideLoading(); // Cacher si on ne recharge pas
-                            }
-                        } else {
-                            console.log("Auth state: Signed out. Signing in anon...");
-                            updateAdminUI(false); // Mettre à jour UI avant connexion anonyme
-                            try { await auth.signInAnonymously(); }
-                            catch (error) { console.error("Anon sign-in failed:", error); showNotification("Erreur connexion service.", "danger"); hideLoading(); }
+            // Démarrer l'initialisation Firebase
+            initializeFirebase().then(success => {
+                if (!success) {
+                    // Afficher un message si l'initialisation a échoué
+                    document.querySelectorAll('.page-content').forEach(page => {
+                        if (page.classList.contains('active')) {
+                            page.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <h4 class="alert-heading">Erreur de connexion</h4>
+                                    <p>L'application n'a pas pu se connecter à la base de données. Veuillez vérifier votre connexion Internet et recharger la page.</p>
+                                    <button class="btn btn-danger" onclick="location.reload()">
+                                        <i class="fas fa-sync-alt me-1"></i> Recharger la page
+                                    </button>
+                                </div>
+                            `;
                         }
                     });
-                } catch (error) { console.error("Firebase Init failed:", error); showNotification("Init App échouée.", "danger"); useFirebase = false; hideLoading(); }
-            } else { console.error("Firebase lib not loaded!"); showNotification("Erreur critique.", "danger"); hideLoading(); }
+                    hideLoading();
+                }
+            }).catch(error => {
+                console.error("Initialization error:", error);
+                hideLoading();
+            });
         });
-
     </script>
 </body>
 </html>
