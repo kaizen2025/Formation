@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Réservation de Formations - Anecoop-France</title>
+    <!-- Dépendances CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #2D7D46;
-            --secondary: #82bc00;
+            --primary: #2D7D46; /* Couleur principale Anecoop */
+            --secondary: #82bc00; /* Vert clair Anecoop */
             --light: #f8f9fa;
             --dark: #343a40;
             --success: #28a745;
@@ -17,180 +19,88 @@
             --warning: #ffc107;
             --info: #17a2b8;
         }
-        
-        /* Admin badge style */
-        .admin-badge {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: var(--primary);
-            color: white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 1050;
-            transition: all 0.3s ease;
-        }
-        
-        .admin-badge:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
 
+        /* Styles généraux et mise en page (similaire à avant) */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
             color: #333;
+            display: flex;
+            min-height: 100vh;
         }
+        .sidebar {
+            background-color: #ffffff;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed; top: 0; left: 0; height: 100vh; width: 250px; z-index: 1000;
+            display: flex; flex-direction: column; padding: 0;
+        }
+        .main-content-area {
+            margin-left: 250px; flex-grow: 1; display: flex; flex-direction: column;
+            width: calc(100% - 250px); padding: 0;
+        }
+        .top-navbar {
+            background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky; top: 0; z-index: 999; height: 60px; padding: 0 1.5rem;
+        }
+        .page-container { padding: 1.5rem; flex-grow: 1; overflow-y: auto; }
+        .navbar-brand { font-weight: 700; color: var(--primary) !important; }
+        .sidebar .nav-link {
+            color: #555; padding: 12px 20px; display: flex; align-items: center;
+            transition: background-color 0.2s ease, color 0.2s ease; border-left: 4px solid transparent;
+        }
+        .sidebar .nav-link i { margin-right: 15px; width: 20px; text-align: center; }
+        .sidebar .nav-link:hover { background-color: #f0f0f0; color: var(--primary); }
+        .sidebar .nav-link.active {
+            background-color: #e8f5e9; color: var(--primary); font-weight: 600; border-left-color: var(--primary);
+        }
+        .btn-anecoop { background-color: var(--primary); color: white; border: none; }
+        .btn-anecoop:hover { background-color: #246039; color: white; }
+        .card { border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px; border: none; }
+        .card-header { background-color: var(--primary); color: white; font-weight: 600; }
+        .session-card-row:hover { background-color: #f8f9fa; cursor: pointer; } /* Style pour survol ligne session */
 
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--primary) !important;
-        }
-
-        .bg-anecoop {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-anecoop {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-        }
-
-        .btn-anecoop:hover {
-            background-color: #246039;
-            color: white;
-        }
-
-        .card {
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            border: none;
-        }
-
-        .card-header {
-            background-color: var(--primary);
-            color: white;
-            font-weight: 600;
-        }
-
-        .session-card {
-            transition: transform 0.3s;
-            cursor: pointer;
-        }
-
-        .session-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .calendar-day {
-            min-height: 100px;
-            background-color: white;
-            border-radius: 8px;
-            padding: 8px;
-            position: relative;
-        }
-
-        .calendar-day .date {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            font-size: 12px;
-            color: #888;
-        }
-
-        .event {
-            padding: 5px;
-            margin: 3px 0;
-            border-radius: 5px;
-            font-size: 12px;
-            color: white;
-            background-color: var(--primary);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
+        /* Loading Overlay */
         .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.85); display: flex; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.3s ease;
         }
-
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            width: 45px; height: 45px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary);
+            border-radius: 50%; animation: spin 1s linear infinite;
         }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
+        /* Notification */
         .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background-color: var(--success);
-            color: white;
-            border-radius: 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 9999;
-            transform: translateX(100%);
-            animation: slideIn 0.5s forwards, fadeOut 0.5s 3s forwards;
-            max-width: 300px;
+            position: fixed; top: 80px; right: 20px; padding: 15px 20px; color: white; border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); z-index: 9998; opacity: 0; max-width: 350px;
+            transform: translateX(100%); animation: slideInFadeOut 4s forwards ease-out;
+        }
+        @keyframes slideInFadeOut { /* Ajusté pour meilleure visibilité */
+            0% { transform: translateX(100%); opacity: 0; }
+            10% { transform: translateX(0); opacity: 1; } /* Apparition rapide */
+            90% { transform: translateX(0); opacity: 1; } /* Reste visible longtemps */
+            100% { transform: translateX(100%); opacity: 0; visibility: hidden; }
         }
 
-        @keyframes slideIn {
-            to { transform: translateX(0); }
+        /* Admin Badge */
+        .admin-badge {
+            position: fixed; bottom: 20px; right: 20px; background-color: var(--primary); color: white;
+            border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1050; transition: all 0.3s ease;
         }
+        .admin-badge:hover { transform: scale(1.1); box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
 
-        @keyframes fadeOut {
-            to { opacity: 0; visibility: hidden; }
-        }
+        /* Visibilité des pages */
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+        .sidebar-footer { margin-top: auto; padding: 1rem; text-align: center; }
 
-        /* Styles pour l'écran de connexion */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f8f9fa;
-        }
-        
-        .login-card {
-            max-width: 400px;
-            width: 100%;
-        }
-        
-        .login-logo {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 20px;
-            text-align: center;
-        }
+        /* Bouton Réserver */
+        .btn-book-session { font-size: 0.8rem; padding: 0.2rem 0.5rem; }
+        .session-full { font-style: italic; color: #6c757d; }
+
     </style>
 </head>
 <body>
@@ -203,14 +113,14 @@
     <div class="admin-badge" id="adminBadge" title="Connexion administrateur">
         <i class="fas fa-lock"></i>
     </div>
-    
+
     <!-- Admin Login Modal -->
-    <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
+    <div class="modal fade" id="adminLoginModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="adminLoginModalLabel">Connexion administrateur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Connexion administrateur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="loginForm">
@@ -232,1259 +142,673 @@
         </div>
     </div>
 
-    <!-- Main App Container -->
-    <div id="appContainer" class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-2 p-0 sidebar">
-                <div class="text-center py-4">
-                    <h4 class="navbar-brand mb-0">Anecoop-France</h4>
-                </div>
-                <ul class="nav flex-column mt-3">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#" data-page="dashboard">
-                            <i class="fas fa-home"></i> Tableau de bord
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="calendar">
-                            <i class="fas fa-calendar-alt"></i> Calendrier
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="sessions">
-                            <i class="fas fa-chalkboard-teacher"></i> Formations
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="groups">
-                            <i class="fas fa-users"></i> Groupes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="participants">
-                            <i class="fas fa-user-graduate"></i> Participants
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="reports">
-                            <i class="fas fa-chart-bar"></i> Rapports
-                        </a>
-                    </li>
-                    <li class="nav-item mt-4">
-                        <a class="nav-link" href="#" data-page="settings">
-                            <i class="fas fa-cog"></i> Paramètres
-                        </a>
-                    </li>
-                </ul>
-                <div class="mt-auto text-center py-3" style="position: absolute; bottom: 0; width: 100%;">
-                    <p class="small text-muted mb-0">© 2025 Anecoop-France</p>
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="col-md-10 p-0">
-                <!-- Top Navigation Bar -->
-                <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-                    <div class="container-fluid">
-                        <a class="navbar-brand d-md-none" href="#">Anecoop-France</a>
-                        <div class="d-flex align-items-center">
-                            <button class="btn btn-sm btn-light" type="button" id="refreshBtn">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
-                            <div class="dropdown ms-3">
-                                <button class="btn btn-sm btn-light position-relative" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-bell"></i>
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        3
-                                    </span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
-                                    <li><h6 class="dropdown-header">Notifications</h6></li>
-                                    <li><a class="dropdown-item" href="#">Nouvelle formation ajoutée</a></li>
-                                    <li><a class="dropdown-item" href="#">2 participants en attente</a></li>
-                                    <li><a class="dropdown-item" href="#">Formation à confirmer</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-center small" href="#">Voir toutes les notifications</a></li>
-                                </ul>
-                            </div>
-                            <div class="dropdown ms-3" id="userMenu" style="display: none;">
-                                <button class="btn btn-sm btn-light" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-user-circle"></i> <span id="userName">Admin</span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profil</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Paramètres</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-
-                <!-- Page Content Area -->
-                <div class="container-fluid p-4">
-                    <!-- Dashboard View -->
-                    <div id="dashboardPage" class="page-content animate__animated animate__fadeInUp">
-                        <h2 class="mb-4">Tableau de bord</h2>
-                        <!-- Contenu du tableau de bord -->
-                    </div>
-
-                    <!-- Les autres pages suivent le même modèle... -->
-                </div>
-            </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="text-center py-4">
+            <h4 class="navbar-brand mb-0">Anecoop-France</h4>
+        </div>
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item"><a class="nav-link active" href="#" data-page="dashboard"><i class="fas fa-home"></i> Tableau de bord</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="calendar"><i class="fas fa-calendar-alt"></i> Calendrier</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="sessions"><i class="fas fa-chalkboard-teacher"></i> Formations</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="groups"><i class="fas fa-users"></i> Groupes</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="participants"><i class="fas fa-user-graduate"></i> Participants</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-page="reports"><i class="fas fa-chart-bar"></i> Rapports</a></li>
+            <li class="nav-item mt-4 admin-only" style="display: none;"><a class="nav-link" href="#" data-page="settings"><i class="fas fa-cog"></i> Paramètres</a></li>
+        </ul>
+        <div class="sidebar-footer">
+             <p class="small text-muted mb-0">© 2025 Anecoop-France</p>
         </div>
     </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content-area">
+        <!-- Top Navigation Bar -->
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid d-flex justify-content-end">
+                 <div class="d-flex align-items-center">
+                    <button class="btn btn-sm btn-light me-2" type="button" id="refreshBtn" title="Actualiser les données"><i class="fas fa-sync-alt"></i></button>
+                    <div class="dropdown admin-only" style="display: none;"> <!-- Notifications pour Admin -->
+                        <button class="btn btn-sm btn-light position-relative" type="button" data-bs-toggle="dropdown"><i class="fas fa-bell"></i><span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span></button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                             <li><h6 class="dropdown-header">Notifications</h6></li>
+                             <div id="notificationList"><li><a class="dropdown-item" href="#">Aucune nouvelle notification</a></li></div>
+                        </ul>
+                    </div>
+                    <div class="dropdown ms-3 admin-only" style="display: none;"> <!-- Menu Admin -->
+                        <button class="btn btn-sm btn-light" type="button" id="userDropdown" data-bs-toggle="dropdown"><i class="fas fa-user-circle"></i> <span id="userName">Admin</span></button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profil</a></li>
+                            <li><a class="dropdown-item" href="#" data-page="settings" id="settingsMenuLink"><i class="fas fa-cog me-2"></i> Paramètres</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content Container -->
+        <div class="page-container">
+            <!-- Dashboard -->
+            <div id="dashboardPage" class="page-content active">
+                <h2 class="mb-4">Tableau de bord</h2>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card mb-4"><div class="card-header">Formations à venir</div><ul class="list-group list-group-flush" id="upcomingSessionsList"><li class="list-group-item">Chargement...</li></ul></div>
+                        <div class="card"><div class="card-header">Progression par Service</div><div class="card-body" id="serviceProgressContainer">Chargement...</div></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-4"><div class="card-body text-center"><h5 class="card-title">Formations Complétées</h5><p class="display-4 fw-bold" id="completedSessionsCount">0</p></div></div>
+                        <div class="card"><div class="card-body text-center"><h5 class="card-title">Participants Total</h5><p class="display-4 fw-bold" id="totalParticipantsCount">0</p></div></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Calendrier -->
+            <div id="calendarPage" class="page-content"><h2 class="mb-4">Calendrier</h2><div class="alert alert-info">Calendrier en développement.</div><div id="calendar-placeholder"></div></div>
+            <!-- Formations (Sessions) -->
+            <div id="sessionsPage" class="page-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                     <h2 class="mb-0">Formations Planifiées</h2>
+                     <button class="btn btn-anecoop admin-action admin-only" style="display: none;" id="addSessionBtn"><i class="fas fa-plus me-2"></i> Ajouter</button>
+                </div>
+                <div class="card"><div class="card-body"><div class="table-responsive"><table class="table table-hover align-middle">
+                    <thead><tr><th>Formation</th><th>Groupe</th><th>Date</th><th>Heure</th><th>Lieu</th><th>Statut</th><th>Places</th><th>Action</th></tr></thead>
+                    <tbody id="sessionsTableBody"><tr><td colspan="8" class="text-center">Chargement...</td></tr></tbody>
+                </table></div></div></div>
+            </div>
+            <!-- Groupes -->
+            <div id="groupsPage" class="page-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                     <h2 class="mb-0">Groupes</h2>
+                     <button class="btn btn-anecoop admin-action admin-only" style="display: none;" id="addGroupBtn"><i class="fas fa-plus me-2"></i> Ajouter</button>
+                </div>
+                <div class="card"><div class="card-body"><div class="table-responsive"><table class="table table-hover">
+                    <thead><tr><th>Nom</th><th>Service</th><th>Taille Min/Max</th><th>Participants Actuels</th><th class="admin-only" style="display: none;">Actions</th></tr></thead>
+                    <tbody id="groupsTableBody"><tr><td colspan="5" class="text-center">Chargement...</td></tr></tbody>
+                </table></div></div></div>
+            </div>
+            <!-- Participants -->
+            <div id="participantsPage" class="page-content">
+                 <div class="d-flex justify-content-between align-items-center mb-4">
+                     <h2 class="mb-0">Participants</h2>
+                     <button class="btn btn-anecoop admin-action admin-only" style="display: none;" id="addParticipantBtn"><i class="fas fa-plus me-2"></i> Ajouter</button>
+                 </div>
+                <div class="card"><div class="card-body"><div class="table-responsive"><table class="table table-hover">
+                    <thead><tr><th>Nom</th><th>Email</th><th>Service</th><th>Groupe</th><th class="admin-only" style="display: none;">Actions</th></tr></thead>
+                    <tbody id="participantsTableBody"><tr><td colspan="5" class="text-center">Chargement...</td></tr></tbody>
+                </table></div></div></div>
+            </div>
+            <!-- Rapports -->
+            <div id="reportsPage" class="page-content"><h2 class="mb-4">Rapports</h2><div class="alert alert-info">Section Rapports en développement.</div></div>
+            <!-- Paramètres -->
+            <div id="settingsPage" class="page-content admin-only" style="display: none;"><h2 class="mb-4">Paramètres</h2><div class="alert alert-warning">Accessible uniquement aux administrateurs.</div>
+                <div class="card"><div class="card-header">Paramètres Généraux</div><div class="card-body"><form id="settingsForm">
+                    <div class="mb-3"><label for="companyName" class="form-label">Nom Entreprise</label><input type="text" class="form-control" id="companyName"></div>
+                    <div class="mb-3"><label for="siteLocation" class="form-label">Lieu Défaut</label><input type="text" class="form-control" id="siteLocation"></div>
+                    <div class="row"><div class="col-md-4 mb-3"><label for="minGroupSize" class="form-label">Taille Min</label><input type="number" class="form-control" id="minGroupSize"></div><div class="col-md-4 mb-3"><label for="maxGroupSize" class="form-label">Taille Max</label><input type="number" class="form-control" id="maxGroupSize"></div><div class="col-md-4 mb-3"><label for="defaultDuration" class="form-label">Durée (min)</label><input type="number" class="form-control" id="defaultDuration"></div></div>
+                    <button type="submit" class="btn btn-anecoop">Enregistrer</button>
+                </form></div></div>
+            </div>
+        </div> <!-- Fin Page Content Container -->
+    </div> <!-- Fin Main Content Area -->
 
     <!-- Notification Template -->
-    <div id="notificationTemplate" style="display: none;">
-        <div class="notification">
-            <div class="notification-content"></div>
-        </div>
-    </div>
+    <div id="notificationTemplate" style="display: none;"><div class="notification"><div class="notification-content"></div></div></div>
 
-    <!-- JavaScript Libraries -->
+    <!-- Dépendances JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Firebase App (the core Firebase SDK) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <!-- Add Firebase products that you want to use -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    
+
     <script>
-        // Firebase Configuration
+        // --- Configuration Firebase ---
         const firebaseConfig = {
-            apiKey: "AIzaSyCrcpvqIszIIVvq7MiNOkj_Fj4dtd9VVyA",
+            apiKey: "AIzaSyCrcpvqIszIIVvq7MiNOkj_Fj4dtd9VVyA", // Votre clé API
             authDomain: "anecoop-formations.firebaseapp.com",
             projectId: "anecoop-formations",
-            storageBucket: "anecoop-formations.firebasestorage.app",
+            storageBucket: "anecoop-formations.appspot.com", // Vérifiez si c'est .appspot.com ou .firebasestorage.app
             messagingSenderId: "81893594187",
             appId: "1:81893594187:web:ec8a87c0b5e7a1844569ce",
-            measurementId: "G-2TMQNNC7KW"
+            measurementId: "G-2TMQNNC7KW" // Optionnel
         };
-        
-        // Données locales pré-configurées pour fonctionnement immédiat
-        const localData = {
-            sessions: [
-                { 
-                    id: 's1', 
-                    trainingId: 'teams', 
-                    trainingName: 'Communiquer avec Teams',
-                    groupId: 'commerce1', 
-                    groupName: 'Commerce - Groupe 1',
-                    date: '2025-05-15', 
-                    startTime: '10:00', 
-                    duration: 90, 
-                    location: 'Anecoop', 
-                    status: 'pending', 
-                    participants: 10, 
-                    maxParticipants: 12,
-                    notes: ''
-                },
-                { 
-                    id: 's2', 
-                    trainingId: 'tasks', 
-                    trainingName: 'Gérer les tâches d\'équipe',
-                    groupId: 'rh', 
-                    groupName: 'RH/Qualité/Marketing',
-                    date: '2025-05-17', 
-                    startTime: '14:30', 
-                    duration: 90, 
-                    location: 'Anecoop', 
-                    status: 'confirmed', 
-                    participants: 8, 
-                    maxParticipants: 10,
-                    notes: ''
-                },
-                { 
-                    id: 's3', 
-                    trainingId: 'sharepoint', 
-                    trainingName: 'Collaborer avec Teams/SharePoint',
-                    groupId: 'commerce2', 
-                    groupName: 'Commerce - Groupe 2',
-                    date: '2025-05-20', 
-                    startTime: '09:00', 
-                    duration: 90, 
-                    location: 'Anecoop', 
-                    status: 'pending', 
-                    participants: 9, 
-                    maxParticipants: 12,
-                    notes: ''
-                },
-                { 
-                    id: 's4', 
-                    trainingId: 'teams', 
-                    trainingName: 'Communiquer avec Teams',
-                    groupId: 'commerce1', 
-                    groupName: 'Commerce - Groupe 1',
-                    date: '2025-04-10', 
-                    startTime: '10:00', 
-                    duration: 90, 
-                    location: 'Anecoop', 
-                    status: 'completed', 
-                    participants: 10, 
-                    maxParticipants: 12,
-                    notes: ''
-                },
-                { 
-                    id: 's5', 
-                    trainingId: 'sharepoint', 
-                    trainingName: 'Collaborer avec Teams/SharePoint',
-                    groupId: 'commerce1', 
-                    groupName: 'Commerce - Groupe 1',
-                    date: '2025-04-17', 
-                    startTime: '14:30', 
-                    duration: 90, 
-                    location: 'Anecoop', 
-                    status: 'completed', 
-                    participants: 10, 
-                    maxParticipants: 12,
-                    notes: ''
-                }
-            ],
-            groups: [
-                { id: 'commerce1', name: 'Commerce - Groupe 1', service: 'Commerce', minSize: 8, maxSize: 12, participants: 10 },
-                { id: 'commerce2', name: 'Commerce - Groupe 2', service: 'Commerce', minSize: 8, maxSize: 12, participants: 9 },
-                { id: 'compta', name: 'Comptabilité', service: 'Comptabilité', minSize: 8, maxSize: 12, participants: 8 },
-                { id: 'rh', name: 'RH/Qualité/Marketing', service: 'RH', minSize: 8, maxSize: 12, participants: 8 }
-            ],
-            participants: [
-                { id: 'p1', name: 'Dupont Jean', email: 'jean.dupont@anecoop.fr', service: 'Commerce', groupId: 'commerce1', phone: '' },
-                { id: 'p2', name: 'Martin Sophie', email: 'sophie.martin@anecoop.fr', service: 'RH', groupId: 'rh', phone: '' },
-                { id: 'p3', name: 'Dubois Pierre', email: 'pierre.dubois@anecoop.fr', service: 'Commerce', groupId: 'commerce2', phone: '' },
-                { id: 'p4', name: 'Leroy Marie', email: 'marie.leroy@anecoop.fr', service: 'Comptabilité', groupId: 'compta', phone: '' }
-            ],
-            trainings: [
-                { id: 'teams', name: 'Communiquer avec Teams', duration: 90 },
-                { id: 'sharepoint', name: 'Collaborer avec Teams/SharePoint', duration: 90 },
-                { id: 'tasks', name: 'Gérer les tâches d\'équipe', duration: 90 },
-                { id: 'onedrive', name: 'Gérer mes fichiers avec OneDrive/SharePoint', duration: 90 }
-            ]
-        };
-        
-        // Initialize the application when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Afficher l'application immédiatement
-            document.getElementById('loadingOverlay').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-            
-            // Initialiser avec des données locales pré-configurées
-            initLocalData();
-            
-            // Configurer les événements UI
-            setupEvents();
-            
-            // Pré-charger le tableau de bord
-            loadDashboardData();
-            
-            // Configurer le bouton admin
-            document.getElementById('adminBadge').addEventListener('click', function() {
-                const adminModal = new bootstrap.Modal(document.getElementById('adminLoginModal'));
-                adminModal.show();
-            });
-            
-            // Configurer le bouton de connexion
-            document.getElementById('loginBtn').addEventListener('click', function() {
-                document.getElementById('userMenu').style.display = 'block';
-                document.getElementById('adminNotifications').style.display = 'block';
-                document.getElementById('settingsNavItem').style.display = 'block';
-                
-                // Fermer le modal
-                const adminModal = bootstrap.Modal.getInstance(document.getElementById('adminLoginModal'));
-                adminModal.hide();
-                
-                showNotification('Connecté en tant qu\'administrateur', 'success');
-            });
-        });
-        
-        // Initialiser les données locales
-        function initLocalData() {
-            // Sauvegarder les données dans le stockage local pour permettre les modifications
-            if (!localStorage.getItem('anecoop_data')) {
-                localStorage.setItem('anecoop_data', JSON.stringify(localData));
+
+        // --- Variables Globales ---
+        let firebaseApp;
+        let db;
+        let auth;
+        let useFirebase = false;
+        let adminLoggedIn = false;
+        let currentUserId = null; // Stocke l'UID de l'utilisateur connecté (anonyme ou admin)
+        window.appData = { sessions: [], groups: [], participants: [], trainings: [], settings: {} }; // Données globales chargées depuis Firebase
+
+        // --- Fonctions Utilitaires ---
+        function showLoading() { document.getElementById('loadingOverlay').style.opacity = '1'; document.getElementById('loadingOverlay').style.visibility = 'visible'; }
+        function hideLoading() { document.getElementById('loadingOverlay').style.opacity = '0'; document.getElementById('loadingOverlay').style.visibility = 'hidden'; }
+
+        function showNotification(message, type = 'info') {
+            const template = document.getElementById('notificationTemplate');
+            if (!template) return;
+            const notification = template.children[0].cloneNode(true); // Cloner .notification
+            notification.querySelector('.notification-content').textContent = message;
+            notification.className = 'notification'; // Reset classes
+            let bgColor = 'var(--info)';
+            switch (type) {
+                case 'success': bgColor = 'var(--success)'; break;
+                case 'danger': bgColor = 'var(--danger)'; break;
+                case 'warning': bgColor = 'var(--warning)'; break;
+            }
+            notification.style.backgroundColor = bgColor;
+            document.body.appendChild(notification);
+            setTimeout(() => { notification.remove(); }, 4100); // CSS gère l'animation
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            try { return new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+            catch (e) { return dateString; }
+        }
+
+        function getStatusBadge(status) {
+            switch (status) {
+                case 'pending': return '<span class="badge bg-warning text-dark">En attente</span>';
+                case 'confirmed': return '<span class="badge bg-success">Confirmée</span>';
+                case 'completed': return '<span class="badge bg-secondary">Terminée</span>';
+                case 'cancelled': return '<span class="badge bg-danger">Annulée</span>';
+                default: return `<span class="badge bg-light text-dark">${status || 'N/A'}</span>`;
             }
         }
-        
-        // Obtenir les données
-        function getLocalData() {
-            return JSON.parse(localStorage.getItem('anecoop_data')) || localData;
+
+        // --- Gestion des Données (Firebase) ---
+        function getData() {
+            return window.appData || { sessions: [], groups: [], participants: [], trainings: [], settings: {} };
         }
-        
-        // Sauvegarder les données
-        function saveLocalData(data) {
-            localStorage.setItem('anecoop_data', JSON.stringify(data));
-        }
-        
-        // Configurer les événements
-        function setupEvents() {
-            // Navigation
-            document.querySelectorAll('.nav-link').forEach(function(link) {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-page');
-                    navigateTo(page);
-                });
-            });
-            
-            // Refresh button
-            document.getElementById('refreshBtn').addEventListener('click', function() {
-                const activePage = document.querySelector('.nav-link.active').getAttribute('data-page');
-                navigateTo(activePage);
-                showNotification('Données actualisées', 'success');
-            });
-            
-            // Ajout des écouteurs pour les cartes et boutons
-            setupCardEventListeners();
-        }
-        
-        // Configurer les écouteurs pour les cartes
-        function setupCardEventListeners() {
-            // Cartes de session
-            document.querySelectorAll('.session-card').forEach(function(card) {
-                card.addEventListener('click', function() {
-                    showNotification('Détails de la formation en cours d\'implémentation', 'info');
-                });
-            });
-            
-            // Boutons d'ajout
-            document.querySelectorAll('[id^="add"]').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    if (this.id.includes('Session')) {
-                        const modal = new bootstrap.Modal(document.getElementById('addSessionModal'));
-                        modal.show();
-                    } else if (this.id.includes('Group')) {
-                        showNotification('Ajout de groupe en cours d\'implémentation', 'info');
-                    } else if (this.id.includes('Participant')) {
-                        showNotification('Ajout de participant en cours d\'implémentation', 'info');
-                    }
-                });
-            });
-            
-            // Boutons d'édition et de suppression
-            document.querySelectorAll('.btn-edit-session, .btn-delete-session').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    showNotification('Fonctionnalité en cours d\'implémentation', 'info');
-                });
-            });
-        }
-        
-        // Navigation
-        function navigateTo(page) {
-            // Cacher toutes les pages
-            document.querySelectorAll('.page-content').forEach(function(pageEl) {
-                pageEl.style.display = 'none';
-            });
-            
-            // Afficher la page sélectionnée
-            document.getElementById(page + 'Page').style.display = 'block';
-            
-            // Mettre à jour le lien actif
-            document.querySelectorAll('.nav-link').forEach(function(link) {
-                link.classList.remove('active');
-            });
-            
-            document.querySelector('.nav-link[data-page="' + page + '"]').classList.add('active');
-            
-            // Charger les données spécifiques à la page
-            switch(page) {
-                case 'dashboard':
-                    loadDashboardData();
-                    break;
-                case 'calendar':
-                    loadCalendarData();
-                    break;
-                case 'sessions':
-                    loadSessionsData();
-                    break;
-                case 'groups':
-                    loadGroupsData();
-                    break;
-                case 'participants':
-                    loadParticipantsData();
-                    break;
-                case 'reports':
-                    loadReportsData();
-                    break;
-                case 'settings':
-                    loadSettingsData();
-                    break;
+
+        async function loadDataAndRenderInitialUI() {
+            if (!useFirebase || !db) {
+                showNotification("Connexion à la base de données échouée.", "danger");
+                hideLoading(); // Cacher même en cas d'échec
+                return;
+            }
+            console.log("Chargement des données depuis Firebase...");
+            showLoading();
+            try {
+                const [sessionsSnap, groupsSnap, participantsSnap, trainingsSnap, settingsSnap] = await Promise.all([
+                    db.collection('sessions').orderBy('date', 'asc').orderBy('startTime', 'asc').get(), // Trier par date/heure
+                    db.collection('groups').orderBy('name', 'asc').get(),
+                    db.collection('participants').orderBy('name', 'asc').get(),
+                    db.collection('trainings').orderBy('name', 'asc').get(),
+                    db.collection('settings').doc('app_settings').get() // Charger les paramètres
+                ]);
+
+                window.appData = {
+                    sessions: sessionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    groups: groupsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    participants: participantsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    trainings: trainingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                    settings: settingsSnap.exists ? settingsSnap.data() : {} // Récupérer les paramètres
+                };
+                console.log("Données chargées:", window.appData);
+
+                // Déterminer la page active ou par défaut
+                const activePage = document.querySelector('.sidebar .nav-link.active')?.getAttribute('data-page') || 'dashboard';
+                navigateTo(activePage); // Afficher la page avec les nouvelles données
+
+            } catch (error) {
+                console.error("Erreur lors du chargement des données Firebase:", error);
+                showNotification("Erreur de chargement des données.", "danger");
+                window.appData = { sessions: [], groups: [], participants: [], trainings: [], settings: {} }; // Fallback
+                renderDashboard(); // Essayer d'afficher le dashboard même vide
+            } finally {
+                hideLoading();
             }
         }
-        
-        // Charger les données du tableau de bord
-        function loadDashboardData() {
-            const data = getLocalData();
-            
-            // Obtenir les sessions à venir
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            const upcomingSessions = data.sessions.filter(session => {
-                const sessionDate = new Date(session.date);
-                return sessionDate >= today && (session.status === 'pending' || session.status === 'confirmed');
-            }).sort((a, b) => {
-                return new Date(a.date + 'T' + a.startTime) - new Date(b.date + 'T' + b.startTime);
-            });
-            
-            // Mettre à jour la liste des sessions à venir
+
+        // --- Rendu UI ---
+        function renderDashboard() {
+            const data = getData();
             const upcomingList = document.getElementById('upcomingSessionsList');
             if (upcomingList) {
-                upcomingList.innerHTML = '';
-                
-                upcomingSessions.slice(0, 3).forEach(session => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
-                    listItem.innerHTML = `
-                        <div>
-                            <h6 class="mb-0">${session.trainingName}</h6>
-                            <small class="text-muted">${session.groupName}</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge bg-primary rounded-pill">${formatDate(session.date)}, ${session.startTime}</span>
-                        </div>
-                    `;
-                    upcomingList.appendChild(listItem);
-                });
+                const today = new Date().toISOString().split('T')[0];
+                const upcomingSessions = data.sessions
+                    .filter(s => s.date >= today && (s.status === 'pending' || s.status === 'confirmed'))
+                    .slice(0, 5);
+                upcomingList.innerHTML = upcomingSessions.length > 0 ? upcomingSessions.map(s => `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div><h6 class="mb-0">${s.trainingName || 'N/A'}</h6><small class="text-muted">${s.groupName || 'N/A'} - ${formatDate(s.date)} ${s.startTime || ''}</small></div>
+                        ${getStatusBadge(s.status)}
+                    </li>`).join('') : '<li class="list-group-item">Aucune formation à venir.</li>';
             }
-            
-            // Calculer les statistiques
-            const completedSessions = data.sessions.filter(s => s.status === 'completed').length;
-            const totalSessions = data.groups.length * data.trainings.length;
-            const progress = Math.round((completedSessions / totalSessions) * 100);
-            
-            // Mettre à jour les statistiques par service
-            updateServiceProgress();
+            const completedCount = data.sessions.filter(s => s.status === 'completed').length;
+            const totalParticipants = data.participants.length; // Ou somme des participants dans sessions ?
+            document.getElementById('completedSessionsCount').textContent = completedCount;
+            document.getElementById('totalParticipantsCount').textContent = totalParticipants;
+            renderServiceProgress();
         }
-        
-        // Charger les données du calendrier
-        function loadCalendarData() {
-            // Cette fonction serait implémentée pour afficher les événements du calendrier
-            console.log('Calendrier chargé');
+
+        function renderServiceProgress() { /* ... (Logique similaire à avant, utilise getData()) ... */
+             const data = getData();
+             const progressContainer = document.getElementById('serviceProgressContainer');
+             if (!progressContainer || !data.groups || !data.trainings || !data.sessions) {
+                 if (progressContainer) progressContainer.innerHTML = '<p>Données de progression indisponibles.</p>';
+                 return;
+             }
+             const services = [...new Set(data.groups.map(g => g.service).filter(s => s))]; // Services uniques non vides
+             const totalTrainings = data.trainings.length;
+             if (totalTrainings === 0) { progressContainer.innerHTML = '<p>Aucune formation définie.</p>'; return; }
+
+             let html = '';
+             services.forEach(service => {
+                 const serviceGroups = data.groups.filter(g => g.service === service);
+                 let totalCompletedForService = 0;
+                 let totalPossibleForService = 0;
+                 serviceGroups.forEach(group => {
+                     const completedForGroup = data.sessions.filter(s => s.groupId === group.id && s.status === 'completed').length;
+                     totalCompletedForService += completedForGroup;
+                     totalPossibleForService += totalTrainings;
+                 });
+                 const progressPercent = totalPossibleForService > 0 ? Math.round((totalCompletedForService / totalPossibleForService) * 100) : 0;
+                 html += `<div class="mb-3"><div class="d-flex justify-content-between"><span>${service}</span><span>${progressPercent}%</span></div><div class="progress" style="height: 10px;"><div class="progress-bar bg-anecoop" role="progressbar" style="width: ${progressPercent}%;" aria-valuenow="${progressPercent}"></div></div></div>`;
+             });
+             progressContainer.innerHTML = html || '<p>Aucun service trouvé.</p>';
         }
-        
-        // Charger les données des sessions
-        function loadSessionsData() {
-            // Cette fonction serait implémentée pour afficher la liste des sessions
-            console.log('Sessions chargées');
+
+        function renderSessions() {
+            const data = getData();
+            const tableBody = document.getElementById('sessionsTableBody');
+            if (!tableBody) return;
+            tableBody.innerHTML = data.sessions.length > 0 ? data.sessions.map(s => {
+                const currentParticipants = s.participants || 0;
+                const maxParticipants = s.maxParticipants || data.settings.maxGroupSize || 10; // Utiliser paramètre global si dispo
+                const isFull = currentParticipants >= maxParticipants;
+                const canBook = s.status === 'pending' || s.status === 'confirmed'; // On peut réserver si pas terminée/annulée
+
+                // Déterminer si l'utilisateur actuel (anonyme ou non) est déjà inscrit
+                // Note: Nécessite de stocker les inscrits, ex: s.bookedBy (array d'UIDs) ou sous-collection
+                const isCurrentUserBooked = s.bookedBy && currentUserId ? s.bookedBy.includes(currentUserId) : false; // Exemple simplifié
+
+                return `
+                 <tr class="session-card-row" data-session-id="${s.id}">
+                     <td>${s.trainingName || 'N/A'}</td>
+                     <td>${s.groupName || 'N/A'}</td>
+                     <td>${formatDate(s.date)}</td>
+                     <td>${s.startTime || 'N/A'}</td>
+                     <td>${s.location || 'N/A'}</td>
+                     <td>${getStatusBadge(s.status)}</td>
+                     <td>${currentParticipants} / ${maxParticipants}</td>
+                     <td>
+                         ${canBook ?
+                             (isFull ? '<span class="session-full">Complet</span>' :
+                                (isCurrentUserBooked ? '<button class="btn btn-sm btn-outline-secondary btn-cancel-booking" data-session-id="${s.id}" title="Annuler ma réservation">Inscrit</button>' :
+                                                        '<button class="btn btn-sm btn-success btn-book-session" data-session-id="${s.id}" title="Réserver ma place">Réserver</button>')
+                             ) : ''
+                         }
+                         <button class="btn btn-sm btn-outline-primary ms-1 admin-action admin-only" style="display: none;" data-action="edit-session" data-id="${s.id}" title="Modifier"><i class="fas fa-edit"></i></button>
+                         <button class="btn btn-sm btn-outline-danger admin-action admin-only" style="display: none;" data-action="delete-session" data-id="${s.id}" title="Supprimer"><i class="fas fa-trash"></i></button>
+                     </td>
+                 </tr>`;
+            }).join('') : '<tr><td colspan="8" class="text-center">Aucune formation planifiée.</td></tr>';
+             updateAdminUI(adminLoggedIn); // Assurer que les boutons admin sont visibles/cachés correctement
         }
-        
-        // Charger les données des groupes
-        function loadGroupsData() {
-            // Cette fonction serait implémentée pour afficher les groupes
-            console.log('Groupes chargés');
+
+        function renderGroups() {
+            const data = getData();
+            const tableBody = document.getElementById('groupsTableBody');
+            if (!tableBody) return;
+            tableBody.innerHTML = data.groups.length > 0 ? data.groups.map(g => {
+                const currentParticipants = data.participants.filter(p => p.groupId === g.id).length;
+                return `
+                 <tr>
+                     <td>${g.name || 'N/A'}</td>
+                     <td>${g.service || 'N/A'}</td>
+                     <td>${g.minSize || 'N/A'} / ${g.maxSize || 'N/A'}</td>
+                     <td>${currentParticipants}</td>
+                     <td class="admin-only" style="display: none;">
+                         <button class="btn btn-sm btn-outline-primary admin-action me-1" data-action="edit-group" data-id="${g.id}" title="Modifier"><i class="fas fa-edit"></i></button>
+                         <button class="btn btn-sm btn-outline-danger admin-action" data-action="delete-group" data-id="${g.id}" title="Supprimer"><i class="fas fa-trash"></i></button>
+                     </td>
+                 </tr>`;
+             }).join('') : '<tr><td colspan="5" class="text-center">Aucun groupe défini.</td></tr>';
+             updateAdminUI(adminLoggedIn);
         }
-        
-        // Charger les données des participants
-        function loadParticipantsData() {
-            // Cette fonction serait implémentée pour afficher les participants
-            console.log('Participants chargés');
+
+        function renderParticipants() {
+            const data = getData();
+            const tableBody = document.getElementById('participantsTableBody');
+             if (!tableBody) return;
+            tableBody.innerHTML = data.participants.length > 0 ? data.participants.map(p => `
+                 <tr>
+                     <td>${p.name || 'N/A'}</td>
+                     <td>${p.email || 'N/A'}</td>
+                     <td>${p.service || 'N/A'}</td>
+                     <td>${data.groups.find(g => g.id === p.groupId)?.name || 'Non assigné'}</td>
+                     <td class="admin-only" style="display: none;">
+                         <button class="btn btn-sm btn-outline-primary admin-action me-1" data-action="edit-participant" data-id="${p.id}" title="Modifier"><i class="fas fa-edit"></i></button>
+                         <button class="btn btn-sm btn-outline-danger admin-action" data-action="delete-participant" data-id="${p.id}" title="Supprimer"><i class="fas fa-trash"></i></button>
+                     </td>
+                 </tr>`).join('') : '<tr><td colspan="5" class="text-center">Aucun participant enregistré.</td></tr>';
+             updateAdminUI(adminLoggedIn);
         }
-        
-        // Charger les données des rapports
-        function loadReportsData() {
-            // Cette fonction serait implémentée pour afficher les rapports
-            console.log('Rapports chargés');
+
+        function renderCalendar() { /* ... Placeholder ... */ }
+        function renderReports() { /* ... Placeholder ... */ }
+
+        function renderSettings() {
+            if (!adminLoggedIn) { navigateTo('dashboard'); return; } // Sécurité côté client
+            const settings = getData().settings;
+            // Pré-remplir le formulaire des paramètres
+            document.getElementById('companyName').value = settings.companyName || '';
+            document.getElementById('siteLocation').value = settings.siteLocation || '';
+            document.getElementById('minGroupSize').value = settings.minGroupSize || 8;
+            document.getElementById('maxGroupSize').value = settings.maxGroupSize || 12;
+            document.getElementById('defaultDuration').value = settings.defaultDuration || 90;
         }
-        
-        // Charger les données des paramètres
-        function loadSettingsData() {
-            // Cette fonction serait implémentée pour afficher les paramètres
-            console.log('Paramètres chargés');
+
+        // --- Navigation ---
+        function navigateTo(page) {
+            console.log(`Navigating to ${page}`);
+            document.querySelectorAll('.page-content').forEach(p => { p.classList.remove('active', 'animate__animated', 'animate__fadeIn'); p.style.display = 'none'; });
+            const targetPage = document.getElementById(page + 'Page');
+            if (targetPage) {
+                targetPage.style.display = 'block';
+                void targetPage.offsetWidth; // Reflow
+                targetPage.classList.add('active', 'animate__animated', 'animate__fadeIn');
+            } else {
+                console.error(`Page element not found: ${page}Page`);
+                showNotification(`Erreur: Page '${page}' introuvable.`, 'danger');
+                document.getElementById('dashboardPage').style.display = 'block'; // Fallback dashboard
+                document.getElementById('dashboardPage').classList.add('active');
+                page = 'dashboard';
+            }
+            document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+            document.querySelector(`.sidebar .nav-link[data-page="${page}"]`)?.classList.add('active');
+
+            // Charger/Rafraîchir les données spécifiques à la page
+            switch (page) {
+                case 'dashboard': renderDashboard(); break;
+                case 'calendar': renderCalendar(); break;
+                case 'sessions': renderSessions(); break;
+                case 'groups': renderGroups(); break;
+                case 'participants': renderParticipants(); break;
+                case 'reports': renderReports(); break;
+                case 'settings': renderSettings(); break;
+            }
         }
-        
-        // Mettre à jour la progression par service
-        function updateServiceProgress() {
-            const data = getLocalData();
-            const groups = data.groups;
-            const sessions = data.sessions;
-            
-            groups.forEach(group => {
-                // Calculer la progression pour chaque groupe
-                const completed = sessions.filter(s => s.groupId === group.id && s.status === 'completed').length;
-                const total = data.trainings.length;
-                const progress = Math.round((completed / total) * 100);
-                
-                // Mettre à jour la barre de progression
-                // Cette partie serait implémentée pour mettre à jour l'UI
+
+        // --- Logique Métier (Réservation, Admin CRUD) ---
+
+        async function handleBooking(sessionId) {
+            if (!useFirebase || !auth.currentUser) { showNotification("Problème de connexion.", "warning"); return; }
+            const userId = auth.currentUser.uid;
+            const sessionRef = db.collection('sessions').doc(sessionId);
+            console.log(`User ${userId} booking session ${sessionId}`);
+            showLoading();
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const sessionDoc = await transaction.get(sessionRef);
+                    if (!sessionDoc.exists) throw "Session non trouvée !";
+                    const sessionData = sessionDoc.data();
+                    const currentParticipants = sessionData.participants || 0;
+                    const maxParticipants = sessionData.maxParticipants || getData().settings.maxGroupSize || 10;
+                    const bookedBy = sessionData.bookedBy || []; // Array des UIDs inscrits
+
+                    if (currentParticipants >= maxParticipants) throw "Session complète !";
+                    if (bookedBy.includes(userId)) throw "Vous êtes déjà inscrit."; // Vérifier si déjà inscrit
+
+                    // Ajouter l'UID à la liste et incrémenter le compteur
+                    transaction.update(sessionRef, {
+                        participants: firebase.firestore.FieldValue.increment(1),
+                        bookedBy: firebase.firestore.FieldValue.arrayUnion(userId) // Ajoute l'UID s'il n'y est pas
+                    });
+                });
+                showNotification("Réservation enregistrée !", "success");
+                await loadDataAndRenderInitialUI(); // Recharger TOUTES les données et rafraîchir l'UI
+            } catch (error) {
+                console.error("Booking failed:", error);
+                showNotification(`Erreur de réservation : ${error}`, "danger");
+            } finally { hideLoading(); }
+        }
+
+        async function handleCancelBooking(sessionId) {
+             if (!useFirebase || !auth.currentUser) { showNotification("Problème de connexion.", "warning"); return; }
+             const userId = auth.currentUser.uid;
+             const sessionRef = db.collection('sessions').doc(sessionId);
+             console.log(`User ${userId} canceling booking for session ${sessionId}`);
+             showLoading();
+             try {
+                 await db.runTransaction(async (transaction) => {
+                     const sessionDoc = await transaction.get(sessionRef);
+                     if (!sessionDoc.exists) throw "Session non trouvée !";
+                     const sessionData = sessionDoc.data();
+                     const bookedBy = sessionData.bookedBy || [];
+
+                     if (!bookedBy.includes(userId)) throw "Vous n'étiez pas inscrit."; // Vérifier si bien inscrit
+
+                     // Retirer l'UID et décrémenter (si participants > 0)
+                     transaction.update(sessionRef, {
+                         participants: firebase.firestore.FieldValue.increment(-1),
+                         bookedBy: firebase.firestore.FieldValue.arrayRemove(userId) // Retire l'UID
+                     });
+                 });
+                 showNotification("Réservation annulée.", "success");
+                 await loadDataAndRenderInitialUI();
+             } catch (error) {
+                 console.error("Cancel Booking failed:", error);
+                 showNotification(`Erreur d'annulation : ${error}`, "danger");
+             } finally { hideLoading(); }
+         }
+
+        async function handleDelete(collection, id, itemName = 'élément') {
+            if (!adminLoggedIn) { showNotification("Action réservée à l'administrateur.", "warning"); return; }
+            if (!confirm(`Voulez-vous vraiment supprimer cet ${itemName} (${id}) ?`)) return;
+            console.log(`Admin deleting ${collection}/${id}`);
+            showLoading();
+            try {
+                await db.collection(collection).doc(id).delete();
+                showNotification(`${itemName} supprimé avec succès.`, "success");
+                await loadDataAndRenderInitialUI(); // Recharger et rafraîchir
+            } catch (error) {
+                console.error(`Error deleting ${collection}/${id}:`, error);
+                showNotification(`Erreur lors de la suppression de l'${itemName}.`, "danger");
+            } finally { hideLoading(); }
+        }
+
+        // --- Authentification ---
+        function updateAdminUI(isLoggedIn, userEmail = '') {
+             adminLoggedIn = isLoggedIn; // Mettre à jour l'état global
+             document.querySelectorAll('.admin-only').forEach(el => el.style.display = isLoggedIn ? '' : 'none'); // Afficher/cacher éléments admin
+             document.querySelectorAll('.admin-action').forEach(el => el.style.display = isLoggedIn ? '' : 'none'); // Afficher/cacher boutons admin
+
+             const userNameSpan = document.getElementById('userName');
+             if (userNameSpan) userNameSpan.textContent = userEmail.split('@')[0];
+
+             // Cacher les boutons de réservation si l'admin est connecté ? Ou les laisser ? À décider.
+             // document.querySelectorAll('.btn-book-session, .btn-cancel-booking').forEach(btn => btn.style.display = isLoggedIn ? 'none' : '');
+
+             // Mettre à jour la visibilité des colonnes Actions dans les tables
+             document.querySelectorAll('#groupsTableBody .admin-only, #participantsTableBody .admin-only').forEach(col => col.style.display = isLoggedIn ? '' : 'none');
+             document.querySelectorAll('#groupsTable thead .admin-only, #participantsTable thead .admin-only').forEach(th => th.style.display = isLoggedIn ? '' : 'none');
+        }
+
+        async function handleAdminLogin() { /* ... (Logique similaire à avant, utilise firebase.auth.signInWithEmailAndPassword) ... */
+             const emailInput = document.getElementById('email');
+             const passwordInput = document.getElementById('password');
+             if (!emailInput || !passwordInput) return;
+             const email = emailInput.value;
+             const password = passwordInput.value;
+             if (!email || !password) { showNotification('Email et mot de passe requis.', 'warning'); return; }
+             showLoading();
+             try {
+                 await auth.signInWithEmailAndPassword(email, password);
+                 // onAuthStateChanged gérera la mise à jour de l'UI et le rechargement des données
+                 const adminModalEl = document.getElementById('adminLoginModal');
+                 const adminModal = bootstrap.Modal.getInstance(adminModalEl);
+                 if (adminModal) adminModal.hide();
+                 showNotification('Connecté en tant qu\'administrateur.', 'success');
+                 // Pas besoin de recharger ici, onAuthStateChanged le fera
+             } catch (error) {
+                 console.error("Admin login failed:", error);
+                 showNotification('Échec de la connexion. Vérifiez vos identifiants.', 'danger');
+                 hideLoading(); // Cacher seulement en cas d'échec ici
+             }
+         }
+
+        async function handleAdminLogout() { /* ... (Logique similaire à avant, utilise firebase.auth.signOut puis signInAnonymously) ... */
+             if (!auth) return;
+             showLoading();
+             try {
+                 await auth.signOut();
+                 console.log("Admin signed out.");
+                 // onAuthStateChanged va détecter la déconnexion et déclencher signInAnonymously
+                 showNotification('Vous avez été déconnecté.', 'info');
+             } catch (error) {
+                 console.error("Admin logout failed:", error);
+                 showNotification('Erreur lors de la déconnexion.', 'danger');
+                 hideLoading(); // Cacher seulement en cas d'échec ici
+             }
+         }
+
+        // --- Setup Événements ---
+        function setupEventListeners() {
+            // Navigation Sidebar
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.addEventListener('click', (e) => { e.preventDefault(); navigateTo(link.dataset.page); });
             });
+            // Bouton Admin Badge
+            document.getElementById('adminBadge')?.addEventListener('click', () => {
+                 const adminModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('adminLoginModal'));
+                 adminModal.show();
+            });
+            // Bouton Connexion Admin
+            document.getElementById('loginBtn')?.addEventListener('click', handleAdminLogin);
+            // Bouton Déconnexion Admin
+            document.getElementById('logoutBtn')?.addEventListener('click', handleAdminLogout);
+            // Lien Paramètres dans menu admin
+            document.getElementById('settingsMenuLink')?.addEventListener('click', (e) => {
+                 e.preventDefault(); navigateTo('settings');
+                 const userDropdown = bootstrap.Dropdown.getInstance(document.getElementById('userDropdown'));
+                 if (userDropdown) userDropdown.hide();
+            });
+            // Bouton Actualiser
+            document.getElementById('refreshBtn')?.addEventListener('click', loadDataAndRenderInitialUI);
+
+            // Gestionnaire global pour les actions (Réservation, Annulation, Admin CRUD)
+            document.body.addEventListener('click', function(event) {
+                const target = event.target.closest('button'); // Clic sur un bouton ?
+                if (!target) return;
+
+                const action = target.dataset.action; // Pour boutons admin CRUD
+                const id = target.dataset.id;         // Pour boutons admin CRUD
+                const sessionId = target.dataset.sessionId; // Pour réservation/annulation
+
+                if (target.classList.contains('btn-book-session') && sessionId) {
+                    handleBooking(sessionId);
+                } else if (target.classList.contains('btn-cancel-booking') && sessionId) {
+                     handleCancelBooking(sessionId);
+                } else if (action === 'delete-session' && id) {
+                    handleDelete('sessions', id, 'session');
+                } else if (action === 'delete-group' && id) {
+                    handleDelete('groups', id, 'groupe');
+                } else if (action === 'delete-participant' && id) {
+                    handleDelete('participants', id, 'participant');
+                } else if (action && action.startsWith('edit-') && id) {
+                    console.log(`Edit action: ${action} for ID: ${id}`);
+                    showNotification(`Fonction modification (${action}) à implémenter.`, 'info');
+                    // Ouvrir un modal pré-rempli ici...
+                }
+                // Ajouter ici les handlers pour les boutons "Ajouter" (ouvrir modal vide)
+                 else if (target.id === 'addSessionBtn') {
+                     console.log("Add Session clicked");
+                     showNotification("Fonction ajout session à implémenter.", 'info');
+                     // Ouvrir modal vide ici...
+                 } // etc. pour addGroupBtn, addParticipantBtn
+
+            });
+
+             // Soumission formulaire Paramètres (Admin)
+             const settingsForm = document.getElementById('settingsForm');
+             if (settingsForm) {
+                 settingsForm.addEventListener('submit', async (e) => {
+                     e.preventDefault();
+                     if (!adminLoggedIn) return;
+                     const updatedSettings = {
+                         companyName: document.getElementById('companyName').value,
+                         siteLocation: document.getElementById('siteLocation').value,
+                         minGroupSize: parseInt(document.getElementById('minGroupSize').value) || 8,
+                         maxGroupSize: parseInt(document.getElementById('maxGroupSize').value) || 12,
+                         defaultDuration: parseInt(document.getElementById('defaultDuration').value) || 90,
+                     };
+                     console.log("Saving settings:", updatedSettings);
+                     showLoading();
+                     try {
+                         await db.collection('settings').doc('app_settings').set(updatedSettings, { merge: true }); // merge: true pour ne pas écraser d'autres champs potentiels
+                         showNotification("Paramètres enregistrés.", "success");
+                         window.appData.settings = updatedSettings; // Mettre à jour les données locales aussi
+                     } catch (error) {
+                         console.error("Error saving settings:", error);
+                         showNotification("Erreur lors de l'enregistrement des paramètres.", "danger");
+                     } finally {
+                         hideLoading();
+                     }
+                 });
+             }
         }
-        
-        // Formater la date
-        function formatDate(dateString) {
-            const options = { day: 'numeric', month: 'long', year: 'numeric' };
-            return new Date(dateString).toLocaleDateString('fr-FR', options);
-        }
-        
-        // Afficher une notification
-        function showNotification(message, type) {
-            // Cloner le template de notification
-            const template = document.getElementById('notificationTemplate');
-            const notification = template.querySelector('.notification').cloneNode(true);
-            
-            // Définir le contenu
-            notification.querySelector('.notification-content').textContent = message;
-            
-            // Définir le type
-            if (type === 'success') {
-                notification.style.backgroundColor = 'var(--success)';
-            } else if (type === 'danger') {
-                notification.style.backgroundColor = 'var(--danger)';
-            } else if (type === 'warning') {
-                notification.style.backgroundColor = 'var(--warning)';
-            } else if (type === 'info') {
-                notification.style.backgroundColor = 'var(--info)';
-            }
-            
-            // Ajouter la notification au corps
-            document.body.appendChild(notification);
-            
-            // Supprimer après l'animation
-            setTimeout(function() {
-                notification.remove();
-            }, 4000);
-        }
-        
-        // Firebase Implementation
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        
-        // Get Firestore instance
-        const db = firebase.firestore();
-        
-        // Database Controller with Firebase
-        const DB = {
-            // Initialize database
-            init: async function() {
+
+        // --- Initialisation au Chargement du DOM ---
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM chargé. Initialisation Firebase...");
+            showLoading(); // Afficher pendant l'init Firebase
+
+            if (typeof firebase !== 'undefined') {
                 try {
-                    // Check if collections exist
-                    const settingsDoc = await db.collection('settings').doc('app_settings').get();
-                    
-                    if (!settingsDoc.exists) {
-                        // Create initial database structure
-                        await this.createInitialData();
-                    }
-                    
-                    console.log('Firebase initialized successfully');
-                    return true;
-                } catch (error) {
-                    console.error('Error initializing Firebase:', error);
-                    return false;
-                }
-            },
-            
-            // Create initial data
-            createInitialData: async function() {
-                try {
-                    // Create settings
-                    await db.collection('settings').doc('app_settings').set({
-                        companyName: 'Anecoop-France',
-                        siteLocation: 'Anecoop',
-                        minGroupSize: 8,
-                        maxGroupSize: 12,
-                        defaultDuration: 90,
-                        autoNotifications: true,
-                        emailReminders: true
-                    });
-                    
-                    // Create trainings
-                    const trainings = [
-                        { id: 'teams', name: 'Communiquer avec Teams', duration: 90 },
-                        { id: 'sharepoint', name: 'Collaborer avec Teams/SharePoint', duration: 90 },
-                        { id: 'tasks', name: 'Gérer les tâches d\'équipe', duration: 90 },
-                        { id: 'onedrive', name: 'Gérer mes fichiers avec OneDrive/SharePoint', duration: 90 }
-                    ];
-                    
-                    for (const training of trainings) {
-                        await db.collection('trainings').doc(training.id).set(training);
-                    }
-                    
-                    // Create groups
-                    const groups = [
-                        { id: 'commerce1', name: 'Commerce - Groupe 1', service: 'Commerce', minSize: 8, maxSize: 12 },
-                        { id: 'commerce2', name: 'Commerce - Groupe 2', service: 'Commerce', minSize: 8, maxSize: 12 },
-                        { id: 'compta', name: 'Comptabilité', service: 'Comptabilité', minSize: 8, maxSize: 12 },
-                        { id: 'rh', name: 'RH/Qualité/Marketing', service: 'RH', minSize: 8, maxSize: 12 }
-                    ];
-                    
-                    for (const group of groups) {
-                        await db.collection('groups').doc(group.id).set(group);
-                    }
-                    
-                    // Create initial sessions
-                    const sessions = [
-                        { 
-                            id: 's1', 
-                            trainingId: 'teams', 
-                            groupId: 'commerce1', 
-                            date: '2025-05-15', 
-                            startTime: '10:00', 
-                            duration: 90, 
-                            location: 'Anecoop', 
-                            status: 'pending', 
-                            participants: 10, 
-                            maxParticipants: 12,
-                            notes: ''
-                        },
-                        { 
-                            id: 's2', 
-                            trainingId: 'tasks', 
-                            groupId: 'rh', 
-                            date: '2025-05-17', 
-                            startTime: '14:30', 
-                            duration: 90, 
-                            location: 'Anecoop', 
-                            status: 'confirmed', 
-                            participants: 8, 
-                            maxParticipants: 10,
-                            notes: ''
-                        }
-                    ];
-                    
-                    for (const session of sessions) {
-                        await db.collection('sessions').doc(session.id).set(session);
-                    }
-                    
-                    console.log('Initial data created successfully');
-                    return true;
-                } catch (error) {
-                    console.error('Error creating initial data:', error);
-                    return false;
-                }
-            },
-            
-            // Sessions operations
-            sessions: {
-                getAll: async function() {
-                    try {
-                        const snapshot = await db.collection('sessions').get();
-                        return snapshot.docs.map(doc => doc.data());
-                    } catch (error) {
-                        console.error('Error getting sessions:', error);
-                        return [];
-                    }
-                },
-                
-                get: async function(id) {
-                    try {
-                        const doc = await db.collection('sessions').doc(id).get();
-                        return doc.exists ? doc.data() : null;
-                    } catch (error) {
-                        console.error('Error getting session:', error);
-                        return null;
-                    }
-                },
-                
-                add: async function(session) {
-                    try {
-                        // Generate ID if not provided
-                        if (!session.id) {
-                            const snapshot = await db.collection('sessions').orderBy('id').get();
-                            const lastId = snapshot.docs.length > 0 ? 
-                                parseInt(snapshot.docs[snapshot.docs.length - 1].data().id.slice(1)) : 0;
-                            session.id = 's' + (lastId + 1);
-                        }
-                        
-                        await db.collection('sessions').doc(session.id).set(session);
-                        return session;
-                    } catch (error) {
-                        console.error('Error adding session:', error);
-                        return null;
-                    }
-                },
-                
-                update: async function(session) {
-                    try {
-                        await db.collection('sessions').doc(session.id).update(session);
-                        return true;
-                    } catch (error) {
-                        console.error('Error updating session:', error);
-                        return false;
-                    }
-                },
-                
-                delete: async function(id) {
-                    try {
-                        await db.collection('sessions').doc(id).delete();
-                        return true;
-                    } catch (error) {
-                        console.error('Error deleting session:', error);
-                        return false;
-                    }
-                },
-                
-                getUpcoming: async function() {
-                    try {
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        
-                        const snapshot = await db.collection('sessions')
-                            .where('date', '>=', today.toISOString().split('T')[0])
-                            .get();
-                            
-                        return snapshot.docs
-                            .map(doc => doc.data())
-                            .filter(session => session.status === 'pending' || session.status === 'confirmed')
-                            .sort((a, b) => {
-                                return new Date(a.date + 'T' + a.startTime) - new Date(b.date + 'T' + b.startTime);
-                            });
-                    } catch (error) {
-                        console.error('Error getting upcoming sessions:', error);
-                        return [];
-                    }
-                }
-            },
-            
-            // Groups operations
-            groups: {
-                getAll: async function() {
-                    try {
-                        const snapshot = await db.collection('groups').get();
-                        return snapshot.docs.map(doc => doc.data());
-                    } catch (error) {
-                        console.error('Error getting groups:', error);
-                        return [];
-                    }
-                },
-                
-                get: async function(id) {
-                    try {
-                        const doc = await db.collection('groups').doc(id).get();
-                        return doc.exists ? doc.data() : null;
-                    } catch (error) {
-                        console.error('Error getting group:', error);
-                        return null;
-                    }
-                },
-                
-                add: async function(group) {
-                    try {
-                        // Generate ID if not provided
-                        if (!group.id) {
-                            const servicePrefix = group.service.toLowerCase().substring(0, 3);
-                            let counter = 1;
-                            let id = servicePrefix + counter;
-                            
-                            // Check if ID exists
-                            let existingDoc = await db.collection('groups').doc(id).get();
-                            
-                            while (existingDoc.exists) {
-                                counter++;
-                                id = servicePrefix + counter;
-                                existingDoc = await db.collection('groups').doc(id).get();
+                    firebaseApp = firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    auth = firebase.auth();
+                    useFirebase = true;
+                    console.log("Firebase initialisé.");
+
+                    // --- GESTION AUTHENTIFICATION AU DEMARRAGE ---
+                    auth.onAuthStateChanged(async user => {
+                        currentUserId = user ? user.uid : null; // Stocker l'UID actuel
+                        if (user) {
+                            console.log("Auth state changed: User signed in.", user.uid, "Anonymous:", user.isAnonymous);
+                            if (!user.isAnonymous) {
+                                updateAdminUI(true, user.email); // Admin connecté
+                            } else {
+                                updateAdminUI(false); // Utilisateur anonyme
                             }
-                            
-                            group.id = id;
+                            // Charger les données une fois connecté (anonyme ou admin)
+                            await loadDataAndRenderInitialUI();
+                        } else {
+                            // Personne n'est connecté -> Connexion anonyme
+                            console.log("Auth state changed: User signed out. Attempting anonymous sign-in...");
+                            try {
+                                await auth.signInAnonymously();
+                                // L'appel suivant à onAuthStateChanged gérera le chargement des données
+                            } catch (error) {
+                                console.error("Échec connexion anonyme:", error);
+                                showNotification("Erreur de connexion au service.", "danger");
+                                hideLoading(); // Cacher si la connexion échoue complètement
+                            }
                         }
-                        
-                        await db.collection('groups').doc(group.id).set(group);
-                        return group;
-                    } catch (error) {
-                        console.error('Error adding group:', error);
-                        return null;
-                    }
-                },
-                
-                update: async function(group) {
-                    try {
-                        await db.collection('groups').doc(group.id).update(group);
-                        return true;
-                    } catch (error) {
-                        console.error('Error updating group:', error);
-                        return false;
-                    }
-                },
-                
-                delete: async function(id) {
-                    try {
-                        await db.collection('groups').doc(id).delete();
-                        return true;
-                    } catch (error) {
-                        console.error('Error deleting group:', error);
-                        return false;
-                    }
-                }
-            },
-            
-            // Participants operations
-            participants: {
-                getAll: async function() {
-                    try {
-                        const snapshot = await db.collection('participants').get();
-                        return snapshot.docs.map(doc => doc.data());
-                    } catch (error) {
-                        console.error('Error getting participants:', error);
-                        return [];
-                    }
-                },
-                
-                get: async function(id) {
-                    try {
-                        const doc = await db.collection('participants').doc(id).get();
-                        return doc.exists ? doc.data() : null;
-                    } catch (error) {
-                        console.error('Error getting participant:', error);
-                        return null;
-                    }
-                },
-                
-                add: async function(participant) {
-                    try {
-                        // Generate ID if not provided
-                        if (!participant.id) {
-                            const snapshot = await db.collection('participants').orderBy('id').get();
-                            const lastId = snapshot.docs.length > 0 ? 
-                                parseInt(snapshot.docs[snapshot.docs.length - 1].data().id.slice(1)) : 0;
-                            participant.id = 'p' + (lastId + 1);
-                        }
-                        
-                        await db.collection('participants').doc(participant.id).set(participant);
-                        return participant;
-                    } catch (error) {
-                        console.error('Error adding participant:', error);
-                        return null;
-                    }
-                },
-                
-                update: async function(participant) {
-                    try {
-                        await db.collection('participants').doc(participant.id).update(participant);
-                        return true;
-                    } catch (error) {
-                        console.error('Error updating participant:', error);
-                        return false;
-                    }
-                },
-                
-                delete: async function(id) {
-                    try {
-                        await db.collection('participants').doc(id).delete();
-                        return true;
-                    } catch (error) {
-                        console.error('Error deleting participant:', error);
-                        return false;
-                    }
-                },
-                
-                getByGroup: async function(groupId) {
-                    try {
-                        const snapshot = await db.collection('participants')
-                            .where('groupId', '==', groupId)
-                            .get();
-                        return snapshot.docs.map(doc => doc.data());
-                    } catch (error) {
-                        console.error('Error getting participants by group:', error);
-                        return [];
-                    }
-                }
-            },
-            
-            // Trainings operations
-            trainings: {
-                getAll: async function() {
-                    try {
-                        const snapshot = await db.collection('trainings').get();
-                        return snapshot.docs.map(doc => doc.data());
-                    } catch (error) {
-                        console.error('Error getting trainings:', error);
-                        return [];
-                    }
-                },
-                
-                get: async function(id) {
-                    try {
-                        const doc = await db.collection('trainings').doc(id).get();
-                        return doc.exists ? doc.data() : null;
-                    } catch (error) {
-                        console.error('Error getting training:', error);
-                        return null;
-                    }
-                }
-            },
-            
-            // Settings operations
-            settings: {
-                get: async function() {
-                    try {
-                        const doc = await db.collection('settings').doc('app_settings').get();
-                        return doc.exists ? doc.data() : null;
-                    } catch (error) {
-                        console.error('Error getting settings:', error);
-                        return null;
-                    }
-                },
-                
-                update: async function(settings) {
-                    try {
-                        await db.collection('settings').doc('app_settings').update(settings);
-                        return true;
-                    } catch (error) {
-                        console.error('Error updating settings:', error);
-                        return false;
-                    }
-                }
-            }
-        };
-
-        // Authentication Controller
-        const Auth = {
-            // Check if user is logged in
-            isLoggedIn: function() {
-                return firebase.auth().currentUser !== null;
-            },
-            
-            // Get current user
-            getCurrentUser: function() {
-                return firebase.auth().currentUser;
-            },
-            
-            // Login
-            login: async function(email, password) {
-                try {
-                    await firebase.auth().signInWithEmailAndPassword(email, password);
-                    return true;
-                } catch (error) {
-                    console.error('Error logging in:', error);
-                    return false;
-                }
-            },
-            
-            // Logout
-            logout: async function() {
-                try {
-                    await firebase.auth().signOut();
-                    return true;
-                } catch (error) {
-                    console.error('Error logging out:', error);
-                    return false;
-                }
-            },
-            
-            // Create user
-            createUser: async function(email, password) {
-                try {
-                    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                    return userCredential.user;
-                } catch (error) {
-                    console.error('Error creating user:', error);
-                    return null;
-                }
-            },
-            
-            // Setup auth state change listener
-            setupAuthListener: function(callback) {
-                firebase.auth().onAuthStateChanged(callback);
-            }
-        };
-
-        // UI Controller
-        const UI = {
-            // Initialize UI
-            init: async function() {
-                // Setup auth listener
-                Auth.setupAuthListener(async function(user) {
-                    if (user) {
-                        // User is logged in
-                        document.getElementById('appContainer').style.display = 'block';
-                        document.getElementById('loginScreen').style.display = 'none';
-                        document.getElementById('userName').textContent = user.email.split('@')[0];
-                        
-                        // Initialize database
-                        await DB.init();
-                        
-                        // Load dashboard data
-                        UI.loadDashboard();
-                    } else {
-                        // User is logged out
-                        document.getElementById('appContainer').style.display = 'none';
-                        document.getElementById('loginScreen').style.display = 'flex';
-                    }
-                    
-                    // Hide loading overlay
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                });
-                
-                // Setup event listeners
-                UI.setupEventListeners();
-            },
-            
-            // Setup UI event listeners
-            setupEventListeners: function() {
-                // Login button
-                document.getElementById('loginBtn').addEventListener('click', async function() {
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-                    
-                    if (!email || !password) {
-                        UI.showNotification('Veuillez remplir tous les champs', 'danger');
-                        return;
-                    }
-                    
-                    document.getElementById('loadingOverlay').style.display = 'flex';
-                    
-                    const success = await Auth.login(email, password);
-                    
-                    if (!success) {
-                        document.getElementById('loadingOverlay').style.display = 'none';
-                        UI.showNotification('Email ou mot de passe incorrect', 'danger');
-                    }
-                });
-                
-                // Logout button
-                document.getElementById('logoutBtn').addEventListener('click', async function() {
-                    document.getElementById('loadingOverlay').style.display = 'flex';
-                    await Auth.logout();
-                });
-                
-                // Navigation
-                document.querySelectorAll('.nav-link').forEach(function(link) {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const page = this.getAttribute('data-page');
-                        UI.navigateTo(page);
                     });
-                });
-                
-                // Refresh button
-                document.getElementById('refreshBtn').addEventListener('click', function() {
-                    UI.refreshCurrentPage();
-                    UI.showNotification('Données actualisées', 'success');
-                });
-            },
-            
-            // Navigate to page
-            navigateTo: function(page) {
-                // Hide all pages
-                document.querySelectorAll('.page-content').forEach(function(pageEl) {
-                    pageEl.style.display = 'none';
-                });
-                
-                // Show selected page
-                document.getElementById(page + 'Page').style.display = 'block';
-                
-                // Update active nav link
-                document.querySelectorAll('.nav-link').forEach(function(link) {
-                    link.classList.remove('active');
-                });
-                
-                document.querySelector('.nav-link[data-page="' + page + '"]').classList.add('active');
-                
-                // Load page specific data
-                switch(page) {
-                    case 'dashboard':
-                        UI.loadDashboard();
-                        break;
-                    case 'calendar':
-                        UI.loadCalendar();
-                        break;
-                    case 'sessions':
-                        UI.loadSessions();
-                        break;
-                    case 'groups':
-                        UI.loadGroups();
-                        break;
-                    case 'participants':
-                        UI.loadParticipants();
-                        break;
-                    case 'reports':
-                        UI.loadReports();
-                        break;
-                    case 'settings':
-                        UI.loadSettings();
-                        break;
-                }
-            },
-            
-            // Refresh current page
-            refreshCurrentPage: function() {
-                const activePage = document.querySelector('.nav-link.active').getAttribute('data-page');
-                UI.navigateTo(activePage);
-            },
-            
-            // Load dashboard data
-            loadDashboard: async function() {
-                try {
-                    // Get upcoming sessions
-                    const upcomingSessions = await DB.sessions.getUpcoming();
-                    
-                    // Update stats here...
-                    console.log('Dashboard loaded with', upcomingSessions.length, 'upcoming sessions');
-                    
-                    // Update the dashboard UI
-                    // This would populate charts, stats, etc.
-                } catch (error) {
-                    console.error('Error loading dashboard:', error);
-                    UI.showNotification('Erreur lors du chargement du tableau de bord', 'danger');
-                }
-            },
-            
-            // Show notification
-            showNotification: function(message, type) {
-                // Clone notification template
-                const template = document.getElementById('notificationTemplate');
-                const notification = template.querySelector('.notification').cloneNode(true);
-                
-                // Set notification content
-                notification.querySelector('.notification-content').textContent = message;
-                
-                // Set notification type
-                if (type === 'success') {
-                    notification.style.backgroundColor = 'var(--success)';
-                } else if (type === 'danger') {
-                    notification.style.backgroundColor = 'var(--danger)';
-                } else if (type === 'warning') {
-                    notification.style.backgroundColor = 'var(--warning)';
-                } else if (type === 'info') {
-                    notification.style.backgroundColor = 'var(--info)';
-                }
-                
-                // Add notification to body
-                document.body.appendChild(notification);
-                
-                // Remove notification after animation
-                setTimeout(function() {
-                    notification.remove();
-                }, 4000);
-            }
-        };
 
-        // Connexion anonyme à Firebase
-        async function signInAnonymously() {
-            try {
-                return await firebase.auth().signInAnonymously();
-            } catch (error) {
-                console.error("Erreur d'authentification anonyme:", error);
-                throw error;
-            }
-        }
-        
-        // Initialiser la base de données
-        async function initDatabase() {
-            try {
-                const db = firebase.firestore();
-                
-                // Vérifier si la collection "settings" existe
-                const settingsDoc = await db.collection('settings').doc('app_settings').get();
-                
-                if (!settingsDoc.exists) {
-                    // Créer les données initiales
-                    await createInitialData();
+                } catch (error) {
+                    console.error("Échec initialisation Firebase:", error);
+                    showNotification("Impossible d'initialiser l'application.", "danger");
+                    useFirebase = false;
+                    hideLoading();
                 }
-                
-                return true;
-            } catch (error) {
-                console.error("Erreur d'initialisation de la base de données:", error);
-                return false;
+            } else {
+                console.error("Librairie Firebase non chargée !");
+                showNotification("Erreur critique: Librairie Firebase manquante.", "danger");
+                hideLoading();
             }
-        }
-        
-        // Créer les données initiales
-        async function createInitialData() {
-            try {
-                const db = firebase.firestore();
-                const batch = db.batch();
-                
-                // Paramètres
-                batch.set(db.collection('settings').doc('app_settings'), {
-                    companyName: 'Anecoop-France',
-                    siteLocation: 'Anecoop',
-                    minGroupSize: 8,
-                    maxGroupSize: 12,
-                    defaultDuration: 90
-                });
-                
-                // Formations
-                const trainings = [
-                    { id: 'teams', name: 'Communiquer avec Teams', duration: 90 },
-                    { id: 'sharepoint', name: 'Collaborer avec Teams/SharePoint', duration: 90 },
-                    { id: 'tasks', name: 'Gérer les tâches d\'équipe', duration: 90 },
-                    { id: 'onedrive', name: 'Gérer mes fichiers avec OneDrive/SharePoint', duration: 90 }
-                ];
-                
-                trainings.forEach(training => {
-                    batch.set(db.collection('trainings').doc(training.id), training);
-                });
-                
-                // Groupes
-                const groups = [
-                    { id: 'commerce1', name: 'Commerce - Groupe 1', service: 'Commerce', minSize: 8, maxSize: 12 },
-                    { id: 'commerce2', name: 'Commerce - Groupe 2', service: 'Commerce', minSize: 8, maxSize: 12 },
-                    { id: 'compta', name: 'Comptabilité', service: 'Comptabilité', minSize: 8, maxSize: 12 },
-                    { id: 'rh', name: 'RH/Qualité/Marketing', service: 'RH', minSize: 8, maxSize: 12 }
-                ];
-                
-                groups.forEach(group => {
-                    batch.set(db.collection('groups').doc(group.id), group);
-                });
-                
-                // Sessions
-                const sessions = [
-                    { 
-                        id: 's1', 
-                        trainingId: 'teams', 
-                        trainingName: 'Communiquer avec Teams',
-                        groupId: 'commerce1', 
-                        groupName: 'Commerce - Groupe 1',
-                        date: '2025-05-15', 
-                        startTime: '10:00', 
-                        endTime: '11:30',
-                        duration: 90, 
-                        location: 'Anecoop', 
-                        status: 'pending', 
-                        participants: 10, 
-                        maxParticipants: 12,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    },
-                    { 
-                        id: 's2', 
-                        trainingId: 'tasks', 
-                        trainingName: 'Gérer les tâches d\'équipe',
-                        groupId: 'rh', 
-                        groupName: 'RH/Qualité/Marketing',
-                        date: '2025-05-17', 
-                        startTime: '14:30', 
-                        endTime: '16:00',
-                        duration: 90, 
-                        location: 'Anecoop', 
-                        status: 'confirmed', 
-                        participants: 8, 
-                        maxParticipants: 10,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    },
-                    { 
-                        id: 's3', 
-                        trainingId: 'sharepoint', 
-                        trainingName: 'Collaborer avec Teams/SharePoint',
-                        groupId: 'commerce2', 
-                        groupName: 'Commerce - Groupe 2',
-                        date: '2025-05-20', 
-                        startTime: '09:00', 
-                        endTime: '10:30',
-                        duration: 90, 
-                        location: 'Anecoop', 
-                        status: 'pending', 
-                        participants: 9, 
-                        maxParticipants: 12,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }
-                ];
-                
-                sessions.forEach(session => {
-                    batch.set(db.collection('sessions').doc(session.id), session);
-                });
-                
-                // Exécuter le batch
-                await batch.commit();
-                
-                console.log("Données initiales créées avec succès");
-                return true;
-            } catch (error) {
-                console.error("Erreur lors de la création des données initiales:", error);
-                return false;
-            }
-        }
+            // Mettre en place les écouteurs d'événements généraux
+            setupEventListeners();
+        });
+
     </script>
 </body>
 </html>
