@@ -261,7 +261,7 @@
         }
 
         function getUserDisplayName(uid) {
-            if (adminLoggedIn && auth.currentUser && uid === auth.currentUser.uid) {
+            if (adminLoggedIn && auth.currentUser && uid === auth.currentUser.uid && auth.currentUser.email) {
                 return auth.currentUser.email.split('@')[0];
             }
             if (uid === currentUserId && isAnonymousUser) {
@@ -1151,7 +1151,7 @@
         }
 
         // --- Authentification ---
-        function updateAdminUI(isLoggedIn, userEmail = '') {
+        function updateAdminUI(isLoggedIn, userEmail = null) {
             adminLoggedIn = isLoggedIn;
             document.querySelectorAll('.admin-only').forEach(el => 
                 el.style.display = isLoggedIn ? '' : 'none');
@@ -1159,7 +1159,8 @@
                 el.style.display = isLoggedIn ? '' : 'none');
                 
             const userNameSpan = document.getElementById('userName');
-            if (userNameSpan) userNameSpan.textContent = userEmail.split('@')[0];
+            // Vérifier si l'email existe avant d'appeler split (pour éviter l'erreur avec users anonymes)
+            if (userNameSpan) userNameSpan.textContent = userEmail ? userEmail.split('@')[0] : 'Utilisateur';
             
              // Mettre à jour visibilité colonnes Actions dans les tables
              document.querySelectorAll('#groupsTableBody .admin-only, #participantsTableBody .admin-only, #proposedSessionsTableBody .admin-only, #allSessionsTableBody .admin-only').forEach(el => 
@@ -1261,7 +1262,10 @@
                         
                         if (user) {
                             console.log("Auth state: User OK.", user.uid, "Anon:", user.isAnonymous);
-                            updateAdminUI(!user.isAnonymous, user.email);
+                            
+                            // Correction du problème avec email null pour utilisateurs anonymes
+                            const userEmail = user.isAnonymous ? null : user.email;
+                            updateAdminUI(!user.isAnonymous, userEmail);
                             updateConnectionStatus(true, user.isAnonymous ? "Connecté (anonyme)" : "Connecté");
                             
                             if (!dataLoadedSuccessfully) { // Charger données seulement si pas déjà fait
