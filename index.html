@@ -725,7 +725,10 @@
 
         async function loadDataAndRenderUI(attemptRetry = true) {
             // IMPROVED: More robust error handling and status updates
-            if (!useFirebase || !db) { /* ... handle no DB ... */ return; }
+            if (!useFirebase || !db) {
+                 if (attemptRetry) { showNotification("Connexion BDD indisponible.", "danger"); updateConnectionStatus(false, "Erreur BDD"); }
+                 hideLoading(); return;
+            }
 
             console.log(`Chargement données (Tentative: ${connectionAttempts + 1})`);
             showLoading(true);
@@ -753,7 +756,7 @@
                     groups: groupsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     participants: participantsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     trainings: trainingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-                    settings: settingsSnap.exists ? settingsSnap.data() : { /* Default settings fallback */ },
+                    settings: settingsSnap.exists ? settingsSnap.data() : { companyName: 'Anecoop-France', siteLocation: 'Anecoop', minGroupSize: 8, maxGroupSize: 12, defaultDuration: 90, planningPeriod: '2025' }, // Default settings fallback
                     services: servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                     administrators: adminsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
                 };
@@ -869,25 +872,27 @@
             if (trainingsListEl) {
                  if (data.trainings.length > 0) {
                      trainingsListEl.innerHTML = data.trainings.map(t => {
-                         const tooltipText = isAnonymousUser ? "Connectez-vous pour réserver (proposition anonyme possible)" : `Proposer une session pour ${t.name}`;
+                         // IMPROVED Tooltip text based on user state
+                         const tooltipText = isAnonymousUser ? "Connectez-vous pour proposer une session" : `Proposer une session pour ${t.name}`;
+                         const canPropose = adminLoggedIn || !isAnonymousUser; // Allow proposal if admin or logged-in user
                          return `
                          <div class="col-md-6 col-lg-4 col-xl-3 mb-3 d-flex">
-                             <div class="card training-card h-100 w-100" data-training-id="${t.id}" data-training-name="${t.name}" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">
+                             <div class="card training-card h-100 w-100" data-training-id="${t.id}" data-training-name="${t.name}" ${canPropose ? '' : 'data-bs-toggle="tooltip" data-bs-placement="top" title="'+tooltipText+'"'} >
                                  <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                      <div>
                                          <h6 class="card-title mb-1">${t.name}</h6>
                                          <p class="card-text small text-muted mb-2">Durée: ${t.duration || 'N/A'} min</p>
                                      </div>
-                                     <button class="btn btn-sm btn-outline-primary btn-propose-session mt-auto">
+                                     <button class="btn btn-sm btn-outline-primary btn-propose-session mt-auto" ${canPropose ? '' : 'disabled'} >
                                          <i class="fas fa-calendar-plus me-1"></i> Proposer
                                      </button>
                                  </div>
                              </div>
                          </div>`;
                      }).join('');
-                      // Initialize tooltips for the newly added cards
+                      // Initialize tooltips for the newly added cards (especially for disabled anonymous state)
                       initializeTooltips();
-                 } else { /* ... show no trainings message ... */ trainingsListEl.innerHTML = '<div class="col-12"><p class="text-muted">Aucune formation disponible.</p></div>'; }
+                 } else { /* ... show no trainings message ... */ trainingsListEl.innerHTML = '<div class="col-12"><p class="text-muted text-center">Aucune formation disponible.</p></div>'; }
             }
 
              // Render Upcoming Sessions
@@ -966,11 +971,12 @@
                             else if (isBooked) actionButton = `<button class="btn btn-sm btn-outline-secondary btn-cancel-booking" data-session-id="${s.id}" title="Annuler ma réservation">Inscrit <i class="fas fa-times-circle ms-1"></i></button>`;
                             else actionButton = `<button class="btn btn-sm btn-success btn-book-session" data-session-id="${s.id}"><i class="fas fa-check-circle me-1"></i> Réserver</button>`;
                         } else { // Anonymous user
-                            actionButton = isFull ? '<span class="session-full fst-italic text-muted small">Complet</span>' : '<span class="login-required-link" data-action="show-login">Connexion requise</span>'; // NEW: Clickable link
+                            actionButton = isFull ? '<span class="session-full fst-italic text-muted small">Complet</span>' : '<span class="login-required-link" data-action="show-login" title="Se connecter pour réserver">Connexion requise</span>'; // NEW: Clickable link + Tooltip
                         }
                         return `<tr><td>${s.trainingName || 'N/A'}</td><td>${s.groupName || 'N/A'}</td><td>${formatDate(s.confirmedDate)}</td><td>${s.confirmedStartTime || 'N/A'}</td><td>${s.location || 'N/A'}</td><td>${currentP}/${maxP}</td><td>${actionButton}</td></tr>`;
                     }).join('');
                 } else { confirmedBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Aucune session confirmée.</td></tr>'; }
+                 initializeTooltips(); // Init tooltips for login links
             }
 
              // Proposed Sessions
@@ -1106,23 +1112,30 @@
          // NEW: Initialize Bootstrap Tooltips
          let tooltipList = []; // Keep track of initialized tooltips
          function initializeTooltips() {
-             // Dispose existing tooltips first
+             // Dispose existing tooltips first to prevent duplicates
              tooltipList.forEach(tooltip => tooltip.dispose());
              tooltipList = [];
-             // Initialize new tooltips
+             // Initialize new tooltips based on data-bs-toggle attribute
              const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
              tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-               return new bootstrap.Tooltip(tooltipTriggerEl, { delay: { "show": 300, "hide": 100 } }); // Add slight delay
+               return new bootstrap.Tooltip(tooltipTriggerEl, { delay: { "show": 300, "hide": 100 } });
              });
-             // Also initialize tooltips based on title attribute for dynamically added icons
+             // Also initialize tooltips based on title attribute for dynamically added elements (like icons)
               const titleTooltipTriggerList = [].slice.call(document.querySelectorAll('[title]:not([title=""]):not([data-bs-toggle="tooltip"])')); // Select elements with title but not already handled
               titleTooltipTriggerList.map(function (tooltipTriggerEl) {
                   // Avoid initializing on elements that might not support it well, or if parent already has tooltip
                   if (!tooltipTriggerEl.closest('[data-bs-toggle="tooltip"]')) {
-                     const ttip = new bootstrap.Tooltip(tooltipTriggerEl, { delay: { "show": 300, "hide": 100 } });
-                     tooltipList.push(ttip);
-                     tooltipTriggerEl.setAttribute('data-bs-toggle', 'tooltip'); // Mark as initialized
-                     tooltipTriggerEl.setAttribute('data-bs-placement', 'top'); // Default placement
+                     // Check if element is visible - hidden elements can cause issues
+                     if (tooltipTriggerEl.offsetParent !== null) {
+                         try {
+                             const ttip = new bootstrap.Tooltip(tooltipTriggerEl, { delay: { "show": 300, "hide": 100 } });
+                             tooltipList.push(ttip);
+                             tooltipTriggerEl.setAttribute('data-bs-toggle', 'tooltip'); // Mark as initialized
+                             tooltipTriggerEl.setAttribute('data-bs-placement', 'top'); // Default placement
+                         } catch (e) {
+                             console.warn("Could not initialize tooltip for:", tooltipTriggerEl, e);
+                         }
+                     }
                   }
                   return null;
               });
@@ -1149,11 +1162,13 @@
             else if (dataLoadedSuccessfully) {
                 console.log("Rendering page:", page);
                 switch (page) { case 'dashboard': renderDashboard(); break; case 'calendar': renderCalendar(); break; case 'sessions': renderSessions(); break; case 'groups': renderGroups(); break; case 'participants': renderParticipants(); break; case 'reports': renderReports(); break; case 'settings': renderSettings(); break; case 'services': renderServicesPage(); break; }
-                updateAdminUI(adminLoggedIn);
+                updateAdminUI(adminLoggedIn); // Ensure UI state matches auth state
                 hideLoading();
             } else {
                  console.warn("Skipping render:", page, "- data not loaded.");
                  if (targetPage) { targetPage.innerHTML = `<div class="loading-placeholder">Chargement des données...</div>`; }
+                 // Keep loading overlay? Decided against it for better UX if navigation happens during failed load
+                 hideLoading(); // Hide global overlay, show placeholder inside page
             }
         }
 
@@ -1187,9 +1202,249 @@
         async function handleSettingsSubmit(event) { /* ... Added robust try/catch/finally ... */ event.preventDefault(); if (!adminLoggedIn) { showNotification("Action réservée.", "warning"); return; } const form = event.target; const button = form.querySelector('button[type="submit"]'); const defaultButtonText = button.textContent; setButtonLoading(button, true); try { const settingsData = { companyName: document.getElementById('companyName').value.trim() || 'Anecoop-France', siteLocation: document.getElementById('siteLocation').value.trim() || 'Anecoop', planningPeriod: document.getElementById('planningPeriod').value.trim() || null, minGroupSize: parseInt(document.getElementById('minGroupSize').value) || 1, maxGroupSize: parseInt(document.getElementById('maxGroupSize').value) || 1, defaultDuration: parseInt(document.getElementById('defaultDuration').value) || 30, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }; if (settingsData.minGroupSize <= 0 || settingsData.maxGroupSize <= 0 || settingsData.minGroupSize > settingsData.maxGroupSize) throw new Error("Tailles groupe min/max invalides."); if (settingsData.defaultDuration <= 0) throw new Error("Durée par défaut invalide."); await db.collection(SETTINGS_COL).doc('app_settings').set(settingsData, { merge: true }); showNotification("Paramètres enregistrés.", "success"); await loadDataAndRenderUI(); } catch (error) { console.error("Settings save error:", error); showNotification(`Erreur paramètres: ${error.message}`, "danger"); } finally { setButtonLoading(button, false, defaultButtonText); } }
 
 
-        // --- Authentification --- (checkAdminStatus, updateAdminUI, handleAdminLogin, handleAdminLogout defined above)
-        // --- Initialisation Firebase --- (initializeFirebase defined above)
-        // --- Setup Événements --- (setupEventListeners defined above)
+        // --- Authentification ---
+        async function checkAdminStatus(user) {
+            // ... (Implementation unchanged, uses constants)
+             if (!user || user.isAnonymous) return false;
+             try { const adminQuery = await db.collection(ADMINS_COL).where('uid', '==', user.uid).limit(1).get(); return !adminQuery.empty; }
+             catch (error) { console.error("Erreur vérification admin:", error); showNotification("Erreur vérification droits admin.", "danger"); return false; }
+        }
+
+        function updateAdminUI(isLoggedIn, userEmailParam = null) {
+            // IMPROVED: Clearer logic for UI updates
+            adminLoggedIn = isLoggedIn; // Update global state
+            currentUserEmail = userEmailParam; // Update global email
+
+            const displayStyle = isLoggedIn ? '' : 'none';
+            const adminElements = document.querySelectorAll('.admin-only');
+
+            adminElements.forEach(el => {
+                 if (el.tagName === 'TD' || el.tagName === 'TH') { el.style.display = isLoggedIn ? 'table-cell' : 'none'; }
+                 else { el.style.display = displayStyle; }
+            });
+
+            // Update Top Bar User Info
+            updateUserStatusDisplay();
+
+            // Update visibility of Add buttons based on current page AND admin status
+            const addGroupBtn = document.getElementById('addGroupBtn');
+            const addParticipantBtn = document.getElementById('addParticipantBtn');
+            const addSessionBtn = document.getElementById('addSessionBtnManual');
+            const addServiceBtn = document.getElementById('addServiceBtn');
+
+            if (addGroupBtn) addGroupBtn.style.display = (isLoggedIn && currentActivePage === 'groups') ? '' : 'none';
+            if (addParticipantBtn) addParticipantBtn.style.display = (isLoggedIn && currentActivePage === 'participants') ? '' : 'none';
+            if (addSessionBtn) addSessionBtn.style.display = (isLoggedIn && currentActivePage === 'sessions') ? '' : 'none';
+            if (addServiceBtn) addServiceBtn.style.display = (isLoggedIn && currentActivePage === 'services') ? '' : 'none';
+        }
+
+        async function handleAdminLogin() {
+            // ... (Implementation unchanged, uses constants)
+            const emailInput = document.getElementById('email'); const passwordInput = document.getElementById('password'); const loginButton = document.getElementById('loginBtn'); const defaultButtonText = loginButton.textContent; if (!emailInput || !passwordInput || !loginButton) return; const email = emailInput.value; const password = passwordInput.value; if (!email || !password) { showNotification('Email et Mot de passe requis.', 'warning'); return; } setButtonLoading(loginButton, true); try { const userCredential = await auth.signInWithEmailAndPassword(email, password); console.log("Login successful for:", userCredential.user.email); const adminModalEl = document.getElementById('loginModal'); const adminModal = bootstrap.Modal.getInstance(adminModalEl); if (adminModal) adminModal.hide(); showNotification('Connexion réussie.', 'success'); passwordInput.value = ''; } catch (error) { console.error("Admin login failed:", error); let message = 'Échec connexion.'; if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') { message = 'Email ou mot de passe incorrect.'; } else { message = 'Erreur: ' + (error.message || error); } showNotification(message, 'danger'); passwordInput.value = ''; setButtonLoading(loginButton, false, defaultButtonText); }
+        }
+
+        async function handleAdminLogout() {
+             // IMPROVED: Check auth state before attempting logout
+             if (!authInitialized || !auth.currentUser || auth.currentUser.isAnonymous) {
+                 showNotification("Vous n'êtes pas connecté avec un compte.", "info");
+                 return; // Don't try to log out if not logged in properly
+             }
+
+             if (!confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) return;
+             console.log("Logging out user:", auth.currentUser.uid);
+             showLoading(); // Indicate logout process
+
+             try {
+                 await auth.signOut();
+                 // Success: onAuthStateChanged listener will handle the rest (anonymous sign-in, UI update)
+                 console.log("Sign-out successful, waiting for auth state change...");
+                 // showNotification('Déconnexion réussie.', 'info'); // Notification might be premature, let listener handle UI updates
+             } catch (error) {
+                 console.error("Logout failed:", error);
+                 showNotification('Erreur lors de la déconnexion: ' + error.message, 'danger');
+                 hideLoading(); // Hide loading on error only
+             }
+             // hideLoading() is called implicitly by loadDataAndRenderUI in the success path triggered by onAuthStateChanged
+        }
+
+
+        // --- Initialisation Firebase ---
+        async function initializeFirebase(isRetry = false) {
+            // ... (Implementation unchanged, uses constants) ...
+            if (typeof firebase === 'undefined' || typeof firebase.app !== 'function') { console.error("Firebase lib non chargée!"); showNotification("Bibliothèque Firebase indisponible.", "danger"); updateConnectionStatus(false, "Firebase indisponible"); hideLoading(); return false; } try { if (firebase.apps.length === 0) { console.log("Initializing Firebase App..."); firebaseApp = firebase.initializeApp(firebaseConfig); } else { console.log("Firebase App already initialized."); firebaseApp = firebase.app(); } db = firebase.firestore(); auth = firebase.auth(); useFirebase = true; console.log("Firebase Core Initialized."); try { await db.enablePersistence({ synchronizeTabs: true }); console.log("Firestore offline persistence enabled/verified."); updateConnectionStatus(true, "Prêt (hors ligne)"); } catch (err) { if (err.code == 'failed-precondition') { console.warn("Persistence failed: Multi-tabs?"); } else if (err.code == 'unimplemented') { console.warn("Persistence failed: Browser unsupported."); } else { console.error("Firestore persistence error:", err); } } console.log("Setting up Auth listener..."); return new Promise((resolve, reject) => { const unsubscribe = auth.onAuthStateChanged(async user => { authInitialized = true; const previousUserId = currentUserId; currentUserId = user ? user.uid : null; currentUserEmail = user ? user.email : null; // Store email
+                    isAnonymousUser = user ? user.isAnonymous : false; const isAdminNow = user ? await checkAdminStatus(user) : false; const adminStatusChanged = adminLoggedIn !== isAdminNow; adminLoggedIn = isAdminNow; console.log(`Auth State Change: User ${currentUserId || 'null'}, Admin: ${adminLoggedIn}, Anon: ${isAnonymousUser}`); updateAdminUI(adminLoggedIn, currentUserEmail); // Update UI with new state
+                     if (user) { const needsReload = !dataLoadedSuccessfully || (previousUserId !== currentUserId) || (adminStatusChanged && adminLoggedIn); if (needsReload) { console.log("Loading/Reloading data due to auth change..."); await loadDataAndRenderUI(false); resolve(true); } else { console.log("Auth ready, data already loaded."); updateConnectionStatus(true, adminLoggedIn ? "Connecté (Admin)" : "Connecté"); navigateTo(currentActivePage, false); hideLoading(); resolve(true); } } else { console.log("User logged out, attempting anonymous sign-in..."); adminLoggedIn = false; updateAdminUI(false); try { await auth.signInAnonymously(); console.log("Anonymous sign-in successful after logout."); resolve(true); } catch (error) { console.error("Anonymous sign-in failed:", error); showNotification("Erreur connexion anonyme: " + error.message, "danger"); updateConnectionStatus(false, "Erreur connexion"); dataLoadedSuccessfully = false; navigateTo('dashboard', false); hideLoading(); reject(error); } } }, error => { console.error("Auth listener error:", error); showNotification("Erreur Auth: " + error.message, "danger"); updateConnectionStatus(false, "Erreur Auth"); authInitialized = true; dataLoadedSuccessfully = false; navigateTo('dashboard', false); hideLoading(); reject(error); }); }); } catch (error) { console.error("Firebase Init failed critically:", error); showNotification("Init Firebase échouée: " + error.message, "danger"); updateConnectionStatus(false, "Échec init"); useFirebase = false; hideLoading(); const container = document.querySelector('.page-container') || document.body; container.innerHTML = `<div class="alert alert-danger m-4"><h4>Erreur Critique</h4><p>Impossible d'initialiser Firebase.</p><pre>${error.message}</pre><button class="btn btn-danger" onclick="location.reload()">Recharger</button></div>`; return false; }
+        }
+
+
+        // --- Setup Événements ---
+        // IMPORTANT: Déplacé la définition de setupEventListeners ici, AVANT son appel.
+        function setupEventListeners() {
+            console.log("Setting up event listeners...");
+
+            // Sidebar Navigation Links
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = link.dataset.page;
+                    if (page) { navigateTo(page, false); }
+                    else if (link.id === 'exportPlanningLink') { openExportPlanningModal(); }
+                });
+            });
+
+            // Admin Badge -> Login Modal
+             if (adminBadgeEl) {
+                 adminBadgeEl.addEventListener('click', () => {
+                     // Always show login modal when clicked, regardless of current state
+                     bootstrap.Modal.getOrCreateInstance(document.getElementById('loginModal')).show();
+                 });
+             }
+
+            // Login/Logout Buttons
+            document.getElementById('loginBtn')?.addEventListener('click', handleAdminLogin);
+            document.getElementById('logoutBtn')?.addEventListener('click', handleAdminLogout);
+
+            // Allow Enter key in password field to trigger login
+            document.getElementById('password')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); handleAdminLogin(); }
+            });
+
+            // Settings Link in User Dropdown
+            document.getElementById('settingsMenuLink')?.addEventListener('click', (e) => {
+                e.preventDefault(); navigateTo('settings', false);
+            });
+
+            // Refresh Button
+            document.getElementById('refreshBtn')?.addEventListener('click', () => {
+                 showNotification("Actualisation des données...", "info");
+                 loadDataAndRenderUI(true);
+            });
+
+            // Retry Connection Button
+             if (retryConnectionBtn) {
+                 retryConnectionBtn.addEventListener('click', () => {
+                     connectionAttempts = 0; retryConnectionBtn.style.display = 'none';
+                     showNotification("Tentative de reconnexion...", "info");
+                     if (!useFirebase) { initializeFirebase(true); }
+                     else { loadDataAndRenderUI(true); }
+                 });
+             }
+
+            // Form Submissions (using specific handlers)
+            document.getElementById('proposeSessionForm')?.addEventListener('submit', handleProposeSubmit);
+            document.getElementById('confirmSessionForm')?.addEventListener('submit', handleConfirmSubmit);
+            document.getElementById('participantForm')?.addEventListener('submit', handleParticipantSubmit);
+            document.getElementById('groupForm')?.addEventListener('submit', handleGroupSubmit);
+            document.getElementById('sessionManualForm')?.addEventListener('submit', handleSessionManualSubmit);
+            document.getElementById('serviceForm')?.addEventListener('submit', handleServiceSubmit);
+            document.getElementById('settingsForm')?.addEventListener('submit', handleSettingsSubmit);
+            document.getElementById('addAdminForm')?.addEventListener('submit', handleAddAdmin);
+
+            // Export Button
+            document.getElementById('exportPlanningBtn')?.addEventListener('click', handleExportPlanning);
+
+            // Add Buttons (Specific listeners for clarity)
+            document.getElementById('addServiceBtn')?.addEventListener('click', () => openServiceModal());
+            document.getElementById('addSessionBtnManual')?.addEventListener('click', () => openSessionManualModal());
+            document.getElementById('addGroupBtn')?.addEventListener('click', () => openGroupModal());
+            document.getElementById('addParticipantBtn')?.addEventListener('click', () => openParticipantModal());
+
+            // Global Event Delegation for dynamic elements
+            document.body.addEventListener('click', function(event) {
+                const target = event.target;
+                const button = target.closest('button');
+                const actionElement = target.closest('[data-action]');
+                const card = target.closest('.training-card');
+                const loginLink = target.closest('.login-required-link'); // NEW: Login link listener
+
+                let action, id, participantId, groupId;
+
+                // --- Login Link ---
+                if (loginLink && loginLink.dataset.action === 'show-login') {
+                    event.preventDefault();
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('loginModal')).show();
+                    return;
+                }
+
+                // --- Actions on Buttons ---
+                if (button) {
+                    if (button.classList.contains('btn-book-session')) { handleBooking(button.dataset.sessionId); return; }
+                    if (button.classList.contains('btn-cancel-booking')) { handleCancelBooking(button.dataset.sessionId); return; }
+                    if (button.classList.contains('btn-propose-session')) { openProposeModal(button.dataset.trainingId, button.dataset.trainingName); return; }
+                }
+
+                // --- Actions via data-action attribute ---
+                if (actionElement) {
+                    action = actionElement.dataset.action;
+                    id = actionElement.dataset.id;
+                    participantId = actionElement.dataset.participantId;
+                    groupId = actionElement.dataset.groupId;
+
+                    if (!action) return;
+                    const tooltip = bootstrap.Tooltip.getInstance(actionElement); if (tooltip) tooltip.hide();
+                    console.log(`Action triggered: ${action}, ID: ${id || 'N/A'}`);
+
+                    const requiresAdmin = !['view-group-participants', 'edit-participant-from-group', 'show-login'].includes(action);
+                    if (requiresAdmin && !adminLoggedIn) { showNotification("Action réservée aux administrateurs.", "warning"); return; }
+
+                    switch(action) {
+                        // Session Actions
+                        case 'confirm-session': if(id) openConfirmModal(id); break;
+                        case 'reject-session': if(id) handleRejectSession(id); break;
+                        case 'edit-proposal': if(id) { const s = getData().sessions.find(s => s.id === id); if (s && s.status === 'proposed') openProposeModal(s.trainingId, s.trainingName, s); else showNotification("Impossible de modifier.", "warning"); } break;
+                        case 'edit-session': if(id) openSessionManualModal(id); break;
+                        case 'delete-session': if(id) handleDelete(SESSIONS_COL, id, 'session'); break; // Use constants
+                        // Group Actions
+                        case 'edit-group': if(id) openGroupModal(id); break;
+                        case 'delete-group': if(id) handleDelete(GROUPS_COL, id, 'groupe'); break;
+                        case 'view-group-participants': if(id) openGroupParticipantsModal(id); break;
+                        // Participant Actions
+                        case 'edit-participant': if(id) openParticipantModal(id); break;
+                        case 'delete-participant': if(id) handleDelete(PARTICIPANTS_COL, id, 'participant'); break;
+                        case 'unassign-participant': if(participantId && groupId) handleUnassignParticipant(participantId, groupId); break;
+                        case 'edit-participant-from-group': if(id) { const gm = document.getElementById('groupParticipantsModal'); const gi = bootstrap.Modal.getInstance(gm); if(gi) gi.hide(); gm?.addEventListener('hidden.bs.modal', () => openParticipantModal(id), { once: true }); } break;
+                        // Service Actions
+                        case 'edit-service': if(id) openServiceModal(id); break;
+                        case 'delete-service': if(id) handleDelete(SERVICES_COL, id, 'service'); break;
+                        // Admin Actions
+                        case 'remove-admin': if(id) handleDelete(ADMINS_COL, id, 'administrateur'); break;
+                        // Other actions
+                        case 'show-login': bootstrap.Modal.getOrCreateInstance(document.getElementById('loginModal')).show(); break;
+                        default: console.warn("Unknown action via delegation:", action);
+                    }
+                    return; // Handled
+                }
+
+                // --- Action on Training Card ---
+                if (card && !target.closest('button')) {
+                     const canPropose = adminLoggedIn || !isAnonymousUser;
+                     if (canPropose) {
+                         openProposeModal(card.dataset.trainingId, card.dataset.trainingName);
+                     } else {
+                         // Tooltip should already be showing explanation, maybe flash login modal briefly?
+                         bootstrap.Modal.getOrCreateInstance(document.getElementById('loginModal')).show();
+                     }
+                    return;
+                 }
+            });
+
+            // Network Status Listeners
+            window.addEventListener('online', () => {
+                 showNotification("Connexion réseau rétablie.", "success");
+                  if (!useFirebase || !dataLoadedSuccessfully) {
+                     console.log("Network online, attempting to initialize/load data...");
+                     connectionAttempts = 0;
+                     if (!useFirebase) initializeFirebase(true); else loadDataAndRenderUI(true);
+                 } else { updateConnectionStatus(true, adminLoggedIn ? "Connecté (Admin)" : "Connecté"); }
+            });
+            window.addEventListener('offline', () => {
+                showNotification("Connexion réseau perdue.", "warning");
+                updateConnectionStatus(false, "Hors ligne");
+            });
+
+            console.log("Event listeners setup complete.");
+        } // END setupEventListeners
+
 
         // --- Initialisation ---
         document.addEventListener('DOMContentLoaded', function() {
@@ -1198,7 +1453,7 @@
             updateConnectionStatus(false, "Initialisation...");
             updateUserStatusDisplay(); // Set initial user status text
 
-            setupEventListeners();
+            setupEventListeners(); // DEFINE setupEventListeners BEFORE calling it
 
             initializeFirebase()
                 .then(success => {
