@@ -1,37 +1,369 @@
-// Initialize the application when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Afficher l'application immédiatement
-            document.getElementById('loadingOverlay').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-            
-            // Initialiser avec des données locales pré-configurées
-            initLocalData();
-            
-            // Configurer les événements UI
-            setupEvents();
-            
-            // Pré-charger le tableau de bord
-            loadDashboardData();
-            
-            // Configurer le bouton admin
-            document.getElementById('adminBadge').addEventListener('click', function() {
-                const adminModal = new bootstrap.Modal(document.getElementById('adminLoginModal'));
-                adminModal.show();
-            });
-            
-            // Configurer le bouton de connexion
-            document.getElementById('loginBtn').addEventListener('click', function() {
-                document.getElementById('userMenu').style.display = 'block';
-                document.getElementById('adminNotifications').style.display = 'block';
-                document.getElementById('settingsNavItem').style.display = 'block';
-                
-                // Fermer le modal
-                const adminModal = bootstrap.Modal.getInstance(document.getElementById('adminLoginModal'));
-                adminModal.hide();
-                
-                showNotification('Connecté en tant qu\'administrateur', 'success');
-            });
-        });
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réservation de Formations - Anecoop-France</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2D7D46;
+            --secondary: #82bc00;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+        }
+        
+        /* Admin badge style */
+        .admin-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1050;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-badge:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+        }
+
+        .bg-anecoop {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-anecoop {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-anecoop:hover {
+            background-color: #246039;
+            color: white;
+        }
+
+        .card {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .card-header {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .session-card {
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .session-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .calendar-day {
+            min-height: 100px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 8px;
+            position: relative;
+        }
+
+        .calendar-day .date {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .event {
+            padding: 5px;
+            margin: 3px 0;
+            border-radius: 5px;
+            font-size: 12px;
+            color: white;
+            background-color: var(--primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: var(--success);
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            transform: translateX(100%);
+            animation: slideIn 0.5s forwards, fadeOut 0.5s 3s forwards;
+            max-width: 300px;
+        }
+
+        @keyframes slideIn {
+            to { transform: translateX(0); }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        /* Styles pour l'écran de connexion */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+        
+        .login-card {
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .login-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Admin Button (Flottant) -->
+    <div class="admin-badge" id="adminBadge" title="Connexion administrateur">
+        <i class="fas fa-lock"></i>
+    </div>
+    
+    <!-- Admin Login Modal -->
+    <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminLoginModalLabel">Connexion administrateur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" value="kbivia@anecoop-france.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="password">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" id="loginBtn" class="btn btn-anecoop">Se connecter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar">
+                <div class="text-center py-4">
+                    <h4 class="navbar-brand mb-0">Anecoop-France</h4>
+                </div>
+                <ul class="nav flex-column mt-3">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-page="dashboard">
+                            <i class="fas fa-home"></i> Tableau de bord
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="calendar">
+                            <i class="fas fa-calendar-alt"></i> Calendrier
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="sessions">
+                            <i class="fas fa-chalkboard-teacher"></i> Formations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="groups">
+                            <i class="fas fa-users"></i> Groupes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="participants">
+                            <i class="fas fa-user-graduate"></i> Participants
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="reports">
+                            <i class="fas fa-chart-bar"></i> Rapports
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link" href="#" data-page="settings">
+                            <i class="fas fa-cog"></i> Paramètres
+                        </a>
+                    </li>
+                </ul>
+                <div class="mt-auto text-center py-3" style="position: absolute; bottom: 0; width: 100%;">
+                    <p class="small text-muted mb-0">© 2025 Anecoop-France</p>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-0">
+                <!-- Top Navigation Bar -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+                    <div class="container-fluid">
+                        <a class="navbar-brand d-md-none" href="#">Anecoop-France</a>
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-sm btn-light" type="button" id="refreshBtn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <div class="dropdown ms-3">
+                                <button class="btn btn-sm btn-light position-relative" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        3
+                                    </span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
+                                    <li><h6 class="dropdown-header">Notifications</h6></li>
+                                    <li><a class="dropdown-item" href="#">Nouvelle formation ajoutée</a></li>
+                                    <li><a class="dropdown-item" href="#">2 participants en attente</a></li>
+                                    <li><a class="dropdown-item" href="#">Formation à confirmer</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-center small" href="#">Voir toutes les notifications</a></li>
+                                </ul>
+                            </div>
+                            <div class="dropdown ms-3" id="userMenu" style="display: none;">
+                                <button class="btn btn-sm btn-light" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user-circle"></i> <span id="userName">Admin</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profil</a></li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Paramètres</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Page Content Area -->
+                <div class="container-fluid p-4">
+                    <!-- Dashboard View -->
+                    <div id="dashboardPage" class="page-content animate__animated animate__fadeInUp">
+                        <h2 class="mb-4">Tableau de bord</h2>
+                        <!-- Contenu du tableau de bord -->
+                    </div>
+
+                    <!-- Les autres pages suivent le même modèle... -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Template -->
+    <div id="notificationTemplate" style="display: none;">
+        <div class="notification">
+            <div class="notification-content"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCrcpvqIszIIVvq7MiNOkj_Fj4dtd9VVyA",
+            authDomain: "anecoop-formations.firebaseapp.com",
+            projectId: "anecoop-formations",
+            storageBucket: "anecoop-formations.firebasestorage.app",
+            messagingSenderId: "81893594187",
+            appId: "1:81893594187:web:ec8a87c0b5e7a1844569ce",
+            measurementId: "G-2TMQNNC7KW"
+        };
         
         // Données locales pré-configurées pour fonctionnement immédiat
         const localData = {
@@ -131,6 +463,41 @@
                 { id: 'onedrive', name: 'Gérer mes fichiers avec OneDrive/SharePoint', duration: 90 }
             ]
         };
+        
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Afficher l'application immédiatement
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            
+            // Initialiser avec des données locales pré-configurées
+            initLocalData();
+            
+            // Configurer les événements UI
+            setupEvents();
+            
+            // Pré-charger le tableau de bord
+            loadDashboardData();
+            
+            // Configurer le bouton admin
+            document.getElementById('adminBadge').addEventListener('click', function() {
+                const adminModal = new bootstrap.Modal(document.getElementById('adminLoginModal'));
+                adminModal.show();
+            });
+            
+            // Configurer le bouton de connexion
+            document.getElementById('loginBtn').addEventListener('click', function() {
+                document.getElementById('userMenu').style.display = 'block';
+                document.getElementById('adminNotifications').style.display = 'block';
+                document.getElementById('settingsNavItem').style.display = 'block';
+                
+                // Fermer le modal
+                const adminModal = bootstrap.Modal.getInstance(document.getElementById('adminLoginModal'));
+                adminModal.hide();
+                
+                showNotification('Connecté en tant qu\'administrateur', 'success');
+            });
+        });
         
         // Initialiser les données locales
         function initLocalData() {
@@ -341,381 +708,46 @@
                 const progress = Math.round((completed / total) * 100);
                 
                 // Mettre à jour la barre de progression
-                <!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Réservation de Formations - Anecoop-France</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Les styles CSS restent les mêmes que dans votre version précédente -->
-    <style>
-        :root {
-            --primary: #2D7D46;
-            --secondary: #82bc00;
-            --light: #f8f9fa;
-            --dark: #343a40;
-            --success: #28a745;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --info: #17a2b8;
+                // Cette partie serait implémentée pour mettre à jour l'UI
+            });
         }
         
-        /* Admin badge style */
-        .admin-badge {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: var(--primary);
-            color: white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 1050;
-            transition: all 0.3s ease;
+        // Formater la date
+        function formatDate(dateString) {
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('fr-FR', options);
         }
         
-        .admin-badge:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--primary) !important;
-        }
-
-        .bg-anecoop {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-anecoop {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-        }
-
-        .btn-anecoop:hover {
-            background-color: #246039;
-            color: white;
-        }
-
-        .card {
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            border: none;
-        }
-
-        .card-header {
-            background-color: var(--primary);
-            color: white;
-            font-weight: 600;
-        }
-
-        .session-card {
-            transition: transform 0.3s;
-            cursor: pointer;
-        }
-
-        .session-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .calendar-day {
-            min-height: 100px;
-            background-color: white;
-            border-radius: 8px;
-            padding: 8px;
-            position: relative;
-        }
-
-        .calendar-day .date {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            font-size: 12px;
-            color: #888;
-        }
-
-        .event {
-            padding: 5px;
-            margin: 3px 0;
-            border-radius: 5px;
-            font-size: 12px;
-            color: white;
-            background-color: var(--primary);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* Tous les autres styles CSS ici... */
-        
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background-color: var(--success);
-            color: white;
-            border-radius: 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 9999;
-            transform: translateX(100%);
-            animation: slideIn 0.5s forwards, fadeOut 0.5s 3s forwards;
-            max-width: 300px;
-        }
-
-        @keyframes slideIn {
-            to { transform: translateX(0); }
-        }
-
-        @keyframes fadeOut {
-            to { opacity: 0; visibility: hidden; }
-        }
-
-        /* Styles pour l'écran de connexion */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f8f9fa;
+        // Afficher une notification
+        function showNotification(message, type) {
+            // Cloner le template de notification
+            const template = document.getElementById('notificationTemplate');
+            const notification = template.querySelector('.notification').cloneNode(true);
+            
+            // Définir le contenu
+            notification.querySelector('.notification-content').textContent = message;
+            
+            // Définir le type
+            if (type === 'success') {
+                notification.style.backgroundColor = 'var(--success)';
+            } else if (type === 'danger') {
+                notification.style.backgroundColor = 'var(--danger)';
+            } else if (type === 'warning') {
+                notification.style.backgroundColor = 'var(--warning)';
+            } else if (type === 'info') {
+                notification.style.backgroundColor = 'var(--info)';
+            }
+            
+            // Ajouter la notification au corps
+            document.body.appendChild(notification);
+            
+            // Supprimer après l'animation
+            setTimeout(function() {
+                notification.remove();
+            }, 4000);
         }
         
-        .login-card {
-            max-width: 400px;
-            width: 100%;
-        }
-        
-        .login-logo {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 20px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-    </div>
-
-    <!-- Admin Button (Flottant) -->
-    <div class="admin-badge" id="adminBadge" title="Connexion administrateur">
-        <i class="fas fa-lock"></i>
-    </div>
-    
-    <!-- Admin Login Modal -->
-    <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="adminLoginModalLabel">Connexion administrateur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="loginForm">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" value="kbivia@anecoop-france.com">
-                        </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Mot de passe</label>
-                            <input type="password" class="form-control" id="password">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="button" id="loginBtn" class="btn btn-anecoop">Se connecter</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main App Container -->
-    <div id="appContainer" class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-2 p-0 sidebar">
-                <div class="text-center py-4">
-                    <h4 class="navbar-brand mb-0">Anecoop-France</h4>
-                </div>
-                <ul class="nav flex-column mt-3">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#" data-page="dashboard">
-                            <i class="fas fa-home"></i> Tableau de bord
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="calendar">
-                            <i class="fas fa-calendar-alt"></i> Calendrier
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="sessions">
-                            <i class="fas fa-chalkboard-teacher"></i> Formations
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="groups">
-                            <i class="fas fa-users"></i> Groupes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="participants">
-                            <i class="fas fa-user-graduate"></i> Participants
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-page="reports">
-                            <i class="fas fa-chart-bar"></i> Rapports
-                        </a>
-                    </li>
-                    <li class="nav-item mt-4">
-                        <a class="nav-link" href="#" data-page="settings">
-                            <i class="fas fa-cog"></i> Paramètres
-                        </a>
-                    </li>
-                </ul>
-                <div class="mt-auto text-center py-3" style="position: absolute; bottom: 0; width: 100%;">
-                    <p class="small text-muted mb-0">© 2025 Anecoop-France</p>
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="col-md-10 p-0">
-                <!-- Top Navigation Bar -->
-                <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-                    <div class="container-fluid">
-                        <a class="navbar-brand d-md-none" href="#">Anecoop-France</a>
-                        <div class="d-flex align-items-center">
-                            <button class="btn btn-sm btn-light" type="button" id="refreshBtn">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
-                            <div class="dropdown ms-3">
-                                <button class="btn btn-sm btn-light position-relative" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-bell"></i>
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        3
-                                    </span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
-                                    <li><h6 class="dropdown-header">Notifications</h6></li>
-                                    <li><a class="dropdown-item" href="#">Nouvelle formation ajoutée</a></li>
-                                    <li><a class="dropdown-item" href="#">2 participants en attente</a></li>
-                                    <li><a class="dropdown-item" href="#">Formation à confirmer</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-center small" href="#">Voir toutes les notifications</a></li>
-                                </ul>
-                            </div>
-                            <div class="dropdown ms-3" id="userMenu" style="display: none;">
-                                <button class="btn btn-sm btn-light" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-user-circle"></i> <span id="userName">Admin</span>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profil</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Paramètres</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-
-                <!-- Page Content Area -->
-                <div class="container-fluid p-4">
-                    <!-- Le reste du contenu HTML des pages reste identique -->
-                    <!-- Dashboard, Calendar, Sessions, Groups, Participants, Reports, Settings -->
-                    
-                    <!-- Dashboard View -->
-                    <div id="dashboardPage" class="page-content animate__animated animate__fadeInUp">
-                        <h2 class="mb-4">Tableau de bord</h2>
-                        <!-- Contenu du tableau de bord -->
-                    </div>
-
-                    <!-- Les autres pages suivent le même modèle... -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modals et templates comme dans la version précédente -->
-    
-    <!-- Notification Template -->
-    <div id="notificationTemplate" style="display: none;">
-        <div class="notification">
-            <div class="notification-content"></div>
-        </div>
-    </div>
-
-    <!-- JavaScript Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <!-- Add Firebase products that you want to use -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCrcpvqIszIIVvq7MiNOkj_Fj4dtd9VVyA",
-            authDomain: "anecoop-formations.firebaseapp.com",
-            projectId: "anecoop-formations",
-            storageBucket: "anecoop-formations.firebasestorage.app",
-            messagingSenderId: "81893594187",
-            appId: "1:81893594187:web:ec8a87c0b5e7a1844569ce",
-            measurementId: "G-2TMQNNC7KW"
-        };
-        
+        // Firebase Implementation
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         
@@ -1220,9 +1252,6 @@
                     UI.refreshCurrentPage();
                     UI.showNotification('Données actualisées', 'success');
                 });
-                
-                // Add other event listeners as in previous version
-                // This includes session, group, participant management buttons
             },
             
             // Navigate to page
@@ -1318,89 +1347,9 @@
                 setTimeout(function() {
                     notification.remove();
                 }, 4000);
-            },
-            
-            // Implement other UI methods as needed (similar to previous version)
-            // These would include CRUD operations for sessions, groups, participants
+            }
         };
 
-        // Initialize the application when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Afficher l'application immédiatement
-            document.getElementById('loadingOverlay').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-            
-            // Configurer Firebase
-            firebase.initializeApp(firebaseConfig);
-            
-            // Authentification anonyme silencieuse pour les utilisateurs standards
-            // Cela permet de stocker les données dans Firebase sans demander de connexion
-            signInAnonymously().then(() => {
-                console.log("Utilisateur anonyme connecté");
-                
-                // Initialiser la base de données
-                initDatabase().then(() => {
-                    // Charger les données initiales
-                    loadDashboard();
-                    
-                    // Configurer les événements
-                    setupUIEvents();
-                });
-            }).catch(error => {
-                console.error("Erreur d'authentification anonyme", error);
-                // En cas d'échec, utiliser le localStorage comme fallback
-                showNotification("Mode hors-ligne activé", "warning");
-                initLocalData();
-                loadDashboard();
-                setupUIEvents();
-            });
-            
-            // Configurer le bouton admin (connexion explicite)
-            document.getElementById('adminBadge').addEventListener('click', function() {
-                const adminModal = new bootstrap.Modal(document.getElementById('adminLoginModal'));
-                adminModal.show();
-            });
-            
-            // Configurer le bouton de connexion admin
-            document.getElementById('loginBtn').addEventListener('click', function() {
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                
-                if (!email || !password) {
-                    showNotification('Veuillez remplir tous les champs', 'danger');
-                    return;
-                }
-                
-                document.getElementById('loadingOverlay').style.display = 'flex';
-                
-                // Connexion avec email/mot de passe
-                firebase.auth().signInWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
-                        // Afficher les fonctionnalités d'admin
-                        document.getElementById('adminNotifications').style.display = 'block';
-                        document.getElementById('userMenu').style.display = 'block';
-                        document.getElementById('settingsNavItem').style.display = 'block';
-                        document.getElementById('userName').textContent = email.split('@')[0];
-                        
-                        // Cacher le bouton flottant admin
-                        document.getElementById('adminBadge').style.display = 'none';
-                        
-                        // Fermer le modal
-                        const adminModal = bootstrap.Modal.getInstance(document.getElementById('adminLoginModal'));
-                        adminModal.hide();
-                        
-                        showNotification('Connecté en tant qu\'administrateur', 'success');
-                    })
-                    .catch((error) => {
-                        console.error('Erreur de connexion:', error);
-                        showNotification('Email ou mot de passe incorrect', 'danger');
-                    })
-                    .finally(() => {
-                        document.getElementById('loadingOverlay').style.display = 'none';
-                    });
-            });
-        });
-        
         // Connexion anonyme à Firebase
         async function signInAnonymously() {
             try {
@@ -1535,410 +1484,6 @@
                 console.error("Erreur lors de la création des données initiales:", error);
                 return false;
             }
-        }
-        
-        // Initialiser des données locales comme fallback
-        function initLocalData() {
-            // Si les données n'existent pas encore dans le stockage local
-            if (!localStorage.getItem('anecoop_data')) {
-                const demoData = {
-                    sessions: [
-                        { 
-                            id: 's1', 
-                            trainingId: 'teams',
-                            trainingName: 'Communiquer avec Teams',
-                            groupId: 'commerce1',
-                            groupName: 'Commerce - Groupe 1',
-                            date: '2025-05-15', 
-                            startTime: '10:00', 
-                            endTime: '11:30',
-                            duration: 90,
-                            location: 'Anecoop', 
-                            status: 'pending', 
-                            participants: 10, 
-                            maxParticipants: 12
-                        },
-                        { 
-                            id: 's2', 
-                            trainingId: 'tasks',
-                            trainingName: 'Gérer les tâches d\'équipe',
-                            groupId: 'rh',
-                            groupName: 'RH/Qualité/Marketing',
-                            date: '2025-05-17', 
-                            startTime: '14:30', 
-                            endTime: '16:00',
-                            duration: 90,
-                            location: 'Anecoop', 
-                            status: 'confirmed', 
-                            participants: 8, 
-                            maxParticipants: 10
-                        },
-                        { 
-                            id: 's3', 
-                            trainingId: 'sharepoint',
-                            trainingName: 'Collaborer avec Teams/SharePoint',
-                            groupId: 'commerce2',
-                            groupName: 'Commerce - Groupe 2',
-                            date: '2025-05-20', 
-                            startTime: '09:00', 
-                            endTime: '10:30',
-                            duration: 90,
-                            location: 'Anecoop', 
-                            status: 'pending', 
-                            participants: 9, 
-                            maxParticipants: 12
-                        }
-                    ],
-                    groups: [
-                        { id: 'commerce1', name: 'Commerce - Groupe 1', service: 'Commerce', progress: 50 },
-                        { id: 'commerce2', name: 'Commerce - Groupe 2', service: 'Commerce', progress: 25 },
-                        { id: 'compta', name: 'Comptabilité', service: 'Comptabilité', progress: 0 },
-                        { id: 'rh', name: 'RH/Qualité/Marketing', services: ['RH', 'Qualité', 'Marketing'], progress: 25 }
-                    ],
-                    trainings: [
-                        { id: 'teams', name: 'Communiquer avec Teams', duration: 90, progress: 50 },
-                        { id: 'sharepoint', name: 'Collaborer avec Teams/SharePoint', duration: 90, progress: 25 },
-                        { id: 'tasks', name: 'Gérer les tâches d\'équipe', duration: 90, progress: 25 },
-                        { id: 'onedrive', name: 'Gérer mes fichiers avec OneDrive/SharePoint', duration: 90, progress: 0 }
-                    ]
-                };
-                
-                localStorage.setItem('anecoop_data', JSON.stringify(demoData));
-            }
-        }
-        
-        // Charger les données du tableau de bord
-        async function loadDashboard() {
-            try {
-                // Essayer de charger depuis Firebase
-                if (firebase.auth().currentUser) {
-                    const db = firebase.firestore();
-                    
-                    // Récupérer les sessions à venir
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    const snapshot = await db.collection('sessions')
-                        .where('date', '>=', today.toISOString().split('T')[0])
-                        .where('status', 'in', ['pending', 'confirmed'])
-                        .orderBy('date')
-                        .orderBy('startTime')
-                        .limit(10)
-                        .get();
-                    
-                    const upcomingSessions = snapshot.docs.map(doc => doc.data());
-                    
-                    // Mettre à jour la liste des sessions à venir
-                    updateUpcomingSessionsList(upcomingSessions);
-                    
-                    return;
-                }
-            } catch (error) {
-                console.error("Erreur lors du chargement des données depuis Firebase:", error);
-            }
-            
-            // Fallback: charger depuis localStorage
-            try {
-                const data = JSON.parse(localStorage.getItem('anecoop_data'));
-                
-                // Récupérer les sessions à venir
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                
-                const upcomingSessions = data.sessions.filter(session => {
-                    const sessionDate = new Date(session.date);
-                    return sessionDate >= today && (session.status === 'pending' || session.status === 'confirmed');
-                }).sort((a, b) => {
-                    return new Date(a.date + 'T' + a.startTime) - new Date(b.date + 'T' + b.startTime);
-                });
-                
-                // Mettre à jour la liste des sessions à venir
-                updateUpcomingSessionsList(upcomingSessions);
-            } catch (error) {
-                console.error("Erreur lors du chargement des données depuis localStorage:", error);
-            }
-        }
-        
-        // Mettre à jour la liste des sessions à venir
-        function updateUpcomingSessionsList(sessions) {
-            const upcomingList = document.getElementById('upcomingSessionsList');
-            if (!upcomingList) return;
-            
-            upcomingList.innerHTML = '';
-            
-            sessions.forEach(session => {
-                const formattedDate = formatDate(session.date);
-                const statusClass = session.status === 'confirmed' ? 'bg-success' : 'bg-warning';
-                
-                const listItem = document.createElement('li');
-                listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
-                listItem.innerHTML = `
-                    <div>
-                        <h6 class="mb-0">${session.trainingName}</h6>
-                        <small class="text-muted">${session.groupName}</small>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge ${statusClass} rounded-pill">${formattedDate}, ${session.startTime}</span>
-                    </div>
-                `;
-                upcomingList.appendChild(listItem);
-            });
-        }
-        
-        // Configurer tous les événements d'interface
-        function setupUIEvents() {
-            // Navigation
-            document.querySelectorAll('.nav-link').forEach(function(link) {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-page');
-                    navigateTo(page);
-                });
-            });
-            
-            // Bouton de rafraîchissement
-            document.getElementById('refreshBtn').addEventListener('click', function() {
-                refreshCurrentPage();
-                showNotification('Données actualisées', 'success');
-            });
-            
-            // Boutons d'ajout de session
-            document.querySelectorAll('#addSessionBtn, #addSessionBtnAlt').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    showAddSessionModal();
-                });
-            });
-            
-            // Bouton de sauvegarde de session
-            document.getElementById('saveSessionBtn').addEventListener('click', function() {
-                saveSession();
-            });
-            
-            // Autres boutons d'action
-            setupActionButtons();
-        }
-        
-        // Configurer les boutons d'action
-        function setupActionButtons() {
-            // Boutons d'édition et de suppression
-            document.querySelectorAll('.btn-edit-session, .btn-delete-session').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    showNotification('Fonctionnalité en cours d\'implémentation', 'info');
-                });
-            });
-            
-            // Événements pour les cartes de session
-            document.querySelectorAll('.session-card').forEach(function(card) {
-                card.addEventListener('click', function() {
-                    showNotification('Détails de la formation', 'info');
-                });
-            });
-            
-            // Événements du calendrier
-            document.querySelectorAll('.event').forEach(function(event) {
-                event.addEventListener('click', function() {
-                    const sessionId = this.getAttribute('data-session-id');
-                    viewSessionDetails(sessionId);
-                });
-            });
-            
-            // Bouton "Voir toutes les formations"
-            document.getElementById('viewAllUpcomingBtn').addEventListener('click', function() {
-                navigateTo('sessions');
-            });
-        }
-        
-        // Afficher le modal d'ajout de session
-        function showAddSessionModal() {
-            const modal = new bootstrap.Modal(document.getElementById('addSessionModal'));
-            modal.show();
-        }
-        
-        // Sauvegarder une session
-        async function saveSession() {
-            // Récupérer les données du formulaire
-            const trainingId = document.getElementById('formationType').value;
-            const trainingName = document.getElementById('formationType').options[document.getElementById('formationType').selectedIndex].text;
-            const groupId = document.getElementById('groupSelect').value;
-            const groupName = document.getElementById('groupSelect').options[document.getElementById('groupSelect').selectedIndex].text;
-            const date = document.getElementById('sessionDate').value;
-            const startTime = document.getElementById('startTime').value;
-            const duration = parseInt(document.getElementById('duration').value);
-            const location = document.getElementById('location').value;
-            const notes = document.getElementById('sessionNotes').value || '';
-            const confirmed = document.getElementById('confirmImmediately').checked;
-            
-            // Valider le formulaire
-            if (!trainingId || !groupId || !date || !startTime || !duration || !location) {
-                showNotification('Veuillez remplir tous les champs obligatoires', 'danger');
-                return;
-            }
-            
-            // Calculer l'heure de fin
-            const startTimeParts = startTime.split(':');
-            const startDate = new Date();
-            startDate.setHours(parseInt(startTimeParts[0]), parseInt(startTimeParts[1]));
-            const endDate = new Date(startDate.getTime() + duration * 60000);
-            const endTime = String(endDate.getHours()).padStart(2, '0') + ':' + String(endDate.getMinutes()).padStart(2, '0');
-            
-            // Créer l'objet session
-            const sessionId = 's' + Date.now();
-            const session = {
-                id: sessionId,
-                trainingId: trainingId,
-                trainingName: trainingName,
-                groupId: groupId,
-                groupName: groupName,
-                date: date,
-                startTime: startTime,
-                endTime: endTime,
-                duration: duration,
-                location: location,
-                notes: notes,
-                status: confirmed ? 'confirmed' : 'pending',
-                participants: 0,
-                maxParticipants: 12,
-                createdAt: new Date().toISOString()
-            };
-            
-            // Sauvegarder dans Firebase si disponible
-            if (firebase.auth().currentUser) {
-                try {
-                    document.getElementById('loadingOverlay').style.display = 'flex';
-                    
-                    const db = firebase.firestore();
-                    await db.collection('sessions').doc(sessionId).set(session);
-                    
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                    
-                    // Fermer le modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addSessionModal'));
-                    modal.hide();
-                    
-                    // Actualiser la page
-                    refreshCurrentPage();
-                    
-                    // Afficher une notification
-                    showNotification('Formation ajoutée avec succès', 'success');
-                    
-                    return;
-                } catch (error) {
-                    console.error("Erreur lors de l'ajout de la session dans Firebase:", error);
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                    // Continuer avec localStorage comme fallback
-                }
-            }
-            
-            // Fallback: sauvegarder dans localStorage
-            try {
-                const data = JSON.parse(localStorage.getItem('anecoop_data'));
-                data.sessions.push(session);
-                localStorage.setItem('anecoop_data', JSON.stringify(data));
-                
-                // Fermer le modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addSessionModal'));
-                modal.hide();
-                
-                // Actualiser la page
-                refreshCurrentPage();
-                
-                // Afficher une notification
-                showNotification('Formation ajoutée avec succès (mode local)', 'success');
-            } catch (error) {
-                console.error("Erreur lors de l'ajout de la session dans localStorage:", error);
-                showNotification('Erreur lors de l\'ajout de la formation', 'danger');
-            }
-        }
-        
-        // Naviguer vers une page
-        function navigateTo(page) {
-            // Cacher toutes les pages
-            document.querySelectorAll('.page-content').forEach(function(pageEl) {
-                pageEl.style.display = 'none';
-            });
-            
-            // Afficher la page sélectionnée
-            document.getElementById(page + 'Page').style.display = 'block';
-            
-            // Mettre à jour le lien actif
-            document.querySelectorAll('.nav-link').forEach(function(link) {
-                link.classList.remove('active');
-            });
-            
-            document.querySelector('.nav-link[data-page="' + page + '"]').classList.add('active');
-            
-            // Charger les données spécifiques à la page
-            switch(page) {
-                case 'dashboard':
-                    loadDashboard();
-                    break;
-                case 'calendar':
-                    // TODO: Charger les données du calendrier
-                    break;
-                case 'sessions':
-                    // TODO: Charger les données des sessions
-                    break;
-                case 'groups':
-                    // TODO: Charger les données des groupes
-                    break;
-                case 'participants':
-                    // TODO: Charger les données des participants
-                    break;
-                case 'reports':
-                    // TODO: Charger les données des rapports
-                    break;
-                case 'settings':
-                    // TODO: Charger les données des paramètres
-                    break;
-            }
-        }
-        
-        // Actualiser la page courante
-        function refreshCurrentPage() {
-            const activePage = document.querySelector('.nav-link.active').getAttribute('data-page');
-            navigateTo(activePage);
-        }
-        
-        // Voir les détails d'une session
-        function viewSessionDetails(sessionId) {
-            // Pour la démo, afficher une notification
-            showNotification('Détails de la session ' + sessionId, 'info');
-        }
-        
-        // Formater une date
-        function formatDate(dateString) {
-            const options = { day: 'numeric', month: 'long', year: 'numeric' };
-            return new Date(dateString).toLocaleDateString('fr-FR', options);
-        }
-        
-        // Afficher une notification
-        function showNotification(message, type) {
-            // Cloner le template de notification
-            const template = document.getElementById('notificationTemplate');
-            const notification = template.querySelector('.notification').cloneNode(true);
-            
-            // Définir le contenu
-            notification.querySelector('.notification-content').textContent = message;
-            
-            // Définir le type
-            if (type === 'success') {
-                notification.style.backgroundColor = 'var(--success)';
-            } else if (type === 'danger') {
-                notification.style.backgroundColor = 'var(--danger)';
-            } else if (type === 'warning') {
-                notification.style.backgroundColor = 'var(--warning)';
-            } else if (type === 'info') {
-                notification.style.backgroundColor = 'var(--info)';
-            }
-            
-            // Ajouter la notification au corps
-            document.body.appendChild(notification);
-            
-            // Supprimer après l'animation
-            setTimeout(function() {
-                notification.remove();
-            }, 4000);
         }
     </script>
 </body>
