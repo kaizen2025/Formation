@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réservation de Formations - Anecoop-France</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Les styles CSS restent les mêmes que dans votre version précédente -->
+    <style>
+        :root {
+            --primary: #2D7D46;
+            --secondary: #82bc00;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+        }
+
+        .bg-anecoop {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-anecoop {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-anecoop:hover {
+            background-color: #246039;
+            color: white;
+        }
+
+        .card {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .card-header {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .session-card {
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .session-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .calendar-day {
+            min-height: 100px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 8px;
+            position: relative;
+        }
+
+        .calendar-day .date {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .event {
+            padding: 5px;
+            margin: 3px 0;
+            border-radius: 5px;
+            font-size: 12px;
+            color: white;
+            background-color: var(--primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Tous les autres styles CSS ici... */
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: var(--success);
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            transform: translateX(100%);
+            animation: slideIn 0.5s forwards, fadeOut 0.5s 3s forwards;
+            max-width: 300px;
+        }
+
+        @keyframes slideIn {
+            to { transform: translateX(0); }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        /* Styles pour l'écran de connexion */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+        
+        .login-card {
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .login-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container" style="display: none;">
+        <div class="card login-card">
+            <div class="card-body">
+                <div class="login-logo">Anecoop-France</div>
+                <h5 class="card-title text-center mb-4">Système de réservation de formations</h5>
+                
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Mot de passe</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="button" id="loginBtn" class="btn btn-anecoop">Se connecter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0 sidebar">
+                <div class="text-center py-4">
+                    <h4 class="navbar-brand mb-0">Anecoop-France</h4>
+                </div>
+                <ul class="nav flex-column mt-3">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-page="dashboard">
+                            <i class="fas fa-home"></i> Tableau de bord
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="calendar">
+                            <i class="fas fa-calendar-alt"></i> Calendrier
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="sessions">
+                            <i class="fas fa-chalkboard-teacher"></i> Formations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="groups">
+                            <i class="fas fa-users"></i> Groupes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="participants">
+                            <i class="fas fa-user-graduate"></i> Participants
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-page="reports">
+                            <i class="fas fa-chart-bar"></i> Rapports
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link" href="#" data-page="settings">
+                            <i class="fas fa-cog"></i> Paramètres
+                        </a>
+                    </li>
+                </ul>
+                <div class="mt-auto text-center py-3" style="position: absolute; bottom: 0; width: 100%;">
+                    <p class="small text-muted mb-0">© 2025 Anecoop-France</p>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-0">
+                <!-- Top Navigation Bar -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+                    <div class="container-fluid">
+                        <a class="navbar-brand d-md-none" href="#">Anecoop-France</a>
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-sm btn-light" type="button" id="refreshBtn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <div class="dropdown ms-3">
+                                <button class="btn btn-sm btn-light position-relative" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-bell"></i>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        3
+                                    </span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
+                                    <li><h6 class="dropdown-header">Notifications</h6></li>
+                                    <li><a class="dropdown-item" href="#">Nouvelle formation ajoutée</a></li>
+                                    <li><a class="dropdown-item" href="#">2 participants en attente</a></li>
+                                    <li><a class="dropdown-item" href="#">Formation à confirmer</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-center small" href="#">Voir toutes les notifications</a></li>
+                                </ul>
+                            </div>
+                            <div class="dropdown ms-3">
+                                <button class="btn btn-sm btn-light" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user-circle"></i> <span id="userName">Admin</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profil</a></li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Paramètres</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Page Content Area -->
+                <div class="container-fluid p-4">
+                    <!-- Le reste du contenu HTML des pages reste identique -->
+                    <!-- Dashboard, Calendar, Sessions, Groups, Participants, Reports, Settings -->
+                    
+                    <!-- Dashboard View -->
+                    <div id="dashboardPage" class="page-content animate__animated animate__fadeInUp">
+                        <h2 class="mb-4">Tableau de bord</h2>
+                        <!-- Contenu du tableau de bord -->
+                    </div>
+
+                    <!-- Les autres pages suivent le même modèle... -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals et templates comme dans la version précédente -->
+    
+    <!-- Notification Template -->
+    <div id="notificationTemplate" style="display: none;">
+        <div class="notification">
+            <div class="notification-content"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCrcpvqIszIIVvq7MiNOkj_Fj4dtd9VVyA",
+            authDomain: "anecoop-formations.firebaseapp.com",
+            projectId: "anecoop-formations",
+            storageBucket: "anecoop-formations.firebasestorage.app",
+            messagingSenderId: "81893594187",
+            appId: "1:81893594187:web:ec8a87c0b5e7a1844569ce",
+            measurementId: "G-2TMQNNC7KW"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Get Firestore instance
+        const db = firebase.firestore();
+        
+        // Database Controller with Firebase
+        const DB = {
+            // Initialize database
+            init: async function() {
+                try {
+                    // Check if collections exist
+                    const settingsDoc = await db.collection('settings').doc('app_settings').get();
+                    
+                    if (!settingsDoc.exists) {
+                        // Create initial database structure
+                        await this.createInitialData();
+                    }
+                    
+                    console.log('Firebase initialized successfully');
+                    return true;
+                } catch (error) {
+                    console.error('Error initializing Firebase:', error);
+                    return false;
+                }
+            },
+            
+            // Create initial data
+            createInitialData: async function() {
+                try {
+                    // Create settings
+                    await db.collection('settings').doc('app_settings').set({
+                        companyName: 'Anecoop-France',
+                        siteLocation: 'Anecoop',
+                        minGroupSize: 8,
+                        maxGroupSize: 12,
+                        defaultDuration: 90,
+                        autoNotifications: true,
+                        emailReminders: true
+                    });
+                    
+                    // Create trainings
+                    const trainings = [
+                        { id: 'teams', name: 'Communiquer avec Teams', duration: 90 },
+                        { id: 'sharepoint', name: 'Collaborer avec Teams/SharePoint', duration: 90 },
+                        { id: 'tasks', name: 'Gérer les tâches d\'équipe', duration: 90 },
+                        { id: 'onedrive', name: 'Gérer mes fichiers avec OneDrive/SharePoint', duration: 90 }
+                    ];
+                    
+                    for (const training of trainings) {
+                        await db.collection('trainings').doc(training.id).set(training);
+                    }
+                    
+                    // Create groups
+                    const groups = [
+                        { id: 'commerce1', name: 'Commerce - Groupe 1', service: 'Commerce', minSize: 8, maxSize: 12 },
+                        { id: 'commerce2', name: 'Commerce - Groupe 2', service: 'Commerce', minSize: 8, maxSize: 12 },
+                        { id: 'compta', name: 'Comptabilité', service: 'Comptabilité', minSize: 8, maxSize: 12 },
+                        { id: 'rh', name: 'RH/Qualité/Marketing', service: 'RH', minSize: 8, maxSize: 12 }
+                    ];
+                    
+                    for (const group of groups) {
+                        await db.collection('groups').doc(group.id).set(group);
+                    }
+                    
+                    // Create initial sessions
+                    const sessions = [
+                        { 
+                            id: 's1', 
+                            trainingId: 'teams', 
+                            groupId: 'commerce1', 
+                            date: '2025-05-15', 
+                            startTime: '10:00', 
+                            duration: 90, 
+                            location: 'Anecoop', 
+                            status: 'pending', 
+                            participants: 10, 
+                            maxParticipants: 12,
+                            notes: ''
+                        },
+                        { 
+                            id: 's2', 
+                            trainingId: 'tasks', 
+                            groupId: 'rh', 
+                            date: '2025-05-17', 
+                            startTime: '14:30', 
+                            duration: 90, 
+                            location: 'Anecoop', 
+                            status: 'confirmed', 
+                            participants: 8, 
+                            maxParticipants: 10,
+                            notes: ''
+                        }
+                    ];
+                    
+                    for (const session of sessions) {
+                        await db.collection('sessions').doc(session.id).set(session);
+                    }
+                    
+                    console.log('Initial data created successfully');
+                    return true;
+                } catch (error) {
+                    console.error('Error creating initial data:', error);
+                    return false;
+                }
+            },
+            
+            // Sessions operations
+            sessions: {
+                getAll: async function() {
+                    try {
+                        const snapshot = await db.collection('sessions').get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.error('Error getting sessions:', error);
+                        return [];
+                    }
+                },
+                
+                get: async function(id) {
+                    try {
+                        const doc = await db.collection('sessions').doc(id).get();
+                        return doc.exists ? doc.data() : null;
+                    } catch (error) {
+                        console.error('Error getting session:', error);
+                        return null;
+                    }
+                },
+                
+                add: async function(session) {
+                    try {
+                        // Generate ID if not provided
+                        if (!session.id) {
+                            const snapshot = await db.collection('sessions').orderBy('id').get();
+                            const lastId = snapshot.docs.length > 0 ? 
+                                parseInt(snapshot.docs[snapshot.docs.length - 1].data().id.slice(1)) : 0;
+                            session.id = 's' + (lastId + 1);
+                        }
+                        
+                        await db.collection('sessions').doc(session.id).set(session);
+                        return session;
+                    } catch (error) {
+                        console.error('Error adding session:', error);
+                        return null;
+                    }
+                },
+                
+                update: async function(session) {
+                    try {
+                        await db.collection('sessions').doc(session.id).update(session);
+                        return true;
+                    } catch (error) {
+                        console.error('Error updating session:', error);
+                        return false;
+                    }
+                },
+                
+                delete: async function(id) {
+                    try {
+                        await db.collection('sessions').doc(id).delete();
+                        return true;
+                    } catch (error) {
+                        console.error('Error deleting session:', error);
+                        return false;
+                    }
+                },
+                
+                getUpcoming: async function() {
+                    try {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        const snapshot = await db.collection('sessions')
+                            .where('date', '>=', today.toISOString().split('T')[0])
+                            .get();
+                            
+                        return snapshot.docs
+                            .map(doc => doc.data())
+                            .filter(session => session.status === 'pending' || session.status === 'confirmed')
+                            .sort((a, b) => {
+                                return new Date(a.date + 'T' + a.startTime) - new Date(b.date + 'T' + b.startTime);
+                            });
+                    } catch (error) {
+                        console.error('Error getting upcoming sessions:', error);
+                        return [];
+                    }
+                }
+            },
+            
+            // Groups operations
+            groups: {
+                getAll: async function() {
+                    try {
+                        const snapshot = await db.collection('groups').get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.error('Error getting groups:', error);
+                        return [];
+                    }
+                },
+                
+                get: async function(id) {
+                    try {
+                        const doc = await db.collection('groups').doc(id).get();
+                        return doc.exists ? doc.data() : null;
+                    } catch (error) {
+                        console.error('Error getting group:', error);
+                        return null;
+                    }
+                },
+                
+                add: async function(group) {
+                    try {
+                        // Generate ID if not provided
+                        if (!group.id) {
+                            const servicePrefix = group.service.toLowerCase().substring(0, 3);
+                            let counter = 1;
+                            let id = servicePrefix + counter;
+                            
+                            // Check if ID exists
+                            let existingDoc = await db.collection('groups').doc(id).get();
+                            
+                            while (existingDoc.exists) {
+                                counter++;
+                                id = servicePrefix + counter;
+                                existingDoc = await db.collection('groups').doc(id).get();
+                            }
+                            
+                            group.id = id;
+                        }
+                        
+                        await db.collection('groups').doc(group.id).set(group);
+                        return group;
+                    } catch (error) {
+                        console.error('Error adding group:', error);
+                        return null;
+                    }
+                },
+                
+                update: async function(group) {
+                    try {
+                        await db.collection('groups').doc(group.id).update(group);
+                        return true;
+                    } catch (error) {
+                        console.error('Error updating group:', error);
+                        return false;
+                    }
+                },
+                
+                delete: async function(id) {
+                    try {
+                        await db.collection('groups').doc(id).delete();
+                        return true;
+                    } catch (error) {
+                        console.error('Error deleting group:', error);
+                        return false;
+                    }
+                }
+            },
+            
+            // Participants operations
+            participants: {
+                getAll: async function() {
+                    try {
+                        const snapshot = await db.collection('participants').get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.error('Error getting participants:', error);
+                        return [];
+                    }
+                },
+                
+                get: async function(id) {
+                    try {
+                        const doc = await db.collection('participants').doc(id).get();
+                        return doc.exists ? doc.data() : null;
+                    } catch (error) {
+                        console.error('Error getting participant:', error);
+                        return null;
+                    }
+                },
+                
+                add: async function(participant) {
+                    try {
+                        // Generate ID if not provided
+                        if (!participant.id) {
+                            const snapshot = await db.collection('participants').orderBy('id').get();
+                            const lastId = snapshot.docs.length > 0 ? 
+                                parseInt(snapshot.docs[snapshot.docs.length - 1].data().id.slice(1)) : 0;
+                            participant.id = 'p' + (lastId + 1);
+                        }
+                        
+                        await db.collection('participants').doc(participant.id).set(participant);
+                        return participant;
+                    } catch (error) {
+                        console.error('Error adding participant:', error);
+                        return null;
+                    }
+                },
+                
+                update: async function(participant) {
+                    try {
+                        await db.collection('participants').doc(participant.id).update(participant);
+                        return true;
+                    } catch (error) {
+                        console.error('Error updating participant:', error);
+                        return false;
+                    }
+                },
+                
+                delete: async function(id) {
+                    try {
+                        await db.collection('participants').doc(id).delete();
+                        return true;
+                    } catch (error) {
+                        console.error('Error deleting participant:', error);
+                        return false;
+                    }
+                },
+                
+                getByGroup: async function(groupId) {
+                    try {
+                        const snapshot = await db.collection('participants')
+                            .where('groupId', '==', groupId)
+                            .get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.error('Error getting participants by group:', error);
+                        return [];
+                    }
+                }
+            },
+            
+            // Trainings operations
+            trainings: {
+                getAll: async function() {
+                    try {
+                        const snapshot = await db.collection('trainings').get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.error('Error getting trainings:', error);
+                        return [];
+                    }
+                },
+                
+                get: async function(id) {
+                    try {
+                        const doc = await db.collection('trainings').doc(id).get();
+                        return doc.exists ? doc.data() : null;
+                    } catch (error) {
+                        console.error('Error getting training:', error);
+                        return null;
+                    }
+                }
+            },
+            
+            // Settings operations
+            settings: {
+                get: async function() {
+                    try {
+                        const doc = await db.collection('settings').doc('app_settings').get();
+                        return doc.exists ? doc.data() : null;
+                    } catch (error) {
+                        console.error('Error getting settings:', error);
+                        return null;
+                    }
+                },
+                
+                update: async function(settings) {
+                    try {
+                        await db.collection('settings').doc('app_settings').update(settings);
+                        return true;
+                    } catch (error) {
+                        console.error('Error updating settings:', error);
+                        return false;
+                    }
+                }
+            }
+        };
+
+        // Authentication Controller
+        const Auth = {
+            // Check if user is logged in
+            isLoggedIn: function() {
+                return firebase.auth().currentUser !== null;
+            },
+            
+            // Get current user
+            getCurrentUser: function() {
+                return firebase.auth().currentUser;
+            },
+            
+            // Login
+            login: async function(email, password) {
+                try {
+                    await firebase.auth().signInWithEmailAndPassword(email, password);
+                    return true;
+                } catch (error) {
+                    console.error('Error logging in:', error);
+                    return false;
+                }
+            },
+            
+            // Logout
+            logout: async function() {
+                try {
+                    await firebase.auth().signOut();
+                    return true;
+                } catch (error) {
+                    console.error('Error logging out:', error);
+                    return false;
+                }
+            },
+            
+            // Create user
+            createUser: async function(email, password) {
+                try {
+                    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    return userCredential.user;
+                } catch (error) {
+                    console.error('Error creating user:', error);
+                    return null;
+                }
+            },
+            
+            // Setup auth state change listener
+            setupAuthListener: function(callback) {
+                firebase.auth().onAuthStateChanged(callback);
+            }
+        };
+
+        // UI Controller
+        const UI = {
+            // Initialize UI
+            init: async function() {
+                // Setup auth listener
+                Auth.setupAuthListener(async function(user) {
+                    if (user) {
+                        // User is logged in
+                        document.getElementById('appContainer').style.display = 'block';
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('userName').textContent = user.email.split('@')[0];
+                        
+                        // Initialize database
+                        await DB.init();
+                        
+                        // Load dashboard data
+                        UI.loadDashboard();
+                    } else {
+                        // User is logged out
+                        document.getElementById('appContainer').style.display = 'none';
+                        document.getElementById('loginScreen').style.display = 'flex';
+                    }
+                    
+                    // Hide loading overlay
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                });
+                
+                // Setup event listeners
+                UI.setupEventListeners();
+            },
+            
+            // Setup UI event listeners
+            setupEventListeners: function() {
+                // Login button
+                document.getElementById('loginBtn').addEventListener('click', async function() {
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    
+                    if (!email || !password) {
+                        UI.showNotification('Veuillez remplir tous les champs', 'danger');
+                        return;
+                    }
+                    
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    
+                    const success = await Auth.login(email, password);
+                    
+                    if (!success) {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        UI.showNotification('Email ou mot de passe incorrect', 'danger');
+                    }
+                });
+                
+                // Logout button
+                document.getElementById('logoutBtn').addEventListener('click', async function() {
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    await Auth.logout();
+                });
+                
+                // Navigation
+                document.querySelectorAll('.nav-link').forEach(function(link) {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const page = this.getAttribute('data-page');
+                        UI.navigateTo(page);
+                    });
+                });
+                
+                // Refresh button
+                document.getElementById('refreshBtn').addEventListener('click', function() {
+                    UI.refreshCurrentPage();
+                    UI.showNotification('Données actualisées', 'success');
+                });
+                
+                // Add other event listeners as in previous version
+                // This includes session, group, participant management buttons
+            },
+            
+            // Navigate to page
+            navigateTo: function(page) {
+                // Hide all pages
+                document.querySelectorAll('.page-content').forEach(function(pageEl) {
+                    pageEl.style.display = 'none';
+                });
+                
+                // Show selected page
+                document.getElementById(page + 'Page').style.display = 'block';
+                
+                // Update active nav link
+                document.querySelectorAll('.nav-link').forEach(function(link) {
+                    link.classList.remove('active');
+                });
+                
+                document.querySelector('.nav-link[data-page="' + page + '"]').classList.add('active');
+                
+                // Load page specific data
+                switch(page) {
+                    case 'dashboard':
+                        UI.loadDashboard();
+                        break;
+                    case 'calendar':
+                        UI.loadCalendar();
+                        break;
+                    case 'sessions':
+                        UI.loadSessions();
+                        break;
+                    case 'groups':
+                        UI.loadGroups();
+                        break;
+                    case 'participants':
+                        UI.loadParticipants();
+                        break;
+                    case 'reports':
+                        UI.loadReports();
+                        break;
+                    case 'settings':
+                        UI.loadSettings();
+                        break;
+                }
+            },
+            
+            // Refresh current page
+            refreshCurrentPage: function() {
+                const activePage = document.querySelector('.nav-link.active').getAttribute('data-page');
+                UI.navigateTo(activePage);
+            },
+            
+            // Load dashboard data
+            loadDashboard: async function() {
+                try {
+                    // Get upcoming sessions
+                    const upcomingSessions = await DB.sessions.getUpcoming();
+                    
+                    // Update stats here...
+                    console.log('Dashboard loaded with', upcomingSessions.length, 'upcoming sessions');
+                    
+                    // Update the dashboard UI
+                    // This would populate charts, stats, etc.
+                } catch (error) {
+                    console.error('Error loading dashboard:', error);
+                    UI.showNotification('Erreur lors du chargement du tableau de bord', 'danger');
+                }
+            },
+            
+            // Show notification
+            showNotification: function(message, type) {
+                // Clone notification template
+                const template = document.getElementById('notificationTemplate');
+                const notification = template.querySelector('.notification').cloneNode(true);
+                
+                // Set notification content
+                notification.querySelector('.notification-content').textContent = message;
+                
+                // Set notification type
+                if (type === 'success') {
+                    notification.style.backgroundColor = 'var(--success)';
+                } else if (type === 'danger') {
+                    notification.style.backgroundColor = 'var(--danger)';
+                } else if (type === 'warning') {
+                    notification.style.backgroundColor = 'var(--warning)';
+                } else if (type === 'info') {
+                    notification.style.backgroundColor = 'var(--info)';
+                }
+                
+                // Add notification to body
+                document.body.appendChild(notification);
+                
+                // Remove notification after animation
+                setTimeout(function() {
+                    notification.remove();
+                }, 4000);
+            },
+            
+            // Implement other UI methods as needed (similar to previous version)
+            // These would include CRUD operations for sessions, groups, participants
+        };
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            UI.init();
+        });
+    </script>
+</body>
+</html>
