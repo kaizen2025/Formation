@@ -213,18 +213,28 @@
         // --- Setup Événements ---
         // ... (setupEventListeners - Vérifiée pour être complète et définie avant appel) ...
 
-        // --- Initialisation ---
+        // ================= SETUP ÉVÉNEMENTS (Définition ici) =================
+        function setupEventListeners() {
+            console.log("Setting up event listeners...");
+            // ... (TOUT le contenu de la fonction setupEventListeners) ...
+             console.log("Event listeners setup complete.");
+        } // FIN DE LA DÉFINITION
+
+        // ================= INITIALISATION DE L'APPLICATION =================
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOM chargé. Initialisation application...");
-            showLoading(); updateConnectionStatus(false, "Initialisation..."); updateUserStatusDisplay();
-            setupEventListeners(); // Appel après définition
+            showLoading();
+            updateConnectionStatus(false, "Initialisation...");
+            updateUserStatusDisplay();
+
+            // APPEL de setupEventListeners (maintenant la fonction est définie au-dessus)
+            setupEventListeners();
+
             initializeFirebase()
-                .then(success => { if (success) console.log("Init Firebase & Auth OK."); else throw new Error("Init Firebase échouée."); })
-                .catch(error => console.error("Erreur critique Init:", error));
+                .then(success => { /* ... */ })
+                .catch(error => { /* ... */ });
         });
 
     </script>
-    <!-- FIN DU SCRIPT PRINCIPAL -->
-
 </body>
 </html>
