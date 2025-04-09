@@ -12,6 +12,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAB1UlEQVR42mNkGGDAOOqAUQeMOiDtHRAXF/d/2bJl/0fdtrD/M2bM+N/Q0PD/2LFj/w0MDP7v2bPnf0VFxf+ysjJUmxkZGf+npqb+DwwM/K+iovL/1atX/728vP7b2NigfAC0QnfRokX/8/Ly/js7O/+/f//+/+joaJosLysr+39mZub/rKys/3Z2dv8/fPiA8AFQH2DcuHH///Hjx3+golOqOj4eLu1Ne3v7/5MnT/5PSEj4n5SU9P/z58//WVhY/j99+hS3AziY2ZgEBIX/cwrJ/Gdm5/z/5+eP/3eO7fvPwMjMwMDIjNfH7CzMDFwC4kD1LP8ZWdj/v7l6+P93ZlEDBlZuRgZWLgaizn//+PH/748v/7//jOD1AT8fDwMXvwjQERwMv759+X967XQGVh5RBjYeUaIOYGZmYhCQ0WBgZOVkYGRiZni6fzEDlxCQ5hYG2ynGwMbDz8DEysbAxoMIRXQfgOwXVdNjEJJQZPj68R3Dx/fvGe6cPcTw7tnD/8J6bmCHfGV4cXrXfwFpTRagwxjevzjN8PPLRwZuYWmwQ4ACEU0dwC0kw8DEws4gLK3GwMbDx/D5/WuGz+9eM7x9fJ1BXMWYgZGZleHF+T0MXz++ZwDZj65+1AFDyQEAQSC4/0t8E0QAAAAASUVORK5CYII=">
     <!-- Custom CSS -->
     <style>
         :root {
@@ -115,12 +117,6 @@
 
         .page-content {
             display: none;
-        }
-
-        #loginPage {
-            display: block;
-            max-width: 500px;
-            margin: 50px auto;
         }
 
         .attachment-preview {
@@ -1135,119 +1131,144 @@
 
     <!-- Application JavaScript -->
     <script>
-        // Mock data for development
-        const mockData = {
-            formations: [
-                {
-                    id: 1,
-                    title: "Introduction à JavaScript",
-                    category: "Informatique",
-                    description: "Une formation complète pour débutants sur JavaScript et ses principes fondamentaux.",
-                    startDate: "2025-04-15T09:00",
-                    endDate: "2025-04-17T17:00",
-                    trainer: "Jean Dupont",
-                    location: "Salle 101",
-                    maxParticipants: 20,
-                    status: "À venir",
-                    prerequisites: "Connaissances de base en HTML et CSS",
-                    attachments: [
-                        { name: "Support_cours.pdf", type: "pdf" },
-                        { name: "Exercices.docx", type: "docx" }
-                    ],
-                    participants: [1, 3, 5]
-                },
-                {
-                    id: 2,
-                    title: "Management d'équipe",
-                    category: "Management",
-                    description: "Apprenez à gérer efficacement une équipe et à développer vos compétences de leadership.",
-                    startDate: "2025-04-20T09:00",
-                    endDate: "2025-04-21T17:00",
-                    trainer: "Marie Martin",
-                    location: "Salle de conférence A",
-                    maxParticipants: 15,
-                    status: "À venir",
-                    prerequisites: "Expérience en gestion d'équipe souhaitée",
-                    attachments: [
-                        { name: "Slides_presentation.pptx", type: "pptx" }
-                    ],
-                    participants: [2, 4, 7]
-                },
-                {
-                    id: 3,
-                    title: "Cybersécurité: les fondamentaux",
-                    category: "Sécurité",
-                    description: "Une introduction aux principes de base de la sécurité informatique.",
-                    startDate: "2025-03-10T09:00",
-                    endDate: "2025-03-12T17:00",
-                    trainer: "Patrick Leroy",
-                    location: "Salle 203",
-                    maxParticipants: 25,
-                    status: "Terminée",
-                    prerequisites: "Connaissances générales en informatique",
-                    attachments: [],
-                    participants: [1, 2, 3, 4, 8]
-                },
-                {
-                    id: 4,
-                    title: "Communication efficace",
-                    category: "Communication",
-                    description: "Développez vos compétences en communication pour améliorer vos relations professionnelles.",
-                    startDate: "2025-05-05T09:00",
-                    endDate: "2025-05-06T17:00",
-                    trainer: "Sophie Dubois",
-                    location: "Salle 105",
-                    maxParticipants: 20,
-                    status: "À venir",
-                    prerequisites: "",
-                    attachments: [
-                        { name: "Guide_pratique.pdf", type: "pdf" }
-                    ],
-                    participants: [3, 5, 6]
-                },
-                {
-                    id: 5,
-                    title: "Excel Avancé",
-                    category: "Informatique",
-                    description: "Maîtrisez les fonctionnalités avancées d'Excel pour analyser et présenter vos données.",
-                    startDate: "2025-04-28T09:00",
-                    endDate: "2025-04-30T17:00",
-                    trainer: "Philippe Martin",
-                    location: "Salle Informatique 2",
-                    maxParticipants: 15,
-                    status: "À venir",
-                    prerequisites: "Connaissance des bases d'Excel",
-                    attachments: [
-                        { name: "Exercices_pratiques.xlsx", type: "xlsx" }
-                    ],
-                    participants: [2, 7, 8]
-                }
-            ],
-            participants: [
-                { id: 1, firstName: "Thomas", lastName: "Bernard", email: "t.bernard@exemple.com", department: "IT", phone: "0123456789", trainings: [1, 3] },
-                { id: 2, firstName: "Laura", lastName: "Petit", email: "l.petit@exemple.com", department: "RH", phone: "0234567890", trainings: [2, 3, 5] },
-                { id: 3, firstName: "Antoine", lastName: "Durand", email: "a.durand@exemple.com", department: "Marketing", phone: "0345678901", trainings: [1, 3, 4] },
-                { id: 4, firstName: "Emma", lastName: "Lefèvre", email: "e.lefevre@exemple.com", department: "Finance", phone: "0456789012", trainings: [2, 3] },
-                { id: 5, firstName: "Nicolas", lastName: "Moreau", email: "n.moreau@exemple.com", department: "Ventes", phone: "0567890123", trainings: [1, 4] },
-                { id: 6, firstName: "Julie", lastName: "Robert", email: "j.robert@exemple.com", department: "R&D", phone: "0678901234", trainings: [4] },
-                { id: 7, firstName: "Maxime", lastName: "Simon", email: "m.simon@exemple.com", department: "Production", phone: "0789012345", trainings: [2, 5] },
-                { id: 8, firstName: "Clara", lastName: "Girard", email: "c.girard@exemple.com", department: "IT", phone: "0890123456", trainings: [3, 5] }
-            ],
-            attendance: [
-                { formationId: 3, participantId: 1, present: true, notes: "Très participatif" },
-                { formationId: 3, participantId: 2, present: true, notes: "" },
-                { formationId: 3, participantId: 3, present: false, notes: "Absent pour maladie" },
-                { formationId: 3, participantId: 4, present: true, notes: "" },
-                { formationId: 3, participantId: 8, present: true, notes: "A posé beaucoup de questions" }
-            ],
-            activities: [
-                { id: 1, type: "formation_created", date: "2025-04-01T11:23", description: "Formation 'Introduction à JavaScript' créée" },
-                { id: 2, type: "participant_added", date: "2025-04-02T09:15", description: "3 participants ajoutés à la formation 'Management d'équipe'" },
-                { id: 3, type: "formation_updated", date: "2025-04-03T14:30", description: "Formation 'Excel Avancé' mise à jour" },
-                { id: 4, type: "participant_created", date: "2025-04-05T10:45", description: "Nouveau participant 'Clara Girard' ajouté" },
-                { id: 5, type: "attendance_updated", date: "2025-03-12T17:30", description: "Présences pour 'Cybersécurité: les fondamentaux' enregistrées" }
-            ]
-        };
+        // Vérifier que toutes les bibliothèques sont correctement chargées
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof FullCalendar === 'undefined') {
+                console.error("FullCalendar n'est pas chargé correctement");
+                document.body.innerHTML = '<div class="container mt-5"><div class="alert alert-danger"><h4>Erreur de chargement</h4><p>La bibliothèque FullCalendar n\'a pas pu être chargée correctement. Veuillez actualiser la page ou contacter l\'administrateur.</p></div></div>';
+                return;
+            }
+            
+            if (typeof $.fn.DataTable === 'undefined') {
+                console.error("DataTable n'est pas chargé correctement");
+                document.body.innerHTML = '<div class="container mt-5"><div class="alert alert-danger"><h4>Erreur de chargement</h4><p>La bibliothèque DataTable n\'a pas pu être chargée correctement. Veuillez actualiser la page ou contacter l\'administrateur.</p></div></div>';
+                return;
+            }
+            
+            if (typeof Chart === 'undefined') {
+                console.error("Chart.js n'est pas chargé correctement");
+                document.body.innerHTML = '<div class="container mt-5"><div class="alert alert-danger"><h4>Erreur de chargement</h4><p>La bibliothèque Chart.js n\'a pas pu être chargée correctement. Veuillez actualiser la page ou contacter l\'administrateur.</p></div></div>';
+                return;
+            }
+            
+            // Si toutes les bibliothèques sont chargées, initialiser l'application
+            initializeApp();
+        });
+        // Fonction principale d'initialisation
+        function initializeApp() {
+            // Mock data for development
+            const mockData = {
+                formations: [
+                    {
+                        id: 1,
+                        title: "Introduction à JavaScript",
+                        category: "Informatique",
+                        description: "Une formation complète pour débutants sur JavaScript et ses principes fondamentaux.",
+                        startDate: "2025-04-15T09:00",
+                        endDate: "2025-04-17T17:00",
+                        trainer: "Jean Dupont",
+                        location: "Salle 101",
+                        maxParticipants: 20,
+                        status: "À venir",
+                        prerequisites: "Connaissances de base en HTML et CSS",
+                        attachments: [
+                            { name: "Support_cours.pdf", type: "pdf" },
+                            { name: "Exercices.docx", type: "docx" }
+                        ],
+                        participants: [1, 3, 5]
+                    },
+                    {
+                        id: 2,
+                        title: "Management d'équipe",
+                        category: "Management",
+                        description: "Apprenez à gérer efficacement une équipe et à développer vos compétences de leadership.",
+                        startDate: "2025-04-20T09:00",
+                        endDate: "2025-04-21T17:00",
+                        trainer: "Marie Martin",
+                        location: "Salle de conférence A",
+                        maxParticipants: 15,
+                        status: "À venir",
+                        prerequisites: "Expérience en gestion d'équipe souhaitée",
+                        attachments: [
+                            { name: "Slides_presentation.pptx", type: "pptx" }
+                        ],
+                        participants: [2, 4, 7]
+                    },
+                    {
+                        id: 3,
+                        title: "Cybersécurité: les fondamentaux",
+                        category: "Sécurité",
+                        description: "Une introduction aux principes de base de la sécurité informatique.",
+                        startDate: "2025-03-10T09:00",
+                        endDate: "2025-03-12T17:00",
+                        trainer: "Patrick Leroy",
+                        location: "Salle 203",
+                        maxParticipants: 25,
+                        status: "Terminée",
+                        prerequisites: "Connaissances générales en informatique",
+                        attachments: [],
+                        participants: [1, 2, 3, 4, 8]
+                    },
+                    {
+                        id: 4,
+                        title: "Communication efficace",
+                        category: "Communication",
+                        description: "Développez vos compétences en communication pour améliorer vos relations professionnelles.",
+                        startDate: "2025-05-05T09:00",
+                        endDate: "2025-05-06T17:00",
+                        trainer: "Sophie Dubois",
+                        location: "Salle 105",
+                        maxParticipants: 20,
+                        status: "À venir",
+                        prerequisites: "",
+                        attachments: [
+                            { name: "Guide_pratique.pdf", type: "pdf" }
+                        ],
+                        participants: [3, 5, 6]
+                    },
+                    {
+                        id: 5,
+                        title: "Excel Avancé",
+                        category: "Informatique",
+                        description: "Maîtrisez les fonctionnalités avancées d'Excel pour analyser et présenter vos données.",
+                        startDate: "2025-04-28T09:00",
+                        endDate: "2025-04-30T17:00",
+                        trainer: "Philippe Martin",
+                        location: "Salle Informatique 2",
+                        maxParticipants: 15,
+                        status: "À venir",
+                        prerequisites: "Connaissance des bases d'Excel",
+                        attachments: [
+                            { name: "Exercices_pratiques.xlsx", type: "xlsx" }
+                        ],
+                        participants: [2, 7, 8]
+                    }
+                ],
+                participants: [
+                    { id: 1, firstName: "Thomas", lastName: "Bernard", email: "t.bernard@exemple.com", department: "IT", phone: "0123456789", trainings: [1, 3] },
+                    { id: 2, firstName: "Laura", lastName: "Petit", email: "l.petit@exemple.com", department: "RH", phone: "0234567890", trainings: [2, 3, 5] },
+                    { id: 3, firstName: "Antoine", lastName: "Durand", email: "a.durand@exemple.com", department: "Marketing", phone: "0345678901", trainings: [1, 3, 4] },
+                    { id: 4, firstName: "Emma", lastName: "Lefèvre", email: "e.lefevre@exemple.com", department: "Finance", phone: "0456789012", trainings: [2, 3] },
+                    { id: 5, firstName: "Nicolas", lastName: "Moreau", email: "n.moreau@exemple.com", department: "Ventes", phone: "0567890123", trainings: [1, 4] },
+                    { id: 6, firstName: "Julie", lastName: "Robert", email: "j.robert@exemple.com", department: "R&D", phone: "0678901234", trainings: [4] },
+                    { id: 7, firstName: "Maxime", lastName: "Simon", email: "m.simon@exemple.com", department: "Production", phone: "0789012345", trainings: [2, 5] },
+                    { id: 8, firstName: "Clara", lastName: "Girard", email: "c.girard@exemple.com", department: "IT", phone: "0890123456", trainings: [3, 5] }
+                ],
+                attendance: [
+                    { formationId: 3, participantId: 1, present: true, notes: "Très participatif" },
+                    { formationId: 3, participantId: 2, present: true, notes: "" },
+                    { formationId: 3, participantId: 3, present: false, notes: "Absent pour maladie" },
+                    { formationId: 3, participantId: 4, present: true, notes: "" },
+                    { formationId: 3, participantId: 8, present: true, notes: "A posé beaucoup de questions" }
+                ],
+                activities: [
+                    { id: 1, type: "formation_created", date: "2025-04-01T11:23", description: "Formation 'Introduction à JavaScript' créée" },
+                    { id: 2, type: "participant_added", date: "2025-04-02T09:15", description: "3 participants ajoutés à la formation 'Management d'équipe'" },
+                    { id: 3, type: "formation_updated", date: "2025-04-03T14:30", description: "Formation 'Excel Avancé' mise à jour" },
+                    { id: 4, type: "participant_created", date: "2025-04-05T10:45", description: "Nouveau participant 'Clara Girard' ajouté" },
+                    { id: 5, type: "attendance_updated", date: "2025-03-12T17:30", description: "Présences pour 'Cybersécurité: les fondamentaux' enregistrées" }
+                ]
+            };
 
         // Global variables
         let currentUser = {
