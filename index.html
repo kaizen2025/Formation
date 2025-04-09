@@ -225,7 +225,7 @@
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="#">FormaGest</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Menu de navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
@@ -281,7 +281,8 @@
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-3 mb-2">
-                            <select class="form-select" id="filterCategoryInscription">
+                            <label for="filterCategoryInscription" class="visually-hidden">Filtrer par catégorie</label>
+                            <select class="form-select" id="filterCategoryInscription" aria-label="Filtrer par catégorie">
                                 <option value="">Toutes les catégories</option>
                                 <option value="Technique">Technique</option>
                                 <option value="Management">Management</option>
@@ -295,7 +296,7 @@
                         <div class="col-md-9">
                             <div class="input-group">
                                 <input type="text" class="form-control" id="searchInscription" placeholder="Rechercher une formation...">
-                                <button class="btn btn-outline-secondary" type="button">
+                                <button class="btn btn-outline-secondary" type="button" aria-label="Rechercher">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </div>
@@ -412,7 +413,8 @@
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-3 mb-2">
-                            <select class="form-select" id="filterCategory">
+                            <label for="filterCategory" class="visually-hidden">Filtrer par catégorie</label>
+                            <select class="form-select" id="filterCategory" aria-label="Filtrer par catégorie">
                                 <option value="">Toutes les catégories</option>
                                 <option value="Technique">Technique</option>
                                 <option value="Management">Management</option>
@@ -424,7 +426,8 @@
                             </select>
                         </div>
                         <div class="col-md-3 mb-2">
-                            <select class="form-select" id="filterStatus">
+                            <label for="filterStatus" class="visually-hidden">Filtrer par statut</label>
+                            <select class="form-select" id="filterStatus" aria-label="Filtrer par statut">
                                 <option value="">Tous les statuts</option>
                                 <option value="À venir">À venir</option>
                                 <option value="En cours">En cours</option>
@@ -435,7 +438,7 @@
                         <div class="col-md-6">
                             <div class="input-group">
                                 <input type="text" class="form-control" id="searchFormations" placeholder="Rechercher une formation...">
-                                <button class="btn btn-outline-secondary" type="button">
+                                <button class="btn btn-outline-secondary" type="button" aria-label="Rechercher">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </div>
@@ -471,14 +474,14 @@
             
             <div class="card">
                 <div class="card-body">
-                    <div class="row mb-3">
+                                            <div class="row mb-3">
                         <div class="col-md-12 text-end">
                             <div class="btn-group">
-                                <button class="btn btn-outline-primary" id="calendarPrev">
+                                <button class="btn btn-outline-primary" id="calendarPrev" aria-label="Mois précédent">
                                     <i class="fas fa-chevron-left"></i>
                                 </button>
                                 <button class="btn btn-outline-primary" id="calendarToday">Aujourd'hui</button>
-                                <button class="btn btn-outline-primary" id="calendarNext">
+                                <button class="btn btn-outline-primary" id="calendarNext" aria-label="Mois suivant">
                                     <i class="fas fa-chevron-right"></i>
                                 </button>
                             </div>
@@ -509,7 +512,8 @@
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-3 mb-2">
-                            <select class="form-select" id="filterDepartment">
+                            <label for="filterDepartment" class="visually-hidden">Filtrer par service</label>
+                            <select class="form-select" id="filterDepartment" aria-label="Filtrer par service">
                                 <option value="">Tous les services</option>
                                 <option value="RH">Ressources Humaines</option>
                                 <option value="IT">Informatique</option>
@@ -523,7 +527,7 @@
                         <div class="col-md-9">
                             <div class="input-group">
                                 <input type="text" class="form-control" id="searchParticipants" placeholder="Rechercher un participant...">
-                                <button class="btn btn-outline-secondary" type="button">
+                                <button class="btn btn-outline-secondary" type="button" aria-label="Rechercher">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </div>
@@ -980,7 +984,8 @@
                                 <tr>
                                     <th>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="selectAllParticipants">
+                                            <input class="form-check-input" type="checkbox" id="selectAllParticipants" aria-label="Sélectionner tous les participants">
+                                            <label for="selectAllParticipants" class="visually-hidden">Sélectionner tous</label>
                                         </div>
                                     </th>
                                     <th>Nom</th>
@@ -1154,7 +1159,6 @@
             // Si toutes les bibliothèques sont chargées, initialiser l'application
             initializeApp();
         });
-        // Fonction principale d'initialisation
         function initializeApp() {
             // Mock data for development
             const mockData = {
