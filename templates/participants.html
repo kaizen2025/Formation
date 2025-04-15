@@ -1,0 +1,594 @@
+{% extends 'base.html' %}
+
+{% block title %}Anecoop Formations - Gestion des participants{% endblock %}
+
+{% block content %}
+<!-- Étapes de progression -->
+<div class="steps-container">
+    <div class="step completed" id="step1">
+        <div class="step-number">1</div>
+        <div class="step-title">Service</div>
+    </div>
+    <div class="step completed" id="step2">
+        <div class="step-number">2</div>
+        <div class="step-title">Formations</div>
+    </div>
+    <div class="step active" id="step3">
+        <div class="step-number">3</div>
+        <div class="step-title">Participants</div>
+    </div>
+    <div class="step" id="step4">
+        <div class="step-number">4</div>
+        <div class="step-title">Documents</div>
+    </div>
+    <div class="step" id="step5">
+        <div class="step-number">5</div>
+        <div class="step-title">Confirmation</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Gestion des participants</h2>
+    <p>Ajoutez les participants qui assisteront aux formations. Vous devez avoir entre {{ min_participants }} et {{ max_participants }} participants.</p>
+    
+    <div class="service-info-banner">
+        <strong>Service:</strong> {{ service_name if service_name is defined else service }} | 
+        <strong>Responsable:</strong> {{ contact }} | 
+        <strong>Email:</strong> {{ email }}
+        {% if phone %} | <strong>Téléphone:</strong> {{ phone }}{% endif %}
+    </div>
+    
+    <div class="widget-container">
+        <div class="widget-header">
+            <div class="widget-title">
+                <i class="fas fa-users"></i> Liste des participants
+                <span class="participants-count" id="participantsCount">0/{{ max_participants }}</span>
+            </div>
+            <div class="widget-actions">
+                <button id="importParticipantsBtn" class="icon-text-btn">
+                    <i class="fas fa-file-import"></i> Importer
+                </button>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress">
+                <div class="progress-bar" id="participantsProgress" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <div class="progress-text d-flex justify-content-between">
+                <span>0</span>
+                <span>{{ min_participants }} (Min.)</span>
+                <span>{{ max_participants }} (Max.)</span>
+            </div>
+        </div>
+        
+        <div class="participant-form p-3 border-top border-bottom bg-light">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="participantName">Nom du participant</label>
+                        <input type="text" id="participantName" class="form-control" placeholder="Nom et prénom">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="participantEmail">Email (optionnel)</label>
+                        <input type="email" id="participantEmail" class="form-control" placeholder="Email professionnel">
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="participantDepartment">Département/Poste (optionnel)</label>
+                        <input type="text" id="participantDepartment" class="form-control" placeholder="Département ou poste">
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button id="addParticipant" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Ajouter
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="participants-list-container">
+            <div class="list-header d-flex p-2 bg-light border-bottom">
+                <div class="flex-grow-1 flex-md-grow-2">Nom</div>
+                <div class="flex-grow-1 flex-md-grow-2 d-none d-md-block">Email</div>
+                <div class="flex-grow-1 d-none d-md-block">Département</div>
+                <div style="width: 80px;">Action</div>
+            </div>
+            <div id="participantsList" class="participants-list">
+                <!-- Liste des participants générée par JavaScript -->
+                <div class="p-3 text-center text-muted">Aucun participant ajouté</div>
+            </div>
+        </div>
+    </div>
+    
+    <form action="{{ url_for('documents') }}" method="POST" id="participants-form">
+        <input type="hidden" name="participant_count" id="participant_count" value="0">
+        
+        <!-- Champs cachés pour les informations de service et formations -->
+        <input type="hidden" name="service" value="{{ service }}">
+        <input type="hidden" name="contact" value="{{ contact }}">
+        <input type="hidden" name="email" value="{{ email }}">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        
+        {% for formation in formations %}
+        <input type="hidden" name="date_{{ formation.formation_id }}" value="{{ formation.date }}">
+        <input type="hidden" name="hour_{{ formation.formation_id }}" value="{{ formation.hour }}">
+        <input type="hidden" name="minutes_{{ formation.formation_id }}" value="{{ formation.minutes }}">
+        {% endfor %}
+        
+        <!-- Champs pour les participants - seront ajoutés dynamiquement -->
+        <div id="participant-fields"></div>
+        
+        <div class="actions-container">
+            <a href="{{ url_for('formations', service=service, contact=contact, email=email, phone=phone) }}" class="secondary-btn">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <button type="submit" class="primary-btn" id="nextToDocuments">
+                Suivant <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal pour importer des participants -->
+<div class="modal fade" id="importParticipantsModal" tabindex="-1" aria-labelledby="importParticipantsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importParticipantsModalLabel">Importer des participants</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Téléchargez un fichier CSV contenant la liste des participants. Le fichier doit avoir les colonnes suivantes: Nom, Email, Département.</p>
+                
+                <div class="form-group">
+                    <label for="csvFile">Fichier CSV</label>
+                    <input type="file" id="csvFile" class="form-control" accept=".csv">
+                </div>
+                
+                <div class="template-download mt-3">
+                    <a href="#" id="downloadCsvTemplate">Télécharger un modèle de fichier CSV</a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmImport">Importer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour éditer un participant -->
+<div class="modal fade" id="editParticipantModal" tabindex="-1" aria-labelledby="editParticipantModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editParticipantModalLabel">Modifier un participant</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editParticipantName">Nom du participant</label>
+                    <input type="text" id="editParticipantName" class="form-control" placeholder="Nom et prénom" required>
+                </div>
+                
+                <div class="form-group mt-2">
+                    <label for="editParticipantEmail">Email (optionnel)</label>
+                    <input type="email" id="editParticipantEmail" class="form-control" placeholder="Email professionnel">
+                </div>
+                
+                <div class="form-group mt-2">
+                    <label for="editParticipantDepartment">Département/Poste (optionnel)</label>
+                    <input type="text" id="editParticipantDepartment" class="form-control" placeholder="Département ou poste">
+                </div>
+                
+                <input type="hidden" id="editParticipantIndex">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="saveEditParticipant">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tableaux pour stocker les participants
+    let participants = [];
+    
+    // Charger les participants existants s'il y en a
+    {% if participants is defined and participants %}
+    participants = {{ participants|tojson }};
+    updateParticipantsList();
+    updateParticipantsProgress();
+    {% endif %}
+    
+    // Gérer l'ajout d'un participant
+    document.getElementById('addParticipant').addEventListener('click', function() {
+        addParticipantToList();
+    });
+    
+    // Permettre l'ajout d'un participant en appuyant sur Entrée
+    document.getElementById('participantName').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            addParticipantToList();
+        }
+    });
+    
+    // Gestion de l'import CSV
+    document.getElementById('importParticipantsBtn').addEventListener('click', function() {
+        const importModal = new bootstrap.Modal(document.getElementById('importParticipantsModal'));
+        importModal.show();
+    });
+    
+    // Télécharger le modèle CSV
+    document.getElementById('downloadCsvTemplate').addEventListener('click', function(e) {
+        e.preventDefault();
+        generateCSVTemplate();
+    });
+    
+    // Confirmer l'import CSV
+    document.getElementById('confirmImport').addEventListener('click', function() {
+        const fileInput = document.getElementById('csvFile');
+        importParticipantsFromCSV(fileInput.files[0]);
+    });
+    
+    // Sauvegarder les modifications d'un participant
+    document.getElementById('saveEditParticipant').addEventListener('click', function() {
+        const index = document.getElementById('editParticipantIndex').value;
+        const name = document.getElementById('editParticipantName').value;
+        const email = document.getElementById('editParticipantEmail').value;
+        const department = document.getElementById('editParticipantDepartment').value;
+        
+        if (!name) {
+            showToast('Erreur', 'Le nom du participant est requis', 'error');
+            return;
+        }
+        
+        // Mettre à jour le participant
+        participants[index] = {
+            name: name,
+            email: email,
+            department: department
+        };
+        
+        // Mettre à jour l'interface
+        updateParticipantsList();
+        
+        // Fermer la modal
+        bootstrap.Modal.getInstance(document.getElementById('editParticipantModal')).hide();
+        
+        showToast('Succès', 'Le participant a été modifié avec succès', 'success');
+    });
+    
+    // Gérer la soumission du formulaire
+    document.getElementById('participants-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Vérifier le nombre de participants
+        if (participants.length < {{ min_participants }}) {
+            showToast('Erreur', 'Vous devez ajouter au moins {{ min_participants }} participants', 'error');
+            return;
+        }
+        
+        if (participants.length > {{ max_participants }}) {
+            showToast('Erreur', 'Vous ne pouvez pas avoir plus de {{ max_participants }} participants', 'error');
+            return;
+        }
+        
+        // Ajouter les champs cachés pour les participants
+        const participantFieldsContainer = document.getElementById('participant-fields');
+        participantFieldsContainer.innerHTML = '';
+        
+        participants.forEach((participant, index) => {
+            participantFieldsContainer.innerHTML += `
+                <input type="hidden" name="participant_name_${index}" value="${participant.name}">
+                <input type="hidden" name="participant_email_${index}" value="${participant.email || ''}">
+                <input type="hidden" name="participant_department_${index}" value="${participant.department || ''}">
+            `;
+        });
+        
+        document.getElementById('participant_count').value = participants.length;
+        
+        // Soumettre le formulaire
+        this.submit();
+    });
+    
+    // Fonctions utilitaires
+    function addParticipantToList() {
+        const name = document.getElementById('participantName').value.trim();
+        const email = document.getElementById('participantEmail').value.trim();
+        const department = document.getElementById('participantDepartment').value.trim();
+        
+        if (!name) {
+            showToast('Erreur', 'Le nom du participant est requis', 'error');
+            return;
+        }
+        
+        // Valider l'email si fourni
+        if (email && !validateEmail(email)) {
+            showToast('Erreur', 'L\'adresse email est invalide', 'error');
+            return;
+        }
+        
+        // Vérifier si le participant existe déjà
+        const exists = participants.some(p => 
+            p.name.toLowerCase() === name.toLowerCase() || 
+            (email && p.email && p.email.toLowerCase() === email.toLowerCase())
+        );
+        
+        if (exists) {
+            showToast('Attention', 'Ce participant existe déjà dans la liste', 'warning');
+            return;
+        }
+        
+        // Vérifier le nombre maximum de participants
+        if (participants.length >= {{ max_participants }}) {
+            showToast('Erreur', 'Vous ne pouvez pas ajouter plus de {{ max_participants }} participants', 'error');
+            return;
+        }
+        
+        // Ajouter le participant
+        participants.push({
+            name: name,
+            email: email,
+            department: department
+        });
+        
+        // Mettre à jour l'interface
+        updateParticipantsList();
+        updateParticipantsProgress();
+        
+        // Effacer le formulaire
+        document.getElementById('participantName').value = '';
+        document.getElementById('participantEmail').value = '';
+        document.getElementById('participantDepartment').value = '';
+        
+        // Mettre le focus sur le champ nom
+        document.getElementById('participantName').focus();
+        
+        showToast('Succès', 'Le participant a été ajouté avec succès', 'success');
+    }
+    
+    function updateParticipantsList() {
+        const listContainer = document.getElementById('participantsList');
+        
+        if (participants.length === 0) {
+            listContainer.innerHTML = '<div class="p-3 text-center text-muted">Aucun participant ajouté</div>';
+            return;
+        }
+        
+        listContainer.innerHTML = '';
+        
+        participants.forEach((participant, index) => {
+            const item = document.createElement('div');
+            item.className = 'd-flex align-items-center p-2 border-bottom';
+            
+            item.innerHTML = `
+                <div class="flex-grow-1 flex-md-grow-2">${participant.name}</div>
+                <div class="flex-grow-1 flex-md-grow-2 d-none d-md-block">${participant.email || '-'}</div>
+                <div class="flex-grow-1 d-none d-md-block">${participant.department || '-'}</div>
+                <div style="width: 80px;">
+                    <button type="button" class="btn btn-sm btn-outline-primary edit-participant me-1" data-index="${index}" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-participant" data-index="${index}" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            listContainer.appendChild(item);
+        });
+        
+        // Ajouter les gestionnaires d'événements pour les boutons
+        document.querySelectorAll('.edit-participant').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                editParticipant(index);
+            });
+        });
+        
+        document.querySelectorAll('.delete-participant').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                removeParticipant(index);
+            });
+        });
+    }
+    
+    function updateParticipantsProgress() {
+        const count = participants.length;
+        
+        // Mettre à jour le compteur
+        document.getElementById('participantsCount').textContent = `${count}/{{ max_participants }}`;
+        
+        // Mettre à jour la barre de progression
+        const percentage = Math.min(100, (count / {{ max_participants }}) * 100);
+        const progressBar = document.getElementById('participantsProgress');
+        progressBar.style.width = `${percentage}%`;
+        progressBar.setAttribute('aria-valuenow', percentage);
+        
+        // Définir la couleur de la barre en fonction du nombre de participants
+        if (count < {{ min_participants }}) {
+            progressBar.className = 'progress-bar bg-danger';
+        } else if (count > {{ max_participants }}) {
+            progressBar.className = 'progress-bar bg-warning';
+        } else {
+            progressBar.className = 'progress-bar bg-success';
+        }
+        
+        // Activer/désactiver le bouton suivant
+        document.getElementById('nextToDocuments').disabled = count < {{ min_participants }} || count > {{ max_participants }};
+    }
+    
+    function editParticipant(index) {
+        const participant = participants[index];
+        
+        // Remplir le formulaire d'édition
+        document.getElementById('editParticipantName').value = participant.name;
+        document.getElementById('editParticipantEmail').value = participant.email || '';
+        document.getElementById('editParticipantDepartment').value = participant.department || '';
+        document.getElementById('editParticipantIndex').value = index;
+        
+        // Afficher la modal
+        const editModal = new bootstrap.Modal(document.getElementById('editParticipantModal'));
+        editModal.show();
+    }
+    
+    function removeParticipant(index) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer ce participant ?')) {
+            // Supprimer le participant
+            participants.splice(index, 1);
+            
+            // Mettre à jour l'interface
+            updateParticipantsList();
+            updateParticipantsProgress();
+            
+            showToast('Succès', 'Le participant a été supprimé avec succès', 'success');
+        }
+    }
+    
+    function importParticipantsFromCSV(file) {
+        if (!file) {
+            showToast('Erreur', 'Veuillez sélectionner un fichier CSV', 'error');
+            return;
+        }
+        
+        // Vérifier l'extension du fichier
+        if (!file.name.endsWith('.csv')) {
+            showToast('Erreur', 'Le fichier doit être au format CSV', 'error');
+            return;
+        }
+        
+        // Lire le fichier
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const content = e.target.result;
+            
+            // Utiliser PapaParse pour analyser le CSV
+            Papa.parse(content, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.errors.length > 0) {
+                        showToast('Erreur', 'Erreur lors de l\'analyse du fichier CSV', 'error');
+                        console.error('Erreurs CSV:', results.errors);
+                        return;
+                    }
+                    
+                    // Créer les nouveaux participants
+                    const newParticipants = results.data.map(row => {
+                        return {
+                            name: row.Nom || row.nom || row.Name || row.name || '',
+                            email: row.Email || row.email || row.E_mail || row.e_mail || '',
+                            department: row.Département || row.département || row.Department || row.department || row.Poste || row.poste || ''
+                        };
+                    }).filter(p => p.name.trim() !== ''); // Ignorer les lignes sans nom
+                    
+                    // Vérifier si des participants sont déjà dans la liste
+                    const duplicates = [];
+                    const validParticipants = [];
+                    
+                    newParticipants.forEach(newP => {
+                        const exists = participants.some(p => 
+                            p.name.toLowerCase() === newP.name.toLowerCase() || 
+                            (newP.email && p.email && p.email.toLowerCase() === newP.email.toLowerCase())
+                        );
+                        
+                        if (exists) {
+                            duplicates.push(newP);
+                        } else {
+                            validParticipants.push(newP);
+                        }
+                    });
+                    
+                    // Vérifier si l'ajout dépasse la limite
+                    if (participants.length + validParticipants.length > {{ max_participants }}) {
+                        showToast('Erreur', 'L\'importation dépasserait la limite de {{ max_participants }} participants', 'error');
+                        return;
+                    }
+                    
+                    // Ajouter les participants valides
+                    participants.push(...validParticipants);
+                    
+                    // Mettre à jour l'interface
+                    updateParticipantsList();
+                    updateParticipantsProgress();
+                    
+                    // Fermer la modal
+                    bootstrap.Modal.getInstance(document.getElementById('importParticipantsModal')).hide();
+                    
+                    // Afficher un message de succès
+                    if (duplicates.length > 0) {
+                        showToast('Importation partielle', `${validParticipants.length} participants importés, ${duplicates.length} ignorés car déjà présents`, 'warning');
+                    } else {
+                        showToast('Importation réussie', `${validParticipants.length} participants ont été importés avec succès`, 'success');
+                    }
+                }
+            });
+        };
+        
+        reader.onerror = function() {
+            showToast('Erreur', 'Une erreur est survenue lors de la lecture du fichier', 'error');
+        };
+        
+        reader.readAsText(file);
+    }
+    
+    function generateCSVTemplate() {
+        const header = 'Nom,Email,Département\n';
+        const rows = [
+            'Jean Dupont,jean.dupont@example.com,Commercial',
+            'Marie Martin,marie.martin@example.com,Marketing',
+            'Pierre Durand,pierre.durand@example.com,Comptabilité'
+        ].join('\n');
+        
+        const content = header + rows;
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'modele_participants.csv';
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+    }
+    
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+    
+    function showToast(title, message, type) {
+        Toastify({
+            text: `<b>${title}</b><br>${message}`,
+            duration: 4000,
+            gravity: "bottom",
+            position: "right",
+            backgroundColor: type === 'success' ? '#48bb78' : type === 'error' ? '#e53e3e' : '#3498db',
+            stopOnFocus: true,
+            className: 'toast-notification',
+            escapeMarkup: false,
+            onClick: function() {}
+        }).showToast();
+    }
+});
+</script>
+{% endblock %}

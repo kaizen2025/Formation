@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Anecoop Formations - Réservation confirmée{% endblock %}
+
+{% block content %}
+<div class="card text-center p-5">
+    <div class="mb-4">
+        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+    </div>
+    <h1 class="mb-4">Réservation confirmée !</h1>
+    
+    <p class="lead mb-4">
+        Merci pour votre réservation. Vos réservations de formations ont été confirmées avec succès.
+    </p>
+    
+    <p class="mb-5">
+        Un email de confirmation a été envoyé à <strong>{{ email }}</strong> avec tous les détails.
+        Vous recevrez également un rappel quelques jours avant chaque formation.
+    </p>
+    
+    <div class="d-flex justify-content-center flex-wrap gap-3">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> Retour à l'accueil
+        </a>
+        
+        <a href="/export/ical" class="btn btn-outline-secondary">
+            <i class="fas fa-calendar-alt"></i> Télécharger le calendrier
+        </a>
+        
+        <a href="/export/pdf" class="btn btn-outline-danger">
+            <i class="fas fa-file-pdf"></i> Télécharger le récapitulatif PDF
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <i class="fas fa-info-circle"></i>
+    <div>
+        <strong>Information :</strong> Si vous avez des questions ou besoin de modifier votre réservation, 
+        n'hésitez pas à contacter le service informatique ou à utiliser le bouton de feedback en bas à droite de l'écran.
+    </div>
+</div>
+{% endblock %}

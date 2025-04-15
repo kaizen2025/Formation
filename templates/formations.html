@@ -1,0 +1,830 @@
+{% extends 'base.html' %}
+
+{% block title %}Anecoop Formations - Sélection des formations{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-container {
+        margin-bottom: 20px;
+    }
+    .fc-event {
+        cursor: pointer;
+    }
+    .time-slot-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .time-slot {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    .time-slot:hover {
+        background-color: #f5f5f5;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .time-slot.selected {
+        background-color: var(--primary);
+        color: white;
+        border-color: var(--primary-dark);
+    }
+    .time-slot.booked {
+        background-color: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+    .time-slot.waitlist {
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+    }
+    .selected-formations .alert {
+        margin-bottom: 10px;
+    }
+    .toast-notification {
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Étapes de progression -->
+<div class="steps-container">
+    <div class="step completed" id="step1">
+        <div class="step-number">1</div>
+        <div class="step-title">Service</div>
+    </div>
+    <div class="step active" id="step2">
+        <div class="step-number">2</div>
+        <div class="step-title">Formations</div>
+    </div>
+    <div class="step" id="step3">
+        <div class="step-number">3</div>
+        <div class="step-title">Participants</div>
+    </div>
+    <div class="step" id="step4">
+        <div class="step-number">4</div>
+        <div class="step-title">Documents</div>
+    </div>
+    <div class="step" id="step5">
+        <div class="step-number">5</div>
+        <div class="step-title">Confirmation</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Sélection des créneaux de formation</h2>
+    <p>Veuillez sélectionner un créneau pour chacune des 4 formations (1h30 par session).</p>
+    
+    <div class="service-info-banner">
+        <strong>Service:</strong> {{ service_name }} | 
+        <strong>Responsable:</strong> {{ contact }} | 
+        <strong>Email:</strong> {{ email }}
+        {% if phone %} | <strong>Téléphone:</strong> {{ phone }}{% endif %}
+    </div>
+    
+    <!-- Vue par onglets / calendrier -->
+    <ul class="nav nav-tabs mb-3" id="formationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar-view" type="button" role="tab" aria-controls="calendar-view" aria-selected="true">
+                <i class="fas fa-calendar-alt"></i> Vue calendrier
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tabs-tab" data-bs-toggle="tab" data-bs-target="#tabs-view" type="button" role="tab" aria-controls="tabs-view" aria-selected="false">
+                <i class="fas fa-list"></i> Vue par onglets
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="formationTabsContent">
+        <!-- Vue calendrier -->
+        <div class="tab-pane fade show active" id="calendar-view" role="tabpanel" aria-labelledby="calendar-tab">
+            <div id="calendar" class="calendar-container"></div>
+            
+            <div class="mt-4">
+                <h4>Formations sélectionnées</h4>
+                <div id="selected-formations" class="selected-formations">
+                    <p>Aucune formation sélectionnée</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vue par onglets -->
+        <div class="tab-pane fade" id="tabs-view" role="tabpanel" aria-labelledby="tabs-tab">
+            <ul class="nav nav-pills mb-3" id="formation-pills" role="tablist">
+                {% for i in range(formations|length) %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if i == 0 %}active{% endif %}" id="formation{{ i+1 }}-pill" data-bs-toggle="pill" data-bs-target="#formation{{ i+1 }}-content" type="button" role="tab" aria-controls="formation{{ i+1 }}-content" aria-selected="{{ 'true' if i == 0 else 'false' }}">
+                        {{ formations[i] }}
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+            
+            <div class="tab-content" id="formation-pills-content">
+                {% for i in range(formations|length) %}
+                <div class="tab-pane fade {% if i == 0 %}show active{% endif %}" id="formation{{ i+1 }}-content" role="tabpanel" aria-labelledby="formation{{ i+1 }}-pill">
+                    <h3>{{ formations[i] }}</h3>
+                    
+                    <div class="form-group">
+                        <label for="month{{ i+1 }}">Mois</label>
+                        <select id="month{{ i+1 }}" class="form-control month-selector" data-formation-id="formation{{ i+1 }}">
+                            {% for month in months %}
+                            <option value="{{ month.id }}">{{ month.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div id="time-slots-formation{{ i+1 }}" class="time-slot-container">
+                        <p>Chargement des créneaux...</p>
+                    </div>
+                    
+                    <div id="selected-slot-formation{{ i+1 }}" class="selected-slot mt-3">
+                        <!-- Sera rempli dynamiquement -->
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <form action="{{ url_for('participants') }}" method="POST" id="formations-form">
+        <input type="hidden" name="service" value="{{ service }}">
+        <input type="hidden" name="contact" value="{{ contact }}">
+        <input type="hidden" name="email" value="{{ email }}">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        
+        <!-- Champs cachés pour les formations sélectionnées -->
+        {% for i in range(formations|length) %}
+        <input type="hidden" name="date_formation{{ i+1 }}" id="date_formation{{ i+1 }}">
+        <input type="hidden" name="hour_formation{{ i+1 }}" id="hour_formation{{ i+1 }}">
+        <input type="hidden" name="minutes_formation{{ i+1 }}" id="minutes_formation{{ i+1 }}">
+        {% endfor %}
+        
+        <div class="actions-container">
+            <a href="{{ url_for('index') }}" class="secondary-btn">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <button type="submit" class="primary-btn" id="nextToParticipants">
+                Suivant <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal pour sélectionner une formation -->
+<div class="modal fade" id="selectFormationModal" tabindex="-1" aria-labelledby="selectFormationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="selectFormationModalLabel">Sélectionner une formation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sélectionnez la formation pour ce créneau :</p>
+                <p id="selected-slot-info"></p>
+                
+                <div class="form-group">
+                    <label for="calendarFormation">Formation</label>
+                    <select id="calendarFormation" class="form-control">
+                        <option value="">-- Sélectionner une formation --</option>
+                        {% for i in range(formations|length) %}
+                        <option value="formation{{ i+1 }}">{{ formations[i] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmFormationSelect">Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour détails d'un créneau déjà réservé -->
+<div class="modal fade" id="slotDetailsModal" tabindex="-1" aria-labelledby="slotDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="slotDetailsModalLabel">Détails du créneau</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="slot-details-content">
+                    <!-- Sera rempli dynamiquement -->
+                </div>
+                <div id="waitlist-option" class="mt-3 d-none">
+                    <hr>
+                    <h5>S'inscrire en liste d'attente</h5>
+                    <p>Il reste des places sur la liste d'attente pour ce créneau.</p>
+                    <button type="button" class="btn btn-warning" id="joinWaitlistBtn">S'inscrire en liste d'attente</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour s'inscrire en liste d'attente -->
+<div class="modal fade" id="waitlistModal" tabindex="-1" aria-labelledby="waitlistModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="waitlistModalLabel">S'inscrire en liste d'attente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="waitlist-info"></div>
+                <form id="waitlist-form" class="mt-3">
+                    <div class="form-group">
+                        <label for="waitlistName">Nom complet</label>
+                        <input type="text" id="waitlistName" class="form-control" placeholder="Votre nom et prénom" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="waitlistEmail">Email</label>
+                        <input type="email" id="waitlistEmail" class="form-control" placeholder="Votre email" required>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="waitlistPhone">Téléphone (optionnel)</label>
+                        <input type="tel" id="waitlistPhone" class="form-control" placeholder="Votre numéro de téléphone">
+                    </div>
+                    <input type="hidden" id="waitlistBookingId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmWaitlist">Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales
+    let calendar;
+    let selectedFormations = {
+        formation1: null,
+        formation2: null,
+        formation3: null,
+        formation4: null
+    };
+    let calendarData = {{ calendar_data|tojson|safe }};
+    let selectedEvent = null;
+    
+    // Initialiser le calendrier FullCalendar
+    const calendarEl = document.getElementById('calendar');
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridWeek,timeGridDay'
+        },
+        locale: 'fr',
+        timeZone: 'local',
+        allDaySlot: false,
+        slotMinTime: '08:00:00',
+        slotMaxTime: '19:00:00',
+        slotDuration: '00:30:00',
+        weekends: false,
+        events: calendarData,
+        editable: false,
+        selectable: true,
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
+        selectConstraint: {
+            start: '08:00:00',
+            end: '19:00:00'
+        },
+        businessHours: {
+            daysOfWeek: [1, 2, 3, 4, 5],
+            startTime: '08:00',
+            endTime: '19:00',
+        },
+        select: function(info) {
+            // Vérifier si le créneau est déjà réservé
+            const isBooked = calendarData.some(event => {
+                return new Date(event.start) <= info.start && new Date(event.end) >= info.end;
+            });
+            
+            if (!isBooked) {
+                selectedEvent = {
+                    start: info.start,
+                    end: info.end
+                };
+                
+                const formattedDate = info.start.toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                const formattedStart = info.start.toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const formattedEnd = info.end.toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                document.getElementById('selected-slot-info').innerHTML = `
+                    <strong>Date :</strong> ${formattedDate}<br>
+                    <strong>Horaire :</strong> ${formattedStart} - ${formattedEnd}
+                `;
+                
+                // Filtrer les formations déjà sélectionnées
+                const selectElement = document.getElementById('calendarFormation');
+                Array.from(selectElement.options).forEach(option => {
+                    option.disabled = option.value && selectedFormations[option.value] !== null;
+                });
+                
+                const selectFormationModal = new bootstrap.Modal(document.getElementById('selectFormationModal'));
+                selectFormationModal.show();
+            } else {
+                showToast('Information', 'Ce créneau est déjà réservé.', 'info');
+            }
+            
+            calendar.unselect();
+        },
+        eventClick: function(info) {
+            const event = info.event;
+            const start = event.start;
+            const end = event.end;
+            
+            const formattedDate = start.toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            const formattedStart = start.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            const formattedEnd = end.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const extendedProps = event.extendedProps || {};
+            
+            document.getElementById('slot-details-content').innerHTML = `
+                <div>
+                    <p><strong>Formation :</strong> ${event.title || 'N/A'}</p>
+                    <p><strong>Date :</strong> ${formattedDate}</p>
+                    <p><strong>Horaire :</strong> ${formattedStart} - ${formattedEnd}</p>
+                    <p><strong>Service :</strong> ${extendedProps.service || 'N/A'}</p>
+                    <p><strong>Contact :</strong> ${extendedProps.contact || 'N/A'}</p>
+                    <p><strong>Email :</strong> ${extendedProps.email || 'N/A'}</p>
+                    <p><strong>Participants :</strong> ${extendedProps.participants || 0}/12</p>
+                </div>
+            `;
+            
+            const waitlistOption = document.getElementById('waitlist-option');
+            if ((extendedProps.participants || 0) < 12) {
+                waitlistOption.classList.remove('d-none');
+                document.getElementById('joinWaitlistBtn').setAttribute('data-booking-id', event.id || '');
+            } else {
+                waitlistOption.classList.add('d-none');
+            }
+            
+            const slotDetailsModal = new bootstrap.Modal(document.getElementById('slotDetailsModal'));
+            slotDetailsModal.show();
+        }
+    });
+    
+    calendar.render();
+    
+    // Gérer la confirmation de sélection de formation
+    document.getElementById('confirmFormationSelect').addEventListener('click', function() {
+        const formationId = document.getElementById('calendarFormation').value;
+        
+        if (!formationId) {
+            showToast('Erreur', 'Veuillez sélectionner une formation.', 'error');
+            return;
+        }
+        
+        // Enregistrer la sélection
+        selectedFormations[formationId] = {
+            date: selectedEvent.start.toISOString().split('T')[0],
+            hour: selectedEvent.start.getHours(),
+            minutes: selectedEvent.start.getMinutes(),
+            formationName: document.getElementById('calendarFormation').options[document.getElementById('calendarFormation').selectedIndex].text
+        };
+        
+        // Fermer la modal
+        bootstrap.Modal.getInstance(document.getElementById('selectFormationModal')).hide();
+        
+        // Ajouter l'événement au calendrier
+        calendar.addEvent({
+            id: `temp-${formationId}`,
+            title: selectedFormations[formationId].formationName,
+            start: selectedEvent.start,
+            end: selectedEvent.end,
+            backgroundColor: '#2c6ecb',
+            borderColor: '#2c6ecb'
+        });
+        
+        // Mettre à jour la liste des formations sélectionnées
+        updateSelectedFormations();
+        
+        // Actualiser dans la vue par onglets
+        updateTabView(formationId);
+    });
+    
+    // Gérer l'inscription en liste d'attente
+    document.getElementById('joinWaitlistBtn').addEventListener('click', function() {
+        const bookingId = this.getAttribute('data-booking-id');
+        document.getElementById('waitlistBookingId').value = bookingId;
+        
+        const event = calendar.getEventById(bookingId);
+        if (event) {
+            const start = event.start;
+            const end = event.end;
+            
+            const formattedDate = start.toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            const formattedStart = start.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            const formattedEnd = end.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const extendedProps = event.extendedProps || {};
+            
+            document.getElementById('waitlist-info').innerHTML = `
+                <p>Vous souhaitez vous inscrire en liste d'attente pour la formation suivante :</p>
+                <div class="alert alert-info">
+                    <p><strong>Formation :</strong> ${event.title || 'N/A'}</p>
+                    <p><strong>Date :</strong> ${formattedDate}</p>
+                    <p><strong>Horaire :</strong> ${formattedStart} - ${formattedEnd}</p>
+                    <p><strong>Service :</strong> ${extendedProps.service || 'N/A'}</p>
+                    <p><strong>Places restantes :</strong> ${12 - (extendedProps.participants || 0)}</p>
+                </div>
+                <p>Veuillez saisir vos informations pour vous inscrire en liste d'attente :</p>
+            `;
+            
+            bootstrap.Modal.getInstance(document.getElementById('slotDetailsModal')).hide();
+            const waitlistModal = new bootstrap.Modal(document.getElementById('waitlistModal'));
+            waitlistModal.show();
+        } else {
+            showToast('Erreur', 'Impossible de charger les détails de la réservation.', 'error');
+        }
+    });
+    
+    // Gérer la confirmation d'inscription en liste d'attente
+    document.getElementById('confirmWaitlist').addEventListener('click', function() {
+        const name = document.getElementById('waitlistName').value.trim();
+        const email = document.getElementById('waitlistEmail').value.trim();
+        const phone = document.getElementById('waitlistPhone').value.trim();
+        const bookingId = document.getElementById('waitlistBookingId').value;
+        
+        if (!name || !email) {
+            showToast('Erreur', 'Veuillez remplir tous les champs obligatoires.', 'error');
+            return;
+        }
+        
+        // Envoyer la demande d'inscription en liste d'attente
+        fetch('/api/waitlist', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                booking_id: parseInt(bookingId) || 0,
+                service: '{{ service }}',
+                contact: name,
+                email: email,
+                phone: phone,
+                formation_name: selectedFormations.formation1?.formationName || ''
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.id) {
+                showToast('Succès', 'Vous avez été ajouté à la liste d\'attente avec succès.', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('waitlistModal')).hide();
+            } else {
+                showToast('Erreur', data.error || 'Une erreur est survenue lors de l\'inscription.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showToast('Erreur', 'Une erreur est survenue lors de l\'inscription.', 'error');
+        });
+    });
+    
+    // Gérer les changements de mois dans la vue par onglets
+    document.querySelectorAll('.month-selector').forEach(selector => {
+        selector.addEventListener('change', function() {
+            const formationId = this.getAttribute('data-formation-id');
+            const month = parseInt(this.value);
+            loadTimeSlots(formationId, month);
+        });
+        
+        // Charger les créneaux initiaux
+        loadTimeSlots(selector.getAttribute('data-formation-id'), parseInt(selector.value));
+    });
+    
+    // Valider le formulaire avant soumission
+    document.getElementById('formations-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Vérifier que toutes les formations ont été sélectionnées
+        const allSelected = Object.values(selectedFormations).every(formation => formation !== null);
+        
+        if (!allSelected) {
+            showToast('Erreur', 'Veuillez sélectionner un créneau pour chaque formation.', 'error');
+            return;
+        }
+        
+        // Remplir les champs cachés
+        Object.keys(selectedFormations).forEach(formationId => {
+            const formation = selectedFormations[formationId];
+            if (formation) {
+                document.getElementById(`date_${formationId}`).value = formation.date;
+                document.getElementById(`hour_${formationId}`).value = formation.hour;
+                document.getElementById(`minutes_${formationId}`).value = formation.minutes;
+            }
+        });
+        
+        // Soumettre le formulaire
+        this.submit();
+    });
+    
+    // Fonctions utilitaires
+    function updateSelectedFormations() {
+        const container = document.getElementById('selected-formations');
+        let html = '';
+        let count = 0;
+        
+        Object.entries(selectedFormations).forEach(([id, formation]) => {
+            if (formation) {
+                count++;
+                const date = new Date(formation.date);
+                const formattedDate = date.toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                const formattedTime = `${formation.hour.toString().padStart(2, '0')}:${formation.minutes.toString().padStart(2, '0')}`;
+                const endHour = formation.hour + 1 + (formation.minutes + 30 >= 60 ? 1 : 0);
+                const endMinutes = (formation.minutes + 30) % 60;
+                const formattedEndTime = `${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+                
+                html += `
+                    <div class="alert alert-primary d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${formation.formationName}</strong><br>
+                            ${formattedDate} de ${formattedTime} à ${formattedEndTime}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-formation" data-formation-id="${id}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        });
+        
+        container.innerHTML = count === 0 
+            ? '<p>Aucune formation sélectionnée</p>' 
+            : html + `<div class="alert alert-info mt-2">${count}/4 formations sélectionnées</div>`;
+        
+        // Ajouter les gestionnaires pour supprimer les formations
+        document.querySelectorAll('.remove-formation').forEach(btn => {
+            btn.removeEventListener('click', handleRemoveFormation); // Éviter les doublons
+            btn.addEventListener('click', handleRemoveFormation);
+        });
+    }
+    
+    function handleRemoveFormation() {
+        const formationId = this.getAttribute('data-formation-id');
+        removeFormation(formationId);
+    }
+    
+    function removeFormation(formationId) {
+        const event = calendar.getEventById(`temp-${formationId}`);
+        if (event) {
+            event.remove();
+        }
+        
+        selectedFormations[formationId] = null;
+        updateSelectedFormations();
+        
+        const slotElement = document.querySelector(`#time-slots-${formationId} .time-slot.selected`);
+        if (slotElement) {
+            slotElement.classList.remove('selected');
+        }
+        document.getElementById(`selected-slot-${formationId}`).innerHTML = '';
+    }
+    
+    function updateTabView(formationId) {
+        if (!selectedFormations[formationId]) return;
+        
+        const formation = selectedFormations[formationId];
+        const date = new Date(formation.date);
+        
+        const selector = document.getElementById(`month${formationId.replace('formation', '')}`);
+        selector.value = date.getMonth() + 1;
+        
+        loadTimeSlots(formationId, date.getMonth() + 1, () => {
+            const slots = document.querySelectorAll(`#time-slots-${formationId} .time-slot`);
+            slots.forEach(slot => {
+                const slotDate = slot.getAttribute('data-date');
+                const slotHour = parseInt(slot.getAttribute('data-hour'));
+                const slotMinutes = parseInt(slot.getAttribute('data-minutes'));
+                
+                if (slotDate === formation.date && slotHour === formation.hour && slotMinutes === formation.minutes) {
+                    slot.classList.add('selected');
+                    
+                    const formattedDate = date.toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                    const formattedTime = `${formation.hour.toString().padStart(2, '0')}:${formation.minutes.toString().padStart(2, '0')}`;
+                    const endHour = formation.hour + 1 + (formation.minutes + 30 >= 60 ? 1 : 0);
+                    const endMinutes = (formation.minutes + 30) % 60;
+                    const formattedEndTime = `${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+                    
+                    document.getElementById(`selected-slot-${formationId}`).innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <div><strong>Créneau sélectionné :</strong> ${formattedDate} de ${formattedTime} à ${formattedEndTime}</div>
+                        </div>
+                    `;
+                }
+            });
+        });
+    }
+    
+    function loadTimeSlots(formationId, month, callback) {
+        const container = document.getElementById(`time-slots-${formationId}`);
+        container.innerHTML = '<p>Chargement des créneaux...</p>';
+        
+        const year = 2025;
+        const daysInMonth = new Date(year, month, 0).getDate();
+        
+        const days = [];
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month - 1, day);
+            const weekday = date.getDay();
+            if (weekday >= 1 && weekday <= 5) {
+                days.push({
+                    date: date,
+                    formatted: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+                    iso: date.toISOString().split('T')[0]
+                });
+            }
+        }
+        
+        const timeSlots = [];
+        for (let hour = 8; hour <= 17; hour++) {
+            [0, 30].forEach(minutes => {
+                const endHour = hour + 1 + (minutes + 30 >= 60 ? 1 : 0);
+                const endMinutes = (minutes + 30) % 60;
+                timeSlots.push({
+                    hour,
+                    minutes,
+                    formatted: `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} - ${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`
+                });
+            });
+        }
+        
+        const slotsHtml = days.map(day => {
+            return timeSlots.map(slot => {
+                const isBooked = calendarData.some(event => {
+                    const eventDate = new Date(event.start);
+                    return eventDate.toISOString().split('T')[0] === day.iso &&
+                           eventDate.getHours() === slot.hour &&
+                           eventDate.getMinutes() === slot.minutes;
+                });
+                
+                const selected = selectedFormations[formationId] &&
+                                selectedFormations[formationId].date === day.iso &&
+                                selectedFormations[formationId].hour === slot.hour &&
+                                selectedFormations[formationId].minutes === slot.minutes;
+                
+                let classNames = 'time-slot';
+                if (selected) classNames += ' selected';
+                else if (isBooked) classNames += ' booked';
+                
+                return `
+                    <div class="${classNames}"
+                         data-date="${day.iso}"
+                         data-hour="${slot.hour}"
+                         data-minutes="${slot.minutes}"
+                         data-formation-id="${formationId}">
+                        <strong>${day.formatted}</strong><br>
+                        ${slot.formatted}
+                    </div>
+                `;
+            }).join('');
+        }).join('');
+        
+        container.innerHTML = slotsHtml;
+        
+        document.querySelectorAll(`#time-slots-${formationId} .time-slot:not(.booked)`).forEach(slot => {
+            slot.addEventListener('click', function() {
+                const date = this.getAttribute('data-date');
+                const hour = parseInt(this.getAttribute('data-hour'));
+                const minutes = parseInt(this.getAttribute('data-minutes'));
+                const formId = this.getAttribute('data-formation-id');
+                
+                document.querySelectorAll(`#time-slots-${formId} .time-slot.selected`).forEach(selected => {
+                    selected.classList.remove('selected');
+                });
+                
+                this.classList.add('selected');
+                
+                const formationName = document.querySelector(`#${formId}-pill`).textContent.trim();
+                const oldEvent = calendar.getEventById(`temp-${formId}`);
+                if (oldEvent) {
+                    oldEvent.remove();
+                }
+                
+                selectedFormations[formId] = {
+                    date,
+                    hour,
+                    minutes,
+                    formationName
+                };
+                
+                updateSelectedFormations();
+                
+                const startDate = new Date(date);
+                startDate.setHours(hour, minutes);
+                const endDate = new Date(startDate);
+                endDate.setHours(hour + 1, minutes + 30);
+                
+                calendar.addEvent({
+                    id: `temp-${formId}`,
+                    title: formationName,
+                    start: startDate,
+                    end: endDate,
+                    backgroundColor: '#2c6ecb',
+                    borderColor: '#2c6ecb'
+                });
+                
+                const dateObj = new Date(date);
+                const formattedDate = dateObj.toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                const formattedTime = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                const endHour = hour + 1 + (minutes + 30 >= 60 ? 1 : 0);
+                const endMinutes = (minutes + 30) % 60;
+                const formattedEndTime = `${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+                
+                document.getElementById(`selected-slot-${formId}`).innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <div><strong>Créneau sélectionné :</strong> ${formattedDate} de ${formattedTime} à ${formattedEndTime}</div>
+                    </div>
+                `;
+            });
+        });
+        
+        if (callback) callback();
+    }
+    
+    function showToast(title, message, type) {
+        Toastify({
+            text: `<strong>${title}</strong><br>${message}`,
+            duration: 4000,
+            gravity: 'bottom',
+            position: 'right',
+            backgroundColor: {
+                success: '#48bb78',
+                error: '#e53e3e',
+                info: '#3498db'
+            }[type] || '#3498db',
+            stopOnFocus: true,
+            className: 'toast-notification',
+            escapeMarkup: false
+        }).showToast();
+    }
+});
+</script>
+{% endblock %}

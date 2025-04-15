@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Anecoop Formations - Réservation{% endblock %}
+
+{% block content %}
+<!-- SECTION RÉSERVATION -->
+<div id="bookingSection">
+    <!-- Introduction -->
+    <div class="card intro">
+        <h1>Réservation des formations internes</h1>
+        <p>
+            Dans le cadre des prochaines <strong>formations internes</strong>, qui se dérouleront <strong>sur site à Anecoop</strong>, 
+            nous préparons l'organisation des groupes et des plannings.
+        </p>
+        
+        <h2>Les formations proposées (1h à 1h30 chacune)</h2>
+        <ul>
+            <li><strong>Communiquer avec Teams</strong></li>
+            <li><strong>Collaborer avec Teams/SharePoint</strong></li>
+            <li><strong>Gérer les tâches d'équipe</strong></li>
+            <li><strong>Gérer mes fichiers avec OneDrive/SharePoint</strong></li>
+        </ul>
+        
+        <h2>Objectif</h2>
+        <p>Créer des groupes de 8 à 12 personnes max, avec 4 sessions par groupe, à programmer sur mai et juin.</p>
+        
+        <h2>Répartition par service</h2>
+        <ul>
+            <li><strong>2 groupes pour le Commerce</strong></li>
+            <li><strong>1 groupe pour la Comptabilité</strong></li>
+            <li><strong>1 groupe pour RH / Qualité / Marketing</strong></li>
+        </ul>
+        
+        <div class="sync-indicator" id="syncStatus">
+            <i class="fas fa-circle-notch fa-spin"></i> Connexion à la base de données...
+        </div>
+    </div>
+    
+    <!-- Étapes de progression -->
+    <div class="steps-container">
+        <div class="step active" id="step1">
+            <div class="step-number">1</div>
+            <div class="step-title">Service</div>
+        </div>
+        <div class="step" id="step2">
+            <div class="step-number">2</div>
+            <div class="step-title">Formations</div>
+        </div>
+        <div class="step" id="step3">
+            <div class="step-number">3</div>
+            <div class="step-title">Participants</div>
+        </div>
+        <div class="step" id="step4">
+            <div class="step-number">4</div>
+            <div class="step-title">Documents</div>
+        </div>
+        <div class="step" id="step5">
+            <div class="step-number">5</div>
+            <div class="step-title">Confirmation</div>
+        </div>
+    </div>
+    
+    <!-- ÉTAPE 1: SÉLECTION DU SERVICE -->
+    <div id="serviceSelection" class="tab-content active animate__animated animate__fadeIn">
+        <div class="card">
+            <h2>Sélection du service</h2>
+            <form action="{{ url_for('formations') }}" method="GET">
+                <div class="form-group">
+                    <label for="service">Veuillez sélectionner votre service</label>
+                    <select id="service" name="service" class="form-control" required>
+                        <option value="">-- Sélectionner votre service --</option>
+                        {% for service in services %}
+                        <option value="{{ service.id }}">{{ service.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="contact">Nom du responsable</label>
+                    <input type="text" id="contact" name="contact" class="form-control" placeholder="Votre nom" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email de contact</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="Votre email" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Téléphone (optionnel)</label>
+                    <input type="tel" id="phone" name="phone" class="form-control" placeholder="Votre numéro de téléphone">
+                </div>
+                
+                <div class="actions-container">
+                    <button type="submit" class="primary-btn">
+                        Suivant <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Aide contextuelle -->
+        <div class="help-card">
+            <div class="help-icon"><i class="fas fa-info-circle"></i></div>
+            <div class="help-content">
+                <h4>Information</h4>
+                <p>Commencez par sélectionner votre service et indiquer qui sera le responsable de groupe pour les formations. Cette personne recevra les confirmations et rappels par email.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mettre à jour le statut de synchronisation
+    function updateSyncStatus(status) {
+        const syncStatus = document.getElementById('syncStatus');
+        if (!syncStatus) return;
+        
+        switch (status) {
+            case 'connecting':
+                syncStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Connexion à la base de données...';
+                syncStatus.className = 'sync-indicator';
+                break;
+                
+            case 'connected':
+                syncStatus.innerHTML = '<i class="fas fa-check-circle"></i> Connecté à la base de données';
+                syncStatus.className = 'sync-indicator connected';
+                break;
+                
+            case 'syncing':
+                syncStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Synchronisation en cours...';
+                syncStatus.className = 'sync-indicator syncing';
+                break;
+                
+            case 'offline':
+                syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Mode hors ligne (données locales)';
+                syncStatus.className = 'sync-indicator offline';
+                break;
+                
+            case 'error':
+                syncStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Erreur de synchronisation';
+                syncStatus.className = 'sync-indicator error';
+                break;
+                
+            default:
+                syncStatus.innerHTML = '<i class="fas fa-question-circle"></i> Statut inconnu';
+                syncStatus.className = 'sync-indicator';
+        }
+    }
+    
+    // Tester la connexion à la base de données
+    fetch('/api/bookings?limit=1')
+        .then(response => {
+            if (response.ok) {
+                updateSyncStatus('connected');
+            } else {
+                updateSyncStatus('error');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur de connexion:', error);
+            updateSyncStatus('offline');
+        });
+});
+</script>
+{% endblock %}

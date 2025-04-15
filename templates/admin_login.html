@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Anecoop Formations - Administration{% endblock %}
+
+{% block content %}
+<div class="card col-md-6 mx-auto">
+    <h2 class="card-title text-center mb-4"><i class="fas fa-user-shield"></i> Accès Administrateur</h2>
+    
+    <form method="POST" action="{{ url_for('admin_login') }}" class="login-form">
+        <div class="form-group mb-4">
+            <label for="password" class="form-label">Mot de passe administrateur</label>
+            <div class="input-group">
+                <input type="password" id="password" name="password" class="form-control" placeholder="Entrez votre mot de passe" required>
+                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="actions-container">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> Se connecter
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password visibility
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    
+    togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+});
+</script>
+{% endblock %}

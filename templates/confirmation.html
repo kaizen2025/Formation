@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block title %}Anecoop Formations - Confirmation{% endblock %}
+
+{% block content %}
+<!-- Étapes de progression -->
+<div class="steps-container">
+    <div class="step completed" id="step1">
+        <div class="step-number">1</div>
+        <div class="step-title">Service</div>
+    </div>
+    <div class="step completed" id="step2">
+        <div class="step-number">2</div>
+        <div class="step-title">Formations</div>
+    </div>
+    <div class="step completed" id="step3">
+        <div class="step-number">3</div>
+        <div class="step-title">Participants</div>
+    </div>
+    <div class="step completed" id="step4">
+        <div class="step-number">4</div>
+        <div class="step-title">Documents</div>
+    </div>
+    <div class="step active" id="step5">
+        <div class="step-number">5</div>
+        <div class="step-title">Confirmation</div>
+    </div>
+</div>
+
+<div class="alert alert-success" id="confirmationAlert">
+    <i class="fas fa-check-circle"></i> 
+    <div>Veuillez vérifier les informations ci-dessous et finaliser votre réservation.</div>
+</div>
+
+<div class="card" id="printable-content">
+    <h2>Récapitulatif des réservations</h2>
+    
+    <div class="summary-section">
+        <h3>Informations générales</h3>
+        <div class="booking-item">
+            <div>
+                <strong>Service:</strong> {{ booking_data.service_name if booking_data.service_name is defined else booking_data.service }}
+            </div>
+        </div>
+        <div class="booking-item">
+            <div>
+                <strong>Responsable:</strong> {{ booking_data.contact }}
+            </div>
+        </div>
+        <div class="booking-item">
+            <div>
+                <strong>Email:</strong> {{ booking_data.email }}
+            </div>
+        </div>
+        {% if booking_data.phone %}
+        <div class="booking-item">
+            <div>
+                <strong>Téléphone:</strong> {{ booking_data.phone }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="summary-section">
+        <h3>Formations réservées ({{ booking_data.formations|length }})</h3>
+        {% for formation in booking_data.formations %}
+        <div class="booking-item">
+            <div>
+                <strong>{{ formation.formation_name }}</strong><br>
+                {% set date_obj = formation.date.split('-') %}
+                {% set month_names = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'] %}
+                {% set month_name = month_names[date_obj[1]|int] %}
+                {{ date_obj[2] }} {{ month_name }} {{ date_obj[0] }} à 
+                
+                {% set hour = '%02d'|format(formation.hour|int) %}
+                {% set minutes = '%02d'|format(formation.minutes|int) %}
+                {% set end_hour = formation.hour|int + 1 %}
+                {% set end_minutes = formation.minutes|int + 30 %}
+                
+                {% if end_minutes >= 60 %}
+                    {% set end_hour = end_hour + 1 %}
+                    {% set end_minutes = end_minutes - 60 %}
+                {% endif %}
+                
+                {% set end_hour_fmt = '%02d'|format(end_hour) %}
+                {% set end_minutes_fmt = '%02d'|format(end_minutes) %}
+                
+                {{ hour }}:{{ minutes }} - {{ end_hour_fmt }}:{{ end_minutes_fmt }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="summary-section">
+        <h3>Participants ({{ booking_data.participants|length }})</h3>
+        {% if booking_data.participants|length > 0 %}
+            {% for participant in booking_data.participants %}
+            <div class="participant-item">
+                <div>
+                    <strong>{{ participant.name }}</strong>
+                    {% if participant.email %}<br><small>{{ participant.email }}</small>{% endif %}
+                    {% if participant.department %}<br><small>{{ participant.department }}</small>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Aucun participant ajouté</p>
+        {% endif %}
+    </div>
+    
+    <div class="summary-section">
+        <h3>Documents ({{ booking_data.documents|length if booking_data.documents else 0 }})</h3>
+        {% if booking_data.documents and booking_data.documents|length > 0 %}
+            {% for document in booking_data.documents %}
+            <div class="participant-item">
+                <div>
+                    <strong>{{ document.filename }}</strong>
+                    <br><small>{{ document.filetype }} - {{ document.filesize|filesizeformat }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Aucun document ajouté</p>
+        {% endif %}
+    </div>
+    
+    {% if booking_data.additional_info %}
+    <div class="summary-section">
+        <h3>Informations supplémentaires</h3>
+        <div class="booking-item">
+            <div>
+                {{ booking_data.additional_info|nl2br }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <form action="{{ url_for('finalize') }}" method="POST" id="confirmation-form">
+        <input type="hidden" name="booking_data" value="{{ booking_data|tojson }}">
+        
+        <div class="form-group">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="send_confirmation" name="send_confirmation" checked>
+                <label class="form-check-label" for="send_confirmation">Envoyer des emails de confirmation aux participants</label>
+            </div>
+        </div>
+        
+        <div class="form-group mt-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="add_to_calendar" name="add_to_calendar" checked>
+                <label class="form-check-label" for="add_to_calendar">Ajouter les événements à mon calendrier</label>
+            </div>
+        </div>
+        
+        <div class="actions-container">
+            <a href="{{ url_for('documents') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Modifier
+            </a>
+            <button type="submit" class="btn btn-success" id="finalizeBooking">
+                <i class="fas fa-check-double"></i> Finaliser la réservation
+            </button>
+        </div>
+    </form>
+    
+    <div id="printExportOptions" class="export-options mt-4 d-none">
+        <button id="printBooking" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-print"></i> Imprimer
+        </button>
+        <button id="exportPDF" class="btn btn-outline-danger me-2">
+            <i class="fas fa-file-pdf"></i> Exporter en PDF
+        </button>
+        <button id="exportExcel" class="btn btn-outline-success me-2">
+            <i class="fas fa-file-excel"></i> Exporter en Excel
+        </button>
+        <button id="exportGoogleCalendar" class="btn btn-outline-primary me-2">
+            <i class="fas fa-calendar-plus"></i> Exporter vers Google Calendar
+        </button>
+        <button id="exportOutlookCalendar" class="btn btn-outline-primary">
+            <i class="fas fa-calendar-alt"></i> Exporter vers Outlook
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gérer la soumission du formulaire
+    document.getElementById('confirmation-form').addEventListener('submit', function(e) {
+        // Désactiver le bouton pour éviter les soumissions multiples
+        const submitBtn = document.getElementById('finalizeBooking');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
+    });
+    
+    // Fonctions pour les exports (seront activées après finalisation)
+    document.getElementById('printBooking')?.addEventListener('click', function() {
+        window.print();
+    });
+    
+    document.getElementById('exportPDF')?.addEventListener('click', function() {
+        // Utiliser jsPDF et html2canvas pour exporter en PDF
+        const element = document.getElementById('printable-content');
+        
+        html2canvas(element).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jspdf.jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            const imgWidth = 210; // A4 width in mm
+            const pageHeight = 295; // A4 height in mm
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+            
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+            
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+            
+            pdf.save('reservation-formations-anecoop.pdf');
+        });
+    });
+    
+    document.getElementById('exportExcel')?.addEventListener('click', function() {
+        // Rediriger vers l'endpoint d'export Excel
+        window.location.href = '/export/excel';
+    });
+    
+    document.getElementById('exportGoogleCalendar')?.addEventListener('click', function() {
+        // Rediriger vers l'endpoint de téléchargement iCal
+        window.location.href = '/export/ical?provider=google';
+    });
+    
+    document.getElementById('exportOutlookCalendar')?.addEventListener('click', function() {
+        // Rediriger vers l'endpoint de téléchargement iCal
+        window.location.href = '/export/ical?provider=outlook';
+    });
+});
+</script>
+{% endblock %}

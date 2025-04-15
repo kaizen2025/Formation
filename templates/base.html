@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Système de réservation de formations pour Anecoop">
+    <title>{% block title %}Formations Anecoop{% endblock %}</title>
+
+    <!-- Ressources CSS externes -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2w==" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet" integrity="sha512-c42qTSw/wi1Z5lL80xL0qQMPN0joL5q1v1Y+CeC5W2a7u0Qb1d4e9z5bN1jA8d5d5f5e5b5e5d5f5e5b5e5d5" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.css" rel="stylesheet" integrity="sha512-16j3q2i4K7iH6u1h6bK2e2x8p5rL0D0c7e2b5f5e5b5e5d5f5e5b5e5d5f5e5b5e5d5f5e5b5e5d5f5e5b5e5" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet" integrity="sha256-j21gC0XDeIbNrc0mEVovbMuUNyn5Rgoz8rW+eN4hl0=" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- CSS personnalisé -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Script critique (jQuery) chargé avec defer -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Indicateur de chargement global -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="header" role="banner">
+        <div class="logo">
+            <i class="fas fa-calendar-check" aria-hidden="true"></i>
+            Anecoop Formations
+        </div>
+        <div class="header-actions">
+            <button id="helpBtn" class="icon-btn" title="Aide" aria-label="Ouvrir l'aide">
+                <i class="fas fa-question-circle" aria-hidden="true"></i>
+            </button>
+            <button id="notificationsBtn" class="icon-btn" title="Notifications" data-count="0" aria-label="Ouvrir les notifications">
+                <i class="fas fa-bell" aria-hidden="true"></i>
+                <span id="notificationsBadge" class="notification-badge hidden" aria-hidden="true">0</span>
+            </button>
+            <button id="themeToggle" class="icon-btn" title="Changer de thème" aria-label="Basculer entre thème clair et sombre">
+                <i class="fas fa-moon" aria-hidden="true"></i>
+            </button>
+            <a href="{{ url_for('admin_login') }}" class="primary-btn" id="adminBtn" aria-label="Accéder à l'interface d'administration">
+                <i class="fas fa-user-shield" aria-hidden="true"></i> Admin
+            </a>
+        </div>
+    </header>
+
+    <!-- NOTIFICATIONS PANEL -->
+    <div id="notifications-panel" class="notifications-panel hidden" aria-hidden="true">
+        <div class="notifications-header">
+            <h3>Notifications</h3>
+            <button class="text-btn" id="clearNotifications" aria-label="Effacer toutes les notifications">Tout effacer</button>
+        </div>
+        <div id="notifications-list" class="notifications-list" role="list">
+            <!-- Les notifications seront ajoutées ici dynamiquement -->
+        </div>
+    </div>
+
+    <!-- CONTAINER PRINCIPAL -->
+    <main class="container main-container">
+        <!-- Messages flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category in ['success', 'warning', 'error', 'info'] else 'info' }} animate__animated animate__fadeIn" role="alert">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'exclamation-circle' if category == 'error' else 'info-circle' }}" aria-hidden="true"></i>
+                        <div>{{ message }}</div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Contenu principal -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- BOUTON FEEDBACK -->
+    <button id="feedbackBtn" class="feedback-btn" aria-label="Ouvrir le formulaire de feedback">
+        <i class="fas fa-comment-alt" aria-hidden="true"></i>
+    </button>
+
+    <!-- MODAL DE FEEDBACK -->
+    <div id="feedbackModal" class="modal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+        <div class="modal-content animate__animated animate__fadeInUp">
+            <div class="modal-header">
+                <h3 id="feedbackModalLabel">Votre avis nous intéresse</h3>
+                <button class="close-btn" id="closeFeedback" aria-label="Fermer le formulaire de feedback">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm" method="POST" action="{{ url_for('send_feedback') }}">
+                    <p>Aidez-nous à améliorer ce système de réservation en partageant votre expérience.</p>
+                    
+                    <div class="form-group">
+                        <label for="feedbackType">Type de retour</label>
+                        <select id="feedbackType" name="type" class="form-control" required>
+                            <option value="suggestion">Suggestion</option>
+                            <option value="bug">Problème technique</option>
+                            <option value="question">Question</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="feedbackMessage">Votre message</label>
+                        <textarea id="feedbackMessage" name="message" rows="5" class="form-control" placeholder="Décrivez votre expérience, suggestion ou problème..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="feedbackEmail">Votre email (optionnel)</label>
+                        <input type="email" id="feedbackEmail" name="email" class="form-control" placeholder="Pour recevoir une réponse">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="submitFeedback" class="primary-btn" type="submit" form="feedbackForm">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i> Envoyer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL D'AIDE -->
+    <div id="helpModal" class="modal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-content animate__animated animate__fadeInUp">
+            <div class="modal-header">
+                <h3 id="helpModalLabel">Aide et guide d'utilisation</h3>
+                <button class="close-btn" id="closeHelp" aria-label="Fermer le guide d'aide">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="help-tabs" role="tablist">
+                    <button class="help-tab active" data-tab="general" role="tab" aria-selected="true" aria-controls="generalHelp">Général</button>
+                    <button class="help-tab" data-tab="booking" role="tab" aria-selected="false" aria-controls="bookingHelp">Réservation</button>
+                    <button class="help-tab" data-tab="admin" role="tab" aria-selected="false" aria-controls="adminHelp">Administration</button>
+                    <button class="help-tab" data-tab="offline" role="tab" aria-selected="false" aria-controls="offlineHelp">Mode hors ligne</button>
+                </div>
+                
+                <div id="generalHelp" class="help-tab-content active" role="tabpanel">
+                    <h4>Guide général d'utilisation</h4>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Le système vous permet de réserver des sessions de formation pour votre service.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Vous devez réserver les 4 formations pour votre groupe.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Vous devez ajouter entre 8 et 12 participants.</div>
+                    </div>
+                </div>
+                
+                <div id="bookingHelp" class="help-tab-content" role="tabpanel">
+                    <h4>Comment réserver une formation</h4>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Étape 1: Sélectionnez votre service et indiquez vos coordonnées.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Étape 2: Sélectionnez un créneau pour chaque formation.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Étape 3: Ajoutez les participants (minimum 8, maximum 12).</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Étape 4: Ajoutez des documents si nécessaire.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Étape 5: Vérifiez et confirmez votre réservation.</div>
+                    </div>
+                </div>
+                
+                <div id="adminHelp" class="help-tab-content" role="tabpanel">
+                    <h4>Administration</h4>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>L'interface d'administration permet de gérer les réservations.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Vous pouvez consulter toutes les réservations par service.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Vous pouvez gérer les participants et les documents.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Vous pouvez consulter les statistiques et les logs d'activité.</div>
+                    </div>
+                </div>
+                
+                <div id="offlineHelp" class="help-tab-content" role="tabpanel">
+                    <h4>Mode hors ligne</h4>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Le système peut fonctionner en mode hors ligne.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Les données sont stockées localement et synchronisées lorsque la connexion est rétablie.</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                        <div>Une notification vous indique le statut de la connexion.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript externes avec defer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.js" integrity="sha512-16j3q2i4K7iH6u1h6bK2e2x8p5rL0D0c7e2b5f5e5b5e5d5f5e5b5e5d5f5e5b5e5d5f5e5b5e5d5f5e5b5e5" crossorigin="anonymous" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUm5x1Xmt4LsmKM9mLLDepm2A2gV7rB+1bF2lW1QfFEAuXfg==" crossorigin="anonymous" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+v==" crossorigin="anonymous" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28utv+RNl+tcl9OaHjqL7a5zH5u1N0jeoHgGXLsjesu39cHtgqI7b2+CaHNVq0t5vQ4pNYF4t4/hxIg==" crossorigin="anonymous" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha512-dfXb3uaC+VkbWE62vOEBpknW8E2o+THlKJUaN0H8TivgL1fBk4F3WkuoHHr6dgoqL5hBI+0TwmRh0sDb4g==" crossorigin="anonymous" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90mlT90+T+g0+1XOpnk65T5k6NI5u0+1+1CS1B9MiyGA8Nh+BmW7+9hNBX04X5KxN5p5w==" crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.js" integrity="sha256-9gq8sG1gCp2pL9nBrw+8qM+5gq8jP5lW4eC0fP8q8jP5lW4eC0fP8q8jP5lW4eC0fP8q8j" crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha256-MnPQr5gJRY1o0SmvJOxwWjT0s4Z7K5S8Kz9W5W2zA4=" crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous" defer></script>
+
+    <!-- JavaScript personnalisé -->
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+
+    <!-- Script inline pour gérer le chargement des scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier si FullCalendar est chargé
+            if (typeof FullCalendar === 'undefined') {
+                console.error('FullCalendar n\'a pas pu être chargé. Vérifiez votre connexion ou la source CDN.');
+                Toastify({
+                    text: "Erreur : FullCalendar n'a pas pu être chargé. Certaines fonctionnalités peuvent ne pas fonctionner.",
+                    duration: 5000,
+                    gravity: "top",
+                    position: "center",
+                    backgroundColor: "#dc3545",
+                }).showToast();
+            }
+
+            // Cacher l'indicateur de chargement une fois que tous les scripts sont chargés
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 1000); // Délai pour s'assurer que tout est chargé
+            }
+        });
+
+        // Gestion du thème (clair/sombre)
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const currentTheme = localStorage.getItem('theme') || 'light';
+
+        if (currentTheme === 'dark') {
+            body.classList.add('dark-mode');
+            themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            themeToggle.querySelector('i').classList.toggle('fa-moon', !isDarkMode);
+            themeToggle.querySelector('i').classList.toggle('fa-sun', isDarkMode);
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

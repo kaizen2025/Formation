@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+
+{% block title %}Anecoop Formations - Gestion des documents{% endblock %}
+
+{% block content %}
+<!-- Étapes de progression -->
+<div class="steps-container">
+    <div class="step completed" id="step1">
+        <div class="step-number">1</div>
+        <div class="step-title">Service</div>
+    </div>
+    <div class="step completed" id="step2">
+        <div class="step-number">2</div>
+        <div class="step-title">Formations</div>
+    </div>
+    <div class="step completed" id="step3">
+        <div class="step-number">3</div>
+        <div class="step-title">Participants</div>
+    </div>
+    <div class="step active" id="step4">
+        <div class="step-number">4</div>
+        <div class="step-title">Documents</div>
+    </div>
+    <div class="step" id="step5">
+        <div class="step-number">5</div>
+        <div class="step-title">Confirmation</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Documents et pièces jointes</h2>
+    <p>Vous pouvez joindre des documents supplémentaires à partager avec les participants (optionnel).</p>
+    
+    <div class="service-info-banner">
+        <strong>Service:</strong> {{ booking_data.service_name if booking_data.service_name is defined else booking_data.service }} | 
+        <strong>Responsable:</strong> {{ booking_data.contact }} | 
+        <strong>Email:</strong> {{ booking_data.email }}
+        {% if booking_data.phone %} | <strong>Téléphone:</strong> {{ booking_data.phone }}{% endif %}
+        <br>
+        <strong>Participants:</strong> {{ booking_data.participants|length }}
+    </div>
+    
+    <div class="widget-container">
+        <div class="widget-header">
+            <div class="widget-title">
+                <i class="fas fa-file-alt"></i> Documents à partager
+            </div>
+        </div>
+        
+        <form action="{{ url_for('confirmation') }}" method="POST" enctype="multipart/form-data" id="documents-form">
+            <!-- Champs cachés pour les informations du service et des formations -->
+            <input type="hidden" name="service" value="{{ booking_data.service }}">
+            <input type="hidden" name="contact" value="{{ booking_data.contact }}">
+            <input type="hidden" name="email" value="{{ booking_data.email }}">
+            <input type="hidden" name="phone" value="{{ booking_data.phone }}">
+            
+            {% for formation in booking_data.formations %}
+            <input type="hidden" name="date_{{ formation.formation_id }}" value="{{ formation.date }}">
+            <input type="hidden" name="hour_{{ formation.formation_id }}" value="{{ formation.hour }}">
+            <input type="hidden" name="minutes_{{ formation.formation_id }}" value="{{ formation.minutes }}">
+            {% endfor %}
+            
+            <!-- Champs cachés pour les participants -->
+            {% for participant in booking_data.participants %}
+            <input type="hidden" name="participant_name_{{ loop.index0 }}" value="{{ participant.name }}">
+            <input type="hidden" name="participant_email_{{ loop.index0 }}" value="{{ participant.email|default('') }}">
+            <input type="hidden" name="participant_department_{{ loop.index0 }}" value="{{ participant.department|default('') }}">
+            {% endfor %}
+            <input type="hidden" name="participant_count" value="{{ booking_data.participants|length }}">
+            
+            <div class="documents-upload p-4 border-top border-bottom">
+                <div class="upload-zone" id="uploadZone">
+                    <i class="fas fa-cloud-upload-alt display-4 text-muted mb-2"></i>
+                    <p>Glissez et déposez des fichiers ici ou</p>
+                    <div class="form-group">
+                        <label for="documents" class="upload-btn">Parcourir</label>
+                        <input type="file" id="documents" name="documents" multiple class="form-control d-none">
+                    </div>
+                    <div class="upload-info small text-muted mt-2">
+                        <p>Types de fichiers acceptés: {{ allowed_extensions }}</p>
+                        <p>Taille maximale: 10 MB par fichier</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="documents-list-container">
+                <div class="list-header d-flex p-2 bg-light border-bottom">
+                    <div class="flex-grow-1">Nom du fichier</div>
+                    <div class="flex-grow-1 d-none d-md-block">Type</div>
+                    <div class="flex-grow-1 d-none d-md-block">Taille</div>
+                    <div style="width: 80px;">Actions</div>
+                </div>
+                <div id="documentsList" class="documents-list">
+                    <!-- Liste des documents - ajoutée dynamiquement -->
+                    <div class="p-3 text-center text-muted">Aucun document ajouté</div>
+                </div>
+            </div>
+            
+            <div class="form-group mt-4">
+                <label for="additional_info">Informations supplémentaires (optionnel)</label>
+                <textarea id="additional_info" name="additional_info" rows="4" class="form-control" placeholder="Informations supplémentaires à communiquer aux participants..."></textarea>
+            </div>
+            
+            <div class="actions-container">
+                <a href="{{ url_for('participants') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Suivant <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales
+    let documents = [];
+    
+    // Gérer l'upload de fichiers par le bouton parcourir
+    document.getElementById('documents').addEventListener('change', function() {
+        handleFileUpload(this.files);
+    });
+    
+    // Gérer le glisser-déposer
+    const uploadZone = document.getElementById('uploadZone');
+    
+    uploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.add('border-primary');
+    });
+    
+    uploadZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.remove('border-primary');
+    });
+    
+    uploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.remove('border-primary');
+        
+        handleFileUpload(e.dataTransfer.files);
+    });
+    
+    // Gérer le clic sur la zone d'upload
+    uploadZone.addEventListener('click', function() {
+        document.getElementById('documents').click();
+    });
+    
+    // Fonctions utilitaires
+    function handleFileUpload(files) {
+        if (!files || files.length === 0) return;
+        
+        // Convertir FileList en Array
+        const fileArray = Array.from(files);
+        
+        // Vérifier les types et tailles
+        const invalidFiles = [];
+        const validFiles = [];
+        
+        const allowedExtensions = "{{ allowed_extensions }}".split(', ');
+        const maxFileSize = 10 * 1024 * 1024; // 10MB
+        
+        fileArray.forEach(file => {
+            // Vérifier la taille
+            if (file.size > maxFileSize) {
+                invalidFiles.push({
+                    file,
+                    reason: 'Taille maximale dépassée (10MB)'
+                });
+                return;
+            }
+            
+            // Vérifier le type
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(extension)) {
+                invalidFiles.push({
+                    file,
+                    reason: 'Type de fichier non autorisé'
+                });
+                return;
+            }
+            
+            validFiles.push(file);
+        });
+        
+        // Traiter les fichiers valides
+        validFiles.forEach(file => {
+            // Ajouter aux documents
+            documents.push({
+                id: Date.now() + Math.random().toString(36).substring(2), // ID unique
+                filename: file.name,
+                filetype: file.type,
+                filesize: file.size,
+                file: file // Conserver une référence au fichier
+            });
+        });
+        
+        // Mettre à jour l'interface
+        updateDocumentsList();
+        
+        // Afficher un message pour les fichiers invalides
+        if (invalidFiles.length > 0) {
+            let message = invalidFiles.length === 1
+                ? `Le fichier "${invalidFiles[0].file.name}" n'a pas été ajouté: ${invalidFiles[0].reason}.`
+                : `${invalidFiles.length} fichiers n'ont pas été ajoutés en raison de restrictions de taille ou de type.`;
+            
+            showToast('Fichiers ignorés', message, 'warning');
+        }
+    }
+    
+    function updateDocumentsList() {
+        const listContainer = document.getElementById('documentsList');
+        
+        if (documents.length === 0) {
+            listContainer.innerHTML = '<div class="p-3 text-center text-muted">Aucun document ajouté</div>';
+            return;
+        }
+        
+        listContainer.innerHTML = '';
+        
+        documents.forEach((doc, index) => {
+            const item = document.createElement('div');
+            item.className = 'd-flex align-items-center p-2 border-bottom';
+            
+            // Déterminer l'icône en fonction du type de fichier
+            let icon = 'fa-file';
+            if (doc.filetype.includes('pdf')) {
+                icon = 'fa-file-pdf';
+            } else if (doc.filetype.includes('word') || doc.filetype.includes('document')) {
+                icon = 'fa-file-word';
+            } else if (doc.filetype.includes('excel') || doc.filetype.includes('sheet')) {
+                icon = 'fa-file-excel';
+            } else if (doc.filetype.includes('powerpoint') || doc.filetype.includes('presentation')) {
+                icon = 'fa-file-powerpoint';
+            } else if (doc.filetype.includes('image')) {
+                icon = 'fa-file-image';
+            }
+            
+            item.innerHTML = `
+                <div class="flex-grow-1">
+                    <i class="fas ${icon}"></i> ${doc.filename}
+                </div>
+                <div class="flex-grow-1 d-none d-md-block">${doc.filetype}</div>
+                <div class="flex-grow-1 d-none d-md-block">${formatFileSize(doc.filesize)}</div>
+                <div style="width: 80px;">
+                    <button type="button" class="btn btn-sm btn-outline-primary preview-document me-1" data-index="${index}" title="Aperçu">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-document" data-index="${index}" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            listContainer.appendChild(item);
+        });
+        
+        // Ajouter les gestionnaires d'événements pour les boutons
+        document.querySelectorAll('.preview-document').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                previewDocument(index);
+            });
+        });
+        
+        document.querySelectorAll('.delete-document').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                removeDocument(index);
+            });
+        });
+    }
+    
+    function previewDocument(index) {
+        const document = documents[index];
+        
+        // Pour les images, on peut afficher un aperçu
+        if (document.filetype.includes('image')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.id = 'previewModal';
+                modal.setAttribute('tabindex', '-1');
+                modal.setAttribute('aria-labelledby', 'previewModalLabel');
+                modal.setAttribute('aria-hidden', 'true');
+                
+                modal.innerHTML = `
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="previewModalLabel">Aperçu de ${document.filename}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img src="${e.target.result}" alt="${document.filename}" style="max-width: 100%; max-height: 70vh;">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                const previewModal = new bootstrap.Modal(modal);
+                previewModal.show();
+                
+                modal.addEventListener('hidden.bs.modal', function() {
+                    document.body.removeChild(modal);
+                });
+            };
+            
+            reader.readAsDataURL(document.file);
+        } else {
+            // Pour les autres types de fichiers, afficher un message
+            showToast(
+                'Aperçu non disponible',
+                `L'aperçu n'est pas disponible pour ce type de fichier (${document.filetype}).`,
+                'info'
+            );
+        }
+    }
+    
+    function removeDocument(index) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
+            // Supprimer le document
+            documents.splice(index, 1);
+            
+            // Mettre à jour l'interface
+            updateDocumentsList();
+            
+            showToast('Succès', 'Le document a été supprimé avec succès', 'success');
+        }
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' bytes';
+        else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        else return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+    
+    function showToast(title, message, type) {
+        Toastify({
+            text: `<b>${title}</b><br>${message}`,
+            duration: 4000,
+            gravity: "bottom",
+            position: "right",
+            backgroundColor: type === 'success' ? '#48bb78' : type === 'error' ? '#e53e3e' : '#3498db',
+            stopOnFocus: true,
+            className: 'toast-notification',
+            escapeMarkup: false,
+            onClick: function() {}
+        }).showToast();
+    }
+    
+    // Gérer la soumission du formulaire
+    document.getElementById('documents-form').addEventListener('submit', function(e) {
+        // Ne pas arrêter la soumission, laisser le formulaire gérer l'upload comme d'habitude
+        // Mais on peut ajouter des validations si nécessaire
+    });
+});
+</script>
+{% endblock %}
