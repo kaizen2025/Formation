@@ -4,38 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Système de réservation de formations pour Anecoop">
-    <title>{% block title %}Formations Anecoop{% endblock %}</title>
+    <title>{% block title %}{{ app_name | default('Formations Anecoop') }}{% endblock %}</title> <!-- Utilisation de app_name global -->
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Ressources CSS externes -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2w==" crossorigin="anonymous">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet" integrity="sha512-c42qTSw/wi1Z5lL80xL0qQMPN0joL5q1v1Y+CeC5W2a7u0Qb1d4e9z5bN1jA8d5d5f5e5b5e5d5f5e5b5e5d5" crossorigin="anonymous">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.css" rel="stylesheet" integrity="sha512-16j3q2i4K7iH6u1h6bK2e2x8p5rL0D0c7e2b5f5e5b5e5d5f5e5b5e5d5f5e5b5e5d5f5e5b5e5d5f5e5b5e5" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet" integrity="sha256-j21gC0XDeIbNrc0mEVovbMuUNyn5Rgoz8rW+eN4hl0=" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="{{ cdn.fontawesome }}" rel="stylesheet" crossorigin="anonymous">
+    <link href="{{ cdn.animate_css }}" rel="stylesheet" crossorigin="anonymous">
+    <link href="{{ cdn.toastify_css }}" rel="stylesheet" crossorigin="anonymous">
+    <link href="{{ cdn.fullcalendar_css }}" rel="stylesheet" type="text/css">
+    <link href="{{ cdn.bootstrap_css }}" rel="stylesheet" crossorigin="anonymous">
+    <link href="{{ cdn.tippy_css }}" rel="stylesheet">
+    <link href="{{ cdn.tippy_theme }}" rel="stylesheet">
 
     <!-- CSS personnalisé -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced-styles.css') }}">
 
     <!-- Script critique (jQuery) chargé avec defer -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.jquery }}" crossorigin="anonymous" defer></script>
 
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Indicateur de chargement global -->
     <div id="loading-overlay" class="loading-overlay">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Chargement...</span>
+        <div class="spinner-container">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+            <p class="mt-2 loading-text">Chargement en cours...</p>
         </div>
     </div>
 
     <!-- HEADER -->
     <header class="header" role="banner">
         <div class="logo">
-            <i class="fas fa-calendar-check" aria-hidden="true"></i>
-            Anecoop Formations
+            <a href="{{ url_for('index') }}" class="logo-link">
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                <span class="logo-text">{{ app_name | default('Anecoop Formations') }}</span>
+            </a>
         </div>
         <div class="header-actions">
+            <button id="searchBtn" class="icon-btn" title="Rechercher" aria-label="Rechercher">
+                <i class="fas fa-search" aria-hidden="true"></i>
+            </button>
             <button id="helpBtn" class="icon-btn" title="Aide" aria-label="Ouvrir l'aide">
                 <i class="fas fa-question-circle" aria-hidden="true"></i>
             </button>
@@ -44,16 +63,53 @@
                 <span id="notificationsBadge" class="notification-badge hidden" aria-hidden="true">0</span>
             </button>
             <button id="themeToggle" class="icon-btn" title="Changer de thème" aria-label="Basculer entre thème clair et sombre">
-                <i class="fas fa-moon" aria-hidden="true"></i>
+                <i class="fas fa-moon" aria-hidden="true"></i> <!-- Icône par défaut (clair) -->
             </button>
-            <a href="{{ url_for('admin_login') }}" class="primary-btn" id="adminBtn" aria-label="Accéder à l'interface d'administration">
-                <i class="fas fa-user-shield" aria-hidden="true"></i> Admin
-            </a>
+            <div class="dropdown user-dropdown">
+                <button class="user-btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="d-none d-md-inline">Mon compte</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <li><a class="dropdown-item" href="{{ url_for('user_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Tableau de bord</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('index') }}"><i class="fas fa-calendar-plus"></i> Nouvelle réservation</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% if is_admin %}
+                        <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"><i class="fas fa-user-shield"></i> Administration</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin_logout') }}"><i class="fas fa-sign-out-alt"></i> Déconnexion Admin</a></li>
+                    {% else %}
+                        <li><a class="dropdown-item" href="{{ url_for('admin_login') }}"><i class="fas fa-user-shield"></i> Connexion Admin</a></li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </header>
 
+    <!-- Recherche overlay -->
+    <div id="search-overlay" class="search-overlay hidden">
+        <div class="search-container animate__animated animate__fadeInDown">
+            <div class="search-header">
+                <h3>Recherche</h3>
+                <button id="closeSearch" class="close-btn" aria-label="Fermer la recherche">×</button>
+            </div>
+            <div class="search-body">
+                <div class="search-form">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher une formation, un responsable, une date...">
+                        <button id="submitSearch" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="searchResults" class="search-results mt-4">
+                    <!-- Les résultats seront ajoutés ici dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- NOTIFICATIONS PANEL -->
-    <div id="notifications-panel" class="notifications-panel hidden" aria-hidden="true">
+    <div id="notifications-panel" class="notifications-panel hidden animate__animated animate__fadeInRight" aria-hidden="true">
         <div class="notifications-header">
             <h3>Notifications</h3>
             <button class="text-btn" id="clearNotifications" aria-label="Effacer toutes les notifications">Tout effacer</button>
@@ -68,12 +124,15 @@
         <!-- Messages flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category in ['success', 'warning', 'error', 'info'] else 'info' }} animate__animated animate__fadeIn" role="alert">
-                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'exclamation-circle' if category == 'error' else 'info-circle' }}" aria-hidden="true"></i>
-                        <div>{{ message }}</div>
-                    </div>
-                {% endfor %}
+                <div id="flash-messages-container"> {# Conteneur pour gérer la disparition #}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category in ['success', 'warning', 'error', 'info'] else 'info' }} alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'exclamation-circle' if category == 'error' else 'info-circle' }}" aria-hidden="true"></i>
+                            <span>{{ message }}</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
 
@@ -86,18 +145,41 @@
         <i class="fas fa-comment-alt" aria-hidden="true"></i>
     </button>
 
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>{{ app_name | default('Anecoop Formations') }}</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#" class="footer-link">Conditions d'utilisation</a>
+                    <a href="#" class="footer-link">Politique de confidentialité</a>
+                    <a href="#" class="footer-link">Contact</a>
+                </div>
+                <div class="footer-copyright">
+                    © {{ current_year|default(2025) }} Anecoop. Tous droits réservés. Version {{ app_version | default('1.0') }}
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <!-- MODAL DE FEEDBACK -->
-    <div id="feedbackModal" class="modal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div id="feedbackModal" class="modal hidden" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
         <div class="modal-content animate__animated animate__fadeInUp">
             <div class="modal-header">
                 <h3 id="feedbackModalLabel">Votre avis nous intéresse</h3>
                 <button class="close-btn" id="closeFeedback" aria-label="Fermer le formulaire de feedback">×</button>
             </div>
             <div class="modal-body">
-                <form id="feedbackForm" method="POST" action="{{ url_for('send_feedback') }}">
+                <!-- Utilisation de l'API endpoint pour l'action -->
+                <form id="feedbackForm" method="POST" action="{{ url_for('send_feedback_api') }}">
+                    <!-- Ajout du token CSRF -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <p>Aidez-nous à améliorer ce système de réservation en partageant votre expérience.</p>
-                    
-                    <div class="form-group">
+
+                    <div class="form-group mb-3">
                         <label for="feedbackType">Type de retour</label>
                         <select id="feedbackType" name="type" class="form-control" required>
                             <option value="suggestion">Suggestion</option>
@@ -106,17 +188,19 @@
                             <option value="other">Autre</option>
                         </select>
                     </div>
-                    
-                    <div class="form-group">
+
+                    <div class="form-group mb-3">
                         <label for="feedbackMessage">Votre message</label>
                         <textarea id="feedbackMessage" name="message" rows="5" class="form-control" placeholder="Décrivez votre expérience, suggestion ou problème..." required></textarea>
+                        <div class="invalid-feedback">Veuillez entrer votre message.</div>
                     </div>
-                    
-                    <div class="form-group">
+
+                    <div class="form-group mb-3">
                         <label for="feedbackEmail">Votre email (optionnel)</label>
                         <input type="email" id="feedbackEmail" name="email" class="form-control" placeholder="Pour recevoir une réponse">
+                        <div class="invalid-feedback">Veuillez entrer une adresse email valide.</div>
                     </div>
-                </form>
+                </form> {# Fin du formulaire #}
             </div>
             <div class="modal-footer">
                 <button id="submitFeedback" class="primary-btn" type="submit" form="feedbackForm">
@@ -127,7 +211,7 @@
     </div>
 
     <!-- MODAL D'AIDE -->
-    <div id="helpModal" class="modal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div id="helpModal" class="modal hidden" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
         <div class="modal-content animate__animated animate__fadeInUp">
             <div class="modal-header">
                 <h3 id="helpModalLabel">Aide et guide d'utilisation</h3>
@@ -140,32 +224,32 @@
                     <button class="help-tab" data-tab="admin" role="tab" aria-selected="false" aria-controls="adminHelp">Administration</button>
                     <button class="help-tab" data-tab="offline" role="tab" aria-selected="false" aria-controls="offlineHelp">Mode hors ligne</button>
                 </div>
-                
+
                 <div id="generalHelp" class="help-tab-content active" role="tabpanel">
                     <h4>Guide général d'utilisation</h4>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
-                        <div>Le système vous permet de réserver des sessions de formation pour votre service.</div>
+                        <div>Le système vous permet de réserver des sessions de formation pour votre département.</div>
                     </div>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
-                        <div>Vous devez réserver les 4 formations pour votre groupe.</div>
+                        <div>Vous pouvez réserver un ou plusieurs modules de formation pour votre groupe.</div>
                     </div>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
-                        <div>Vous devez ajouter entre 8 et 12 participants.</div>
+                        <div>Vous devez ajouter entre 8 et 12 participants pour chaque groupe de formation.</div>
                     </div>
                 </div>
-                
+
                 <div id="bookingHelp" class="help-tab-content" role="tabpanel">
                     <h4>Comment réserver une formation</h4>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
-                        <div>Étape 1: Sélectionnez votre service et indiquez vos coordonnées.</div>
+                        <div>Étape 1: Sélectionnez votre département et indiquez vos coordonnées.</div>
                     </div>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
-                        <div>Étape 2: Sélectionnez un créneau pour chaque formation.</div>
+                        <div>Étape 2: Sélectionnez un créneau pour chaque module de formation.</div>
                     </div>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
@@ -173,14 +257,14 @@
                     </div>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
-                        <div>Étape 4: Ajoutez des documents si nécessaire.</div>
+                        <div>Étape 4: Ajoutez des documents si nécessaire ou sélectionnez des documents de la bibliothèque.</div>
                     </div>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
                         <div>Étape 5: Vérifiez et confirmez votre réservation.</div>
                     </div>
                 </div>
-                
+
                 <div id="adminHelp" class="help-tab-content" role="tabpanel">
                     <h4>Administration</h4>
                     <div class="help-item">
@@ -189,7 +273,7 @@
                     </div>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
-                        <div>Vous pouvez consulter toutes les réservations par service.</div>
+                        <div>Vous pouvez consulter toutes les réservations par département.</div>
                     </div>
                     <div class="help-item">
                         <div class="help-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
@@ -200,7 +284,7 @@
                         <div>Vous pouvez consulter les statistiques et les logs d'activité.</div>
                     </div>
                 </div>
-                
+
                 <div id="offlineHelp" class="help-tab-content" role="tabpanel">
                     <h4>Mode hors ligne</h4>
                     <div class="help-item">
@@ -221,59 +305,125 @@
     </div>
 
     <!-- JavaScript externes avec defer -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.js" integrity="sha512-16j3q2i4K7iH6u1h6bK2e2x8p5rL0D0c7e2b5f5e5b5e5d5f5e5b5e5d5f5e5b5e5d5f5e5b5e5d5f5e5b5e5" crossorigin="anonymous" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUm5x1Xmt4LsmKM9mLLDepm2A2gV7rB+1bF2lW1QfFEAuXfg==" crossorigin="anonymous" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+v==" crossorigin="anonymous" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28utv+RNl+tcl9OaHjqL7a5zH5u1N0jeoHgGXLsjesu39cHtgqI7b2+CaHNVq0t5vQ4pNYF4t4/hxIg==" crossorigin="anonymous" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha512-dfXb3uaC+VkbWE62vOEBpknW8E2o+THlKJUaN0H8TivgL1fBk4F3WkuoHHr6dgoqL5hBI+0TwmRh0sDb4g==" crossorigin="anonymous" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90mlT90+T+g0+1XOpnk65T5k6NI5u0+1+1CS1B9MiyGA8Nh+BmW7+9hNBX04X5KxN5p5w==" crossorigin="anonymous" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.js" integrity="sha256-9gq8sG1gCp2pL9nBrw+8qM+5gq8jP5lW4eC0fP8q8jP5lW4eC0fP8q8jP5lW4eC0fP8q8j" crossorigin="anonymous" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha256-MnPQr5gJRY1o0SmvJOxwWjT0s4Z7K5S8Kz9W5W2zA4=" crossorigin="anonymous" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous" defer></script>
+    <!-- FullCalendar doit être chargé avant les autres pour que `main.js` puisse l'utiliser -->
+    <script src="{{ cdn.fullcalendar_js }}" crossorigin="anonymous"></script>
+    <script src="{{ cdn.toastify_js }}" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.jspdf }}" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.html2canvas }}" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.jszip }}" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.papaparse }}" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.xlsx }}" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.chart_js }}" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.bootstrap_js }}" crossorigin="anonymous" defer></script>
+    <script src="{{ cdn.tippy_js }}" defer></script>
 
     <!-- JavaScript personnalisé -->
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/enhanced-ui.js') }}" defer></script>
 
     <!-- Script inline pour gérer le chargement des scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Vérifier si FullCalendar est chargé
-            if (typeof FullCalendar === 'undefined') {
-                console.error('FullCalendar n\'a pas pu être chargé. Vérifiez votre connexion ou la source CDN.');
-                Toastify({
-                    text: "Erreur : FullCalendar n'a pas pu être chargé. Certaines fonctionnalités peuvent ne pas fonctionner.",
-                    duration: 5000,
-                    gravity: "top",
-                    position: "center",
-                    backgroundColor: "#dc3545",
-                }).showToast();
-            }
-
             // Cacher l'indicateur de chargement une fois que tous les scripts sont chargés
             const loadingOverlay = document.getElementById('loading-overlay');
             if (loadingOverlay) {
+                // Utiliser window.onload pour être sûr que tout (y compris les images) est chargé
+                window.onload = () => {
+                    loadingOverlay.classList.add('fade-out');
+                    setTimeout(() => {
+                        loadingOverlay.style.display = 'none';
+                    }, 500); // Délai pour la fin de l'animation
+                };
+                // Fallback si onload ne se déclenche pas rapidement
                 setTimeout(() => {
-                    loadingOverlay.style.display = 'none';
-                }, 1000); // Délai pour s'assurer que tout est chargé
+                     if (loadingOverlay.style.display !== 'none') {
+                         loadingOverlay.classList.add('fade-out');
+                         setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+                     }
+                }, 2000); // Timeout de 2 secondes
             }
-        });
 
-        // Gestion du thème (clair/sombre)
-        const themeToggle = document.getElementById('themeToggle');
-        const body = document.body;
-        const currentTheme = localStorage.getItem('theme') || 'light';
+            // Initialisation des dropdowns de Bootstrap (si Bootstrap est chargé)
+            if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                const dropdownElementList = document.querySelectorAll('.dropdown-toggle');
+                const dropdownList = [...dropdownElementList].map(dropdownToggleEl =>
+                    new bootstrap.Dropdown(dropdownToggleEl)
+                );
+            } else {
+                 console.warn("Bootstrap Dropdown non trouvé. Les menus déroulants pourraient ne pas fonctionner.");
+            }
 
-        if (currentTheme === 'dark') {
-            body.classList.add('dark-mode');
-            themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
-        }
+            // Fonction pour charger dynamiquement un script (déjà définie dans main.js/enhanced-ui.js ?)
+            // Assurez-vous qu'elle est disponible ou définissez-la ici si nécessaire.
+            function loadScriptFallback(src) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
 
-        themeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            const isDarkMode = body.classList.contains('dark-mode');
-            themeToggle.querySelector('i').classList.toggle('fa-moon', !isDarkMode);
-            themeToggle.querySelector('i').classList.toggle('fa-sun', isDarkMode);
-            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            // Vérifier si les bibliothèques essentielles sont chargées, sinon tenter un chargement dynamique
+            // (Cette logique est peut-être déjà dans enhanced-ui.js, à vérifier pour éviter doublons)
+            if (typeof FullCalendar === 'undefined' && document.getElementById('calendar')) {
+                console.warn('FullCalendar n\'a pas pu être chargé initialement. Tentative de chargement dynamique.');
+                loadScriptFallback('{{ cdn.fullcalendar_js }}')
+                    .then(() => console.log('FullCalendar chargé dynamiquement'))
+                    .catch(() => {
+                        console.error('Impossible de charger FullCalendar');
+                        // Afficher un message à l'utilisateur si showFallbackNotification est défini
+                        if (typeof showFallbackNotification === 'function') {
+                             showFallbackNotification('FullCalendar');
+                        }
+                    });
+            }
+
+            if (typeof Toastify === 'undefined') {
+                console.warn('Toastify n\'a pas pu être chargé initialement. Tentative de chargement dynamique.');
+                loadScriptFallback('{{ cdn.toastify_js }}')
+                    .then(() => console.log('Toastify chargé dynamiquement'))
+                    .catch(() => {
+                        console.error('Impossible de charger Toastify');
+                         if (typeof showFallbackNotification === 'function') {
+                             showFallbackNotification('Toastify');
+                        }
+                    });
+            }
+             if (typeof tippy === 'undefined') {
+                console.warn('Tippy.js n\'a pas pu être chargé initialement. Tentative de chargement dynamique.');
+                loadScriptFallback('{{ cdn.tippy_js }}')
+                    .then(() => {
+                        console.log('Tippy.js chargé dynamiquement');
+                        // Ré-initialiser les tooltips si la fonction existe
+                        if (typeof initTooltips === 'function') initTooltips();
+                    })
+                    .catch(() => {
+                        console.error('Impossible de charger Tippy.js');
+                         if (typeof showFallbackNotification === 'function') {
+                             showFallbackNotification('Tippy.js');
+                        }
+                    });
+            }
+
+             // Gestion de la disparition des messages flash
+             const flashContainer = document.getElementById('flash-messages-container');
+             if (flashContainer) {
+                 setTimeout(() => {
+                     flashContainer.querySelectorAll('.alert').forEach(alert => {
+                         // Utiliser l'API Bootstrap si disponible pour une transition douce
+                         if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                             const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                             if (bsAlert) bsAlert.close();
+                         } else {
+                             alert.style.transition = 'opacity 0.5s ease-out';
+                             alert.style.opacity = '0';
+                             setTimeout(() => alert.remove(), 500);
+                         }
+                     });
+                 }, 5000); // Disparaît après 5 secondes
+             }
         });
     </script>
 

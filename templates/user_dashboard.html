@@ -1,0 +1,804 @@
+{% extends 'base.html' %}
+
+{% block title %}Anecoop Formations - Tableau de bord utilisateur{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-info-banner {
+        background-color: var(--info-light);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .user-avatar {
+        width: 64px;
+        height: 64px;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    .user-details {
+        display: flex;
+        flex-direction: column;
+    }
+    .dashboard-card {
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        margin-bottom: var(--spacing-lg);
+        overflow: hidden;
+        background-color: white;
+        transition: all 0.3s;
+    }
+    .dashboard-card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-3px);
+    }
+    .dashboard-card-header {
+        background-color: var(--primary);
+        color: white;
+        padding: var(--spacing-md) var(--spacing-lg);
+        font-weight: bold;
+        font-size: 1.1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .dashboard-card-body {
+        padding: var(--spacing-lg);
+    }
+    .formation-item {
+        border: 1px solid var(--gray-light);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        transition: all 0.3s;
+    }
+    .formation-item:hover {
+        border-color: var(--primary-light);
+        background-color: var(--primary-transparent);
+        transform: translateY(-2px);
+    }
+    .formation-item:last-child {
+        margin-bottom: 0;
+    }
+    .formation-info {
+        flex: 1;
+        min-width: 250px;
+    }
+    .formation-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .formation-meta {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        color: var(--gray-dark);
+        font-size: 0.9rem;
+    }
+    .formation-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .formation-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .document-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px solid var(--gray-light);
+    }
+    .document-item:last-child {
+        border-bottom: none;
+    }
+    .document-icon {
+        font-size: 1.5rem;
+        width: 30px;
+        text-align: center;
+    }
+    .document-info {
+        flex: 1;
+    }
+    .document-title {
+        font-weight: 500;
+    }
+    .document-meta {
+        font-size: 0.85rem;
+        color: var(--gray);
+    }
+    .document-actions {
+        display: flex;
+        gap: 5px;
+    }
+    .badge-group {
+        position: relative;
+        font-size: 0.85rem;
+    }
+    .badge-role {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+    .badge-role.contact {
+        background-color: var(--primary-light);
+        color: var(--primary-dark);
+    }
+    .badge-role.participant {
+        background-color: var(--secondary-light);
+        color: var(--secondary-dark);
+    }
+    .badge-role.waitlist {
+        background-color: var(--warning-light);
+        color: var(--gray-dark);
+    }
+    .formation-date {
+        font-weight: 500;
+    }
+    .empty-message {
+        text-align: center;
+        padding: var(--spacing-lg);
+        color: var(--gray-dark);
+    }
+    .empty-message i {
+        font-size: 3rem;
+        margin-bottom: var(--spacing-sm);
+        color: var(--gray);
+    }
+    .summary-card {
+        background-color: white;
+        border-radius: var(--radius-md);
+        padding: var(--spacing-lg);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: var(--spacing-md);
+        text-align: center;
+    }
+    .summary-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--primary);
+        margin-bottom: var(--spacing-xs);
+    }
+    .summary-title {
+        color: var(--gray-dark);
+        font-size: 0.9rem;
+    }
+    .upcoming-formation {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+        border-left: 3px solid var(--primary);
+        background-color: var(--primary-transparent);
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+    .waitlist-item {
+        border: 1px solid var(--warning-light);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        background-color: #fff9e6;
+    }
+    .waitlist-status {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        background-color: var(--warning);
+        color: white;
+        font-weight: 500;
+    }
+    .participants-list {
+        margin-top: var(--spacing-md);
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid var(--gray-light);
+        border-radius: var(--radius-md);
+    }
+    .participant-item {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--gray-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .participant-item:last-child {
+        border-bottom: none;
+    }
+    .participant-info {
+        display: flex;
+        flex-direction: column;
+    }
+    .participant-name {
+        font-weight: 500;
+    }
+    .participant-email {
+        font-size: 0.85rem;
+        color: var(--gray);
+    }
+    .time-remaining {
+        font-size: 0.9rem;
+        color: var(--gray-dark);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    @media (max-width: 768px) {
+        .formation-item, .formation-info, .formation-meta {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .formation-meta {
+            gap: 5px;
+        }
+        .formation-actions {
+            margin-top: 10px;
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Bannière d'info utilisateur -->
+<div class="user-info-banner">
+    <div class="user-info">
+        <div class="user-avatar">
+            {{ email|first|upper }}
+        </div>
+        <div class="user-details">
+            <h2 class="m-0">Tableau de bord</h2>
+            <div>{{ email }}</div>
+        </div>
+    </div>
+    <div>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-plus"></i> Nouvelle réservation
+        </a>
+    </div>
+</div>
+
+{% if is_guest %}
+<div class="alert alert-info mt-3">
+    <i class="fas fa-info-circle"></i> 
+    Vous êtes actuellement en mode invité. Les données affichées sont fictives.
+</div>
+{% endif %}
+
+<!-- Rangée de statistiques -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="summary-card">
+            <div class="summary-number">{{ bookings_as_contact|length }}</div>
+            <div class="summary-title">RÉSERVATIONS GÉRÉES</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="summary-card">
+            <div class="summary-number">{{ bookings_as_participant|length }}</div>
+            <div class="summary-title">FORMATIONS À SUIVRE</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="summary-card">
+            <div class="summary-number">{{ waitlist_entries|length }}</div>
+            <div class="summary-title">LISTE D'ATTENTE</div>
+        </div>
+    </div>
+</div>
+
+<!-- Prochaines formations -->
+<div class="dashboard-card">
+    <div class="dashboard-card-header">
+        <span><i class="fas fa-calendar-day"></i> Formations à venir</span>
+        <div>
+            <button class="btn btn-sm btn-light" id="exportCalendarBtn">
+                <i class="fas fa-calendar-plus"></i> Exporter vers le calendrier
+            </button>
+        </div>
+    </div>
+    <div class="dashboard-card-body">
+        {% set upcoming_formations = bookings_as_contact + bookings_as_participant %}
+        {% set has_upcoming = false %}
+        
+        {% if upcoming_formations %}
+            {% for formation in upcoming_formations %}
+                {% if formation.date >= today_date %}
+                    {% set has_upcoming = true %}
+                    <div class="formation-item">
+                        <div class="formation-info">
+                            <div class="formation-title">{{ formation.formation_name }}</div>
+                            <div class="formation-meta">
+                                <div class="formation-meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span class="formation-date">{{ formation.date|format_date }}</span>
+                                </div>
+                                <div class="formation-meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ formation.hour }}:{{ '%02d'|format(formation.minutes) }} - 
+                                    {% set end_hour = formation.hour + 1 %}
+                                    {% set end_minutes = formation.minutes + 30 %}
+                                    {% if end_minutes >= 60 %}
+                                        {% set end_hour = end_hour + 1 %}
+                                        {% set end_minutes = end_minutes - 60 %}
+                                    {% endif %}
+                                    {{ '%02d'|format(end_hour) }}:{{ '%02d'|format(end_minutes) }}</span>
+                                </div>
+                                <div class="formation-meta-item">
+                                    <i class="fas fa-users"></i>
+                                    <span>{{ formation.participants|length }} participants</span>
+                                </div>
+                                <div class="badge-group">
+                                    {% if formation.email == email %}
+                                        <span class="badge-role contact">Responsable</span>
+                                    {% else %}
+                                        <span class="badge-role participant">Participant</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="formation-actions">
+                            <button class="btn btn-sm btn-outline-primary view-participants" data-id="{{ formation.id }}">
+                                <i class="fas fa-users"></i> Participants
+                            </button>
+                            <button class="btn btn-sm btn-outline-success view-documents" data-id="{{ formation.id }}">
+                                <i class="fas fa-file-alt"></i> Documents
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            
+            {% if not has_upcoming %}
+                <div class="empty-message">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>Vous n'avez pas de formations à venir.</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-message">
+                <i class="fas fa-calendar-times"></i>
+                <p>Vous n'avez pas de formations à venir.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Formations passées -->
+<div class="dashboard-card">
+    <div class="dashboard-card-header">
+        <span><i class="fas fa-history"></i> Historique des formations</span>
+    </div>
+    <div class="dashboard-card-body">
+        {% set past_formations = bookings_as_contact + bookings_as_participant %}
+        {% set has_past = false %}
+        
+        {% if past_formations %}
+            {% for formation in past_formations %}
+                {% if formation.date < today_date %}
+                    {% set has_past = true %}
+                    <div class="formation-item">
+                        <div class="formation-info">
+                            <div class="formation-title">{{ formation.formation_name }}</div>
+                            <div class="formation-meta">
+                                <div class="formation-meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span class="formation-date">{{ formation.date|format_date }}</span>
+                                </div>
+                                <div class="formation-meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ formation.hour }}:{{ '%02d'|format(formation.minutes) }}</span>
+                                </div>
+                                <div class="formation-meta-item">
+                                    <i class="fas fa-users"></i>
+                                    <span>{{ formation.participants|length }} participants</span>
+                                </div>
+                                <div class="badge-group">
+                                    {% if formation.email == email %}
+                                        <span class="badge-role contact">Responsable</span>
+                                    {% else %}
+                                        <span class="badge-role participant">Participant</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="formation-actions">
+                            <button class="btn btn-sm btn-outline-secondary view-participants" data-id="{{ formation.id }}">
+                                <i class="fas fa-users"></i> Participants
+                            </button>
+                            <button class="btn btn-sm btn-outline-info view-documents" data-id="{{ formation.id }}">
+                                <i class="fas fa-file-alt"></i> Documents
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            
+            {% if not has_past %}
+                <div class="empty-message">
+                    <i class="fas fa-history"></i>
+                    <p>Vous n'avez pas d'historique de formations.</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-message">
+                <i class="fas fa-history"></i>
+                <p>Vous n'avez pas d'historique de formations.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Liste d'attente -->
+{% if waitlist_entries %}
+<div class="dashboard-card">
+    <div class="dashboard-card-header">
+        <span><i class="fas fa-user-clock"></i> Liste d'attente</span>
+    </div>
+    <div class="dashboard-card-body">
+        {% for entry in waitlist_entries %}
+        <div class="waitlist-item">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <span class="waitlist-status">En attente</span>
+                </div>
+                <div class="text-muted">
+                    <small>Inscrit le {{ entry.timestamp|format_datetime }}</small>
+                </div>
+            </div>
+            <h5>{{ entry.formation_name }}</h5>
+            <div class="formation-meta mb-2">
+                <div class="formation-meta-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>{{ entry.date|format_date }}</span>
+                </div>
+                <div class="formation-meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ entry.hour }}:{{ '%02d'|format(entry.minutes) }}</span>
+                </div>
+                <div class="formation-meta-item">
+                    <i class="fas fa-users"></i>
+                    <span>Groupe: {{ entry.service }}</span>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-sm btn-outline-danger cancel-waitlist" data-id="{{ entry.id }}">
+                    <i class="fas fa-times"></i> Annuler
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Documents globaux -->
+{% if global_documents %}
+<div class="dashboard-card">
+    <div class="dashboard-card-header">
+        <span><i class="fas fa-book"></i> Bibliothèque de documents</span>
+    </div>
+    <div class="dashboard-card-body">
+        {% for document in global_documents %}
+        <div class="document-item">
+            <div class="document-icon">
+                {% if 'pdf' in document.filetype %}
+                <i class="fas fa-file-pdf text-danger"></i>
+                {% elif 'word' in document.filetype or 'doc' in document.filetype %}
+                <i class="fas fa-file-word text-primary"></i>
+                {% elif 'excel' in document.filetype or 'sheet' in document.filetype or 'xls' in document.filetype %}
+                <i class="fas fa-file-excel text-success"></i>
+                {% elif 'powerpoint' in document.filetype or 'presentation' in document.filetype or 'ppt' in document.filetype %}
+                <i class="fas fa-file-powerpoint text-warning"></i>
+                {% elif 'image' in document.filetype or 'jpg' in document.filetype or 'png' in document.filetype %}
+                <i class="fas fa-file-image text-info"></i>
+                {% else %}
+                <i class="fas fa-file text-secondary"></i>
+                {% endif %}
+            </div>
+            <div class="document-info">
+                <div class="document-title">{{ document.filename }}</div>
+                <div class="document-meta">
+                    {{ (document.filesize / 1024)|round(1) }} KB | {{ document.document_type|capitalize }}
+                    {% if document.description %}| {{ document.description }}{% endif %}
+                </div>
+            </div>
+            <div class="document-actions">
+                <a href="{{ url_for('download_document', document_id=document.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-download"></i> Télécharger
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal pour voir les participants -->
+<div class="modal fade" id="participantsModal" tabindex="-1" aria-labelledby="participantsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="participantsModalLabel">Participants de la formation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="participants-info">
+                    <p>Chargement des participants...</p>
+                </div>
+                <div id="participants-list" class="participants-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour voir les documents -->
+<div class="modal fade" id="documentsModal" tabindex="-1" aria-labelledby="documentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="documentsModalLabel">Documents de la formation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="documents-list">
+                    <p>Chargement des documents...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestionnaires pour les boutons de participants
+    document.querySelectorAll('.view-participants').forEach(button => {
+        button.addEventListener('click', function() {
+            const bookingId = this.getAttribute('data-id');
+            openParticipantsModal(bookingId);
+        });
+    });
+    
+    // Gestionnaires pour les boutons de documents
+    document.querySelectorAll('.view-documents').forEach(button => {
+        button.addEventListener('click', function() {
+            const bookingId = this.getAttribute('data-id');
+            openDocumentsModal(bookingId);
+        });
+    });
+    
+    // Gestionnaires pour les boutons d'annulation de liste d'attente
+    document.querySelectorAll('.cancel-waitlist').forEach(button => {
+        button.addEventListener('click', function() {
+            const waitlistId = this.getAttribute('data-id');
+            cancelWaitlistEntry(waitlistId);
+        });
+    });
+    
+    // Gestionnaire pour l'export de calendrier
+    document.getElementById('exportCalendarBtn').addEventListener('click', function() {
+        window.location.href = '/export/ical?email={{ email }}&provider=all';
+    });
+    
+    // Fonctions
+    function openParticipantsModal(bookingId) {
+        // Montrer la modal
+        const participantsModal = new bootstrap.Modal(document.getElementById('participantsModal'));
+        participantsModal.show();
+        
+        // Charger les détails de la réservation
+        fetch(`/api/booking/${bookingId}`)
+            .then(response => response.json())
+            .then(booking => {
+                if (booking.error) {
+                    document.getElementById('participants-info').innerHTML = `
+                        <div class="alert alert-danger">Erreur: ${booking.error}</div>
+                    `;
+                    document.getElementById('participants-list').innerHTML = '';
+                    return;
+                }
+                
+                // Mettre à jour les informations
+                const formattedDate = new Date(booking.date).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                
+                document.getElementById('participantsModalLabel').textContent = `Participants - ${booking.formation_name}`;
+                
+                let infoHtml = `
+                    <p><strong>Formation:</strong> ${booking.formation_name}</p>
+                    <p><strong>Date:</strong> ${formattedDate}</p>
+                    <p><strong>Horaire:</strong> ${booking.hour}:${String(booking.minutes).padStart(2, '0')} - `;
+                
+                let endHour = booking.hour + 1;
+                let endMinutes = booking.minutes + 30;
+                if (endMinutes >= 60) {
+                    endHour++;
+                    endMinutes -= 60;
+                }
+                
+                infoHtml += `${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}</p>`;
+                infoHtml += `<p><strong>Responsable:</strong> ${booking.contact} (${booking.email})</p>`;
+                infoHtml += `<p><strong>Participants:</strong> ${booking.participants.length}</p>`;
+                
+                document.getElementById('participants-info').innerHTML = infoHtml;
+                
+                // Liste des participants
+                let participantsHtml = '';
+                
+                if (booking.participants && booking.participants.length > 0) {
+                    booking.participants.forEach(participant => {
+                        participantsHtml += `
+                            <div class="participant-item">
+                                <div class="participant-info">
+                                    <div class="participant-name">${participant.name}</div>
+                                    ${participant.email ? `<div class="participant-email">${participant.email}</div>` : ''}
+                                </div>
+                                <div>
+                                    ${participant.department ? `<span class="badge bg-light text-dark">${participant.department}</span>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    participantsHtml = '<div class="p-3 text-center text-muted">Aucun participant trouvé</div>';
+                }
+                
+                document.getElementById('participants-list').innerHTML = participantsHtml;
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des participants:', error);
+                document.getElementById('participants-info').innerHTML = `
+                    <div class="alert alert-danger">Erreur lors du chargement des données</div>
+                `;
+                document.getElementById('participants-list').innerHTML = '';
+            });
+    }
+    
+    function openDocumentsModal(bookingId) {
+        // Montrer la modal
+        const documentsModal = new bootstrap.Modal(document.getElementById('documentsModal'));
+        documentsModal.show();
+        
+        // Charger les documents
+        fetch(`/api/documents/${bookingId}`)
+            .then(response => response.json())
+            .then(documents => {
+                if (documents.error) {
+                    document.getElementById('documents-list').innerHTML = `
+                        <div class="alert alert-danger">Erreur: ${documents.error}</div>
+                    `;
+                    return;
+                }
+                
+                // Mise à jour du titre
+                document.getElementById('documentsModalLabel').textContent = 'Documents de la formation';
+                
+                // Afficher les documents
+                let documentsHtml = '';
+                
+                if (documents && documents.length > 0) {
+                    documents.forEach(document => {
+                        let iconClass = 'fa-file';
+                        
+                        if (document.filetype.includes('pdf')) {
+                            iconClass = 'fa-file-pdf text-danger';
+                        } else if (document.filetype.includes('word') || document.filetype.includes('doc')) {
+                            iconClass = 'fa-file-word text-primary';
+                        } else if (document.filetype.includes('excel') || document.filetype.includes('sheet') || document.filetype.includes('xls')) {
+                            iconClass = 'fa-file-excel text-success';
+                        } else if (document.filetype.includes('powerpoint') || document.filetype.includes('presentation') || document.filetype.includes('ppt')) {
+                            iconClass = 'fa-file-powerpoint text-warning';
+                        } else if (document.filetype.includes('image') || document.filetype.includes('jpg') || document.filetype.includes('png')) {
+                            iconClass = 'fa-file-image text-info';
+                        }
+                        
+                        documentsHtml += `
+                            <div class="document-item">
+                                <div class="document-icon">
+                                    <i class="fas ${iconClass}"></i>
+                                </div>
+                                <div class="document-info">
+                                    <div class="document-title">${document.filename}</div>
+                                    <div class="document-meta">
+                                        ${Math.round(document.filesize / 1024 * 10) / 10} KB 
+                                        ${document.document_type ? '| ' + document.document_type.charAt(0).toUpperCase() + document.document_type.slice(1) : ''}
+                                        ${document.description ? '| ' + document.description : ''}
+                                    </div>
+                                </div>
+                                <div class="document-actions">
+                                    <a href="/api/document/${document.id}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="fas fa-download"></i> Télécharger
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    documentsHtml = `
+                        <div class="alert alert-info">
+                            Aucun document disponible pour cette formation.
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('documents-list').innerHTML = documentsHtml;
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des documents:', error);
+                document.getElementById('documents-list').innerHTML = `
+                    <div class="alert alert-danger">Erreur lors du chargement des documents</div>
+                `;
+            });
+    }
+    
+    function cancelWaitlistEntry(waitlistId) {
+        if (confirm('Êtes-vous sûr de vouloir vous retirer de cette liste d\'attente ?')) {
+            // Appel API pour annuler l'inscription en liste d'attente
+            fetch(`/api/waitlist/${waitlistId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showToast('Erreur', data.error, 'error');
+                } else {
+                    showToast('Succès', 'Vous avez été retiré de la liste d\'attente avec succès', 'success');
+                    // Recharger la page pour actualiser les données
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors de l\'annulation de la liste d\'attente:', error);
+                showToast('Erreur', 'Une erreur est survenue lors de l\'annulation', 'error');
+            });
+        }
+    }
+    
+    function showToast(title, message, type) {
+        Toastify({
+            text: `<strong>${title}</strong><br>${message}`,
+            duration: 4000,
+            gravity: 'bottom',
+            position: 'right',
+            backgroundColor: type === 'success' ? '#48bb78' : type === 'error' ? '#e53e3e' : '#3498db',
+            stopOnFocus: true,
+            className: 'toast-notification',
+            escapeMarkup: false
+        }).showToast();
+    }
+});
+</script>
+{% endblock %}

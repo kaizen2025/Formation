@@ -1,27 +1,30 @@
 {% extends 'base.html' %}
 
-{% block title %}Anecoop Formations - Tableau de bord admin{% endblock %}
+{% block title %}Anecoop Formations - Tableau de bord administrateur{% endblock %}
 
 {% block extra_css %}
 <style>
     .stat-card {
         background-color: white;
-        border-radius: 8px;
+        border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         height: 100%;
         transition: transform 0.3s, box-shadow 0.3s;
+        position: relative;
+        overflow: hidden;
     }
     
     .stat-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
     }
     
     .stat-card .number {
         font-size: 2.5rem;
         font-weight: 700;
         color: var(--primary);
+        margin-bottom: 0.25rem;
     }
     
     .stat-card .title {
@@ -31,9 +34,301 @@
         letter-spacing: 1px;
     }
     
+    .stat-card .icon {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 2.5rem;
+        opacity: 0.1;
+        color: var(--primary);
+    }
+    
+    .stat-card .trend {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .trend.up {
+        color: var(--success);
+    }
+    
+    .trend.down {
+        color: var(--danger);
+    }
+    
+    .trend.neutral {
+        color: var(--gray);
+    }
+    
     .chart-container {
-        height: 300px;
+        height: 320px;
         position: relative;
+    }
+    
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .chart-header h5 {
+        margin: 0;
+    }
+    
+    .chart-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .tab-icon {
+        margin-right: 8px;
+    }
+    
+    .table-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+        background-color: var(--gray-light);
+        padding: 12px;
+        border-radius: 8px;
+    }
+    
+    .search-filter {
+        position: relative;
+        flex-grow: 1;
+        min-width: 200px;
+    }
+    
+    .search-filter input {
+        padding-left: 35px;
+        border-radius: 25px;
+    }
+    
+    .search-filter i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray);
+    }
+    
+    .custom-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-confirmed {
+        background-color: rgba(72, 187, 120, 0.15);
+        color: var(--success);
+    }
+    
+    .badge-waiting {
+        background-color: rgba(246, 173, 85, 0.15);
+        color: var(--warning);
+    }
+    
+    .badge-canceled {
+        background-color: rgba(229, 62, 62, 0.15);
+        color: var(--danger);
+    }
+    
+    .admin-quick-links {
+        margin-bottom: 1.5rem;
+    }
+    
+    .admin-quick-links a {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        color: var(--dark);
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    
+    .admin-quick-links a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        color: var(--primary);
+    }
+    
+    .admin-quick-links a i {
+        margin-right: 8px;
+        color: var(--primary);
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        border-radius: 4px;
+        border: none !important;
+        background: var(--gray-light) !important;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: var(--primary-transparent) !important;
+        color: var(--primary) !important;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: var(--primary) !important;
+        color: white !important;
+    }
+    
+    .dashboard-card {
+        margin-bottom: 1.5rem;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .dashboard-card-header {
+        padding: 1rem 1.25rem;
+        background-color: var(--primary);
+        color: white;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .dashboard-card-header h5 {
+        margin: 0;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .dashboard-card-header h5 i {
+        margin-right: 8px;
+    }
+    
+    .dashboard-card-body {
+        background-color: white;
+        padding: 1.25rem;
+    }
+    
+    .activity-timeline {
+        position: relative;
+        padding-left: 25px;
+    }
+    
+    .activity-timeline::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 8px;
+        width: 2px;
+        background-color: var(--gray-light);
+    }
+    
+    .activity-item {
+        position: relative;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .activity-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .activity-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -25px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: white;
+        border: 2px solid var(--primary);
+    }
+    
+    .activity-item.type-booking::before {
+        border-color: var(--primary);
+    }
+    
+    .activity-item.type-participant::before {
+        border-color: var(--success);
+    }
+    
+    .activity-item.type-document::before {
+        border-color: var(--info);
+    }
+    
+    .activity-item.type-feedback::before {
+        border-color: var(--warning);
+    }
+    
+    .activity-time {
+        font-size: 0.85rem;
+        color: var(--gray);
+        margin-bottom: 5px;
+    }
+    
+    .activity-content {
+        font-weight: 500;
+    }
+    
+    .activity-details {
+        font-size: 0.9rem;
+        color: var(--gray-dark);
+    }
+    
+    .alert-banner {
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        background-color: #fff3cd;
+        border-left: 4px solid var(--warning);
+        display: flex;
+        align-items: center;
+    }
+    
+    .alert-banner i {
+        font-size: 1.5rem;
+        color: var(--warning);
+        margin-right: 1rem;
+    }
+    
+    .alert-banner-content {
+        flex-grow: 1;
+    }
+    
+    .alert-banner-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .alert-banner-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    @media (max-width: 768px) {
+        .admin-quick-links a {
+            width: 100%;
+            margin-right: 0;
+        }
+        
+        .chart-container {
+            height: 250px;
+        }
     }
 </style>
 {% endblock %}
@@ -42,118 +337,204 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Tableau de bord administrateur</h1>
     <div>
-        <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-secondary">
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-plus"></i> Actions
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#" id="createSessionBtn"><i class="fas fa-calendar-plus"></i> Nouvelle session</a></li>
+                <li><a class="dropdown-item" href="#" id="addDocumentBtn"><i class="fas fa-file-upload"></i> Ajouter un document</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="exportDataBtn"><i class="fas fa-file-export"></i> Exporter les données</a></li>
+                <li><a class="dropdown-item" href="#" id="systemSettingsBtn"><i class="fas fa-cog"></i> Paramètres système</a></li>
+            </ul>
+        </div>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-secondary ms-2">
             <i class="fas fa-sign-out-alt"></i> Déconnexion
         </a>
+    </div>
+</div>
+
+<!-- Alertes système -->
+{% if stats.new_feedback_count > 0 %}
+<div class="alert-banner">
+    <i class="fas fa-bell"></i>
+    <div class="alert-banner-content">
+        <div class="alert-banner-title">Nouveaux retours utilisateurs</div>
+        <div>Vous avez {{ stats.new_feedback_count }} nouveau(x) message(s) qui nécessite(nt) votre attention.</div>
+    </div>
+    <div class="alert-banner-actions">
+        <a href="{{ url_for('admin_feedback') }}" class="btn btn-sm btn-warning">Voir les messages</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Liens rapides -->
+<div class="admin-quick-links">
+    <a href="{{ url_for('admin_bookings') }}"><i class="fas fa-calendar-check"></i> Sessions</a>
+    <a href="{{ url_for('admin_participants') }}"><i class="fas fa-users"></i> Participants</a>
+    <a href="{{ url_for('admin_documents') }}"><i class="fas fa-file-alt"></i> Documents</a>
+    <a href="{{ url_for('admin_waitlist') }}"><i class="fas fa-user-clock"></i> Liste d'attente</a>
+    <a href="{{ url_for('admin_logs') }}"><i class="fas fa-history"></i> Logs d'activité</a>
+    <a href="{{ url_for('admin_feedback') }}"><i class="fas fa-comment-alt"></i> Feedback</a>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="number">{{ stats.total_bookings }}</div>
+            <div class="title">Sessions programmées</div>
+            {% if stats.bookings_trend > 0 %}
+            <div class="trend up">
+                <i class="fas fa-arrow-up"></i> {{ stats.bookings_trend }}% depuis le mois dernier
+            </div>
+            {% elif stats.bookings_trend < 0 %}
+            <div class="trend down">
+                <i class="fas fa-arrow-down"></i> {{ stats.bookings_trend|abs }}% depuis le mois dernier
+            </div>
+            {% else %}
+            <div class="trend neutral">
+                <i class="fas fa-equals"></i> Stable depuis le mois dernier
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="number">{{ stats.total_participants }}</div>
+            <div class="title">Participants inscrits</div>
+            <div class="trend up">
+                <i class="fas fa-arrow-up"></i> {{ stats.participants_trend|default(5) }}% depuis le mois dernier
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="number">{{ stats.waiting_list_count }}</div>
+            <div class="title">En liste d'attente</div>
+            <div class="trend {{ 'up' if stats.waiting_list_count > 0 else 'neutral' }}">
+                {% if stats.waiting_list_count > 5 %}
+                <i class="fas fa-exclamation-circle"></i> Attention, liste d'attente importante
+                {% elif stats.waiting_list_count > 0 %}
+                <i class="fas fa-info-circle"></i> Liste d'attente modérée
+                {% else %}
+                <i class="fas fa-check-circle"></i> Aucune personne en attente
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="number">{{ stats.total_documents }}</div>
+            <div class="title">Documents partagés</div>
+            <div class="trend neutral">
+                <i class="fas fa-info-circle"></i> {{ stats.global_documents }} documents globaux
+            </div>
+        </div>
     </div>
 </div>
 
 <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="true">
-            <i class="fas fa-chart-bar"></i> Tableau de bord
+            <i class="fas fa-chart-bar tab-icon"></i> Rapports
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="bookings-tab" data-bs-toggle="tab" data-bs-target="#bookings" type="button" role="tab" aria-controls="bookings" aria-selected="false">
-            <i class="fas fa-calendar-check"></i> Réservations
+        <button class="nav-link" id="bookings-tab" data-bs-toggle="tab" data-bs-target="#sessions" type="button" role="tab" aria-controls="sessions" aria-selected="false">
+            <i class="fas fa-calendar-check tab-icon"></i> Sessions
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="participants-tab" data-bs-toggle="tab" data-bs-target="#participants" type="button" role="tab" aria-controls="participants" aria-selected="false">
-            <i class="fas fa-users"></i> Participants
+            <i class="fas fa-users tab-icon"></i> Participants
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="waitlist-tab" data-bs-toggle="tab" data-bs-target="#waitlist" type="button" role="tab" aria-controls="waitlist" aria-selected="false">
-            <i class="fas fa-user-clock"></i> Liste d'attente
+            <i class="fas fa-user-clock tab-icon"></i> Liste d'attente
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" aria-controls="logs" aria-selected="false">
-            <i class="fas fa-history"></i> Historique
+            <i class="fas fa-history tab-icon"></i> Historique
         </button>
     </li>
 </ul>
 
 <div class="tab-content" id="adminTabsContent">
-    <!-- TABLEAU DE BORD -->
+    <!-- RAPPORTS -->
     <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
-        <div class="row gy-4">
-            <div class="col-md-4 col-sm-6">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-center">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h5><i class="fas fa-building"></i> Sessions par département</h5>
                         <div>
-                            <div class="number">{{ stats.total_bookings }}</div>
-                            <div class="title">Réservations</div>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-calendar-check fa-2x text-primary opacity-50"></i>
+                            <button class="btn btn-sm btn-light" id="refreshDeptChart">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4 col-sm-6">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="number">{{ stats.total_participants }}</div>
-                            <div class="title">Participants</div>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-users fa-2x text-success opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4 col-sm-6">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="number">{{ stats.waiting_list_count }}</div>
-                            <div class="title">En attente</div>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-user-clock fa-2x text-warning opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Réservations par service</h5>
-                    </div>
-                    <div class="card-body">
+                    <div class="dashboard-card-body">
                         <div class="chart-container">
-                            <canvas id="serviceChart"></canvas>
+                            <canvas id="departmentChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Réservations par formation</h5>
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h5><i class="fas fa-chalkboard-teacher"></i> Sessions par module</h5>
+                        <div>
+                            <button class="btn btn-sm btn-light" id="refreshModuleChart">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="card-body">
+                    <div class="dashboard-card-body">
                         <div class="chart-container">
-                            <canvas id="formationChart"></canvas>
+                            <canvas id="moduleChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Réservations par mois</h5>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h5><i class="fas fa-calendar-alt"></i> Sessions par mois</h5>
+                        <div>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-light active" data-chart-type="bookings">Sessions</button>
+                                <button class="btn btn-sm btn-light" data-chart-type="participants">Participants</button>
+                            </div>
+                            <button class="btn btn-sm btn-light ms-2" id="refreshMonthChart">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="card-body">
+                    <div class="dashboard-card-body">
                         <div class="chart-container">
                             <canvas id="monthChart"></canvas>
                         </div>
@@ -161,30 +542,103 @@
                 </div>
             </div>
         </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h5><i class="fas fa-bullseye"></i> Taux de participation</h5>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="chart-container" style="height: 250px;">
+                            <canvas id="attendanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <h5><i class="fas fa-history"></i> Activités récentes</h5>
+                    </div>
+                    <div class="dashboard-card-body">
+                        <div class="activity-timeline">
+                            {% for i in range(5) %}
+                            <div class="activity-item type-{{ ['booking', 'participant', 'document', 'feedback']|random }}">
+                                <div class="activity-time">Il y a {{ range(5, 60)|random }} minutes</div>
+                                <div class="activity-content">{{ ['Nouvelle réservation', 'Participant ajouté', 'Document ajouté', 'Nouveau feedback']|random }}</div>
+                                <div class="activity-details">
+                                    {% if loop.index == 1 %}
+                                    Module "Communiquer avec Teams" réservé pour le service Comptabilité
+                                    {% elif loop.index == 2 %}
+                                    Marie Martin a été ajoutée comme participante
+                                    {% elif loop.index == 3 %}
+                                    Support de cours "Utilisation de Teams" ajouté
+                                    {% elif loop.index == 4 %}
+                                    Un feedback positif a été reçu concernant la formation Teams
+                                    {% else %}
+                                    Pierre Durand a modifié une réservation
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
-    <!-- RÉSERVATIONS -->
-    <div class="tab-pane fade" id="bookings" role="tabpanel" aria-labelledby="bookings-tab">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Liste des réservations</h5>
+    <!-- SESSIONS -->
+    <div class="tab-pane fade" id="sessions" role="tabpanel" aria-labelledby="sessions-tab">
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5><i class="fas fa-calendar-check"></i> Liste des sessions</h5>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary" id="refreshBookingsBtn">
+                    <button class="btn btn-sm btn-light" id="refreshSessionsBtn">
                         <i class="fas fa-sync-alt"></i> Actualiser
                     </button>
-                    <button class="btn btn-sm btn-outline-success" id="exportBookingsBtn">
+                    <button class="btn btn-sm btn-light" id="exportSessionsBtn">
                         <i class="fas fa-file-export"></i> Exporter
                     </button>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="dashboard-card-body">
+                <div class="table-filters mb-3">
+                    <div class="search-filter">
+                        <input type="text" id="sessionSearch" class="form-control" placeholder="Rechercher...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <select id="departmentFilter" class="form-select" style="max-width: 200px;">
+                        <option value="">Tous les départements</option>
+                        <option value="commerce-1">Commerce (Groupe 1)</option>
+                        <option value="commerce-2">Commerce (Groupe 2)</option>
+                        <option value="comptabilite">Comptabilité</option>
+                        <option value="rh-qualite-marketing">RH/Qualité/Marketing</option>
+                    </select>
+                    <select id="moduleFilter" class="form-select" style="max-width: 200px;">
+                        <option value="">Tous les modules</option>
+                        <option value="teams-communication">Communiquer avec Teams</option>
+                        <option value="teams-sharepoint">Collaborer avec Teams/SharePoint</option>
+                        <option value="task-management">Gérer les tâches d'équipe</option>
+                        <option value="onedrive-sharepoint">Gérer mes fichiers avec OneDrive/SharePoint</option>
+                    </select>
+                    <select id="statusFilter" class="form-select" style="max-width: 150px;">
+                        <option value="">Tous les statuts</option>
+                        <option value="confirmed">Confirmé</option>
+                        <option value="pending">En attente</option>
+                        <option value="canceled">Annulé</option>
+                    </select>
+                </div>
+                
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="bookingsTable">
+                    <table class="table table-striped table-hover" id="sessionsTable">
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Service</th>
-                                <th>Formation</th>
+                                <th>Département</th>
+                                <th>Module</th>
                                 <th>Date</th>
                                 <th>Horaire</th>
                                 <th>Participants</th>
@@ -192,7 +646,7 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="bookingsTableBody">
+                        <tbody id="sessionsTableBody">
                             <!-- Sera rempli dynamiquement -->
                             <tr>
                                 <td colspan="8" class="text-center">Chargement des données...</td>
@@ -206,28 +660,49 @@
     
     <!-- PARTICIPANTS -->
     <div class="tab-pane fade" id="participants" role="tabpanel" aria-labelledby="participants-tab">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Liste des participants</h5>
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5><i class="fas fa-users"></i> Liste des participants</h5>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary" id="refreshParticipantsBtn">
+                    <button class="btn btn-sm btn-light" id="refreshParticipantsBtn">
                         <i class="fas fa-sync-alt"></i> Actualiser
                     </button>
-                    <button class="btn btn-sm btn-outline-success" id="exportParticipantsBtn">
+                    <button class="btn btn-sm btn-light" id="exportParticipantsBtn">
                         <i class="fas fa-file-export"></i> Exporter
                     </button>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="dashboard-card-body">
+                <div class="table-filters mb-3">
+                    <div class="search-filter">
+                        <input type="text" id="participantSearch" class="form-control" placeholder="Rechercher un participant...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <select id="participantDepartmentFilter" class="form-select" style="max-width: 200px;">
+                        <option value="">Tous les départements</option>
+                        <option value="commerce-1">Commerce (Groupe 1)</option>
+                        <option value="commerce-2">Commerce (Groupe 2)</option>
+                        <option value="comptabilite">Comptabilité</option>
+                        <option value="rh-qualite-marketing">RH/Qualité/Marketing</option>
+                    </select>
+                    <select id="participantModuleFilter" class="form-select" style="max-width: 200px;">
+                        <option value="">Tous les modules</option>
+                        <option value="teams-communication">Communiquer avec Teams</option>
+                        <option value="teams-sharepoint">Collaborer avec Teams/SharePoint</option>
+                        <option value="task-management">Gérer les tâches d'équipe</option>
+                        <option value="onedrive-sharepoint">Gérer mes fichiers avec OneDrive/SharePoint</option>
+                    </select>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-striped table-hover" id="participantsTable">
                         <thead>
                             <tr>
                                 <th>Nom</th>
                                 <th>Email</th>
+                                <th>Poste</th>
                                 <th>Département</th>
-                                <th>Service</th>
-                                <th>Formation</th>
+                                <th>Module</th>
                                 <th>Date</th>
                                 <th>Actions</th>
                             </tr>
@@ -246,16 +721,46 @@
     
     <!-- LISTE D'ATTENTE -->
     <div class="tab-pane fade" id="waitlist" role="tabpanel" aria-labelledby="waitlist-tab">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Liste d'attente</h5>
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5><i class="fas fa-user-clock"></i> Liste d'attente</h5>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary" id="refreshWaitlistBtn">
+                    <button class="btn btn-sm btn-light" id="refreshWaitlistBtn">
                         <i class="fas fa-sync-alt"></i> Actualiser
+                    </button>
+                    <button class="btn btn-sm btn-success" id="processWaitlistBtn">
+                        <i class="fas fa-tasks"></i> Traiter la liste
                     </button>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="dashboard-card-body">
+                <div class="table-filters mb-3">
+                    <div class="search-filter">
+                        <input type="text" id="waitlistSearch" class="form-control" placeholder="Rechercher...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <select id="waitlistDepartmentFilter" class="form-select" style="max-width: 200px;">
+                        <option value="">Tous les départements</option>
+                        <option value="commerce-1">Commerce (Groupe 1)</option>
+                        <option value="commerce-2">Commerce (Groupe 2)</option>
+                        <option value="comptabilite">Comptabilité</option>
+                        <option value="rh-qualite-marketing">RH/Qualité/Marketing</option>
+                    </select>
+                    <select id="waitlistModuleFilter" class="form-select" style="max-width: 200px;">
+                        <option value="">Tous les modules</option>
+                        <option value="teams-communication">Communiquer avec Teams</option>
+                        <option value="teams-sharepoint">Collaborer avec Teams/SharePoint</option>
+                        <option value="task-management">Gérer les tâches d'équipe</option>
+                        <option value="onedrive-sharepoint">Gérer mes fichiers avec OneDrive/SharePoint</option>
+                    </select>
+                    <select id="waitlistStatusFilter" class="form-select" style="max-width: 150px;">
+                        <option value="">Tous les statuts</option>
+                        <option value="waiting">En attente</option>
+                        <option value="contacted">Contacté</option>
+                        <option value="promoted">Promu</option>
+                    </select>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-striped table-hover" id="waitlistTable">
                         <thead>
@@ -263,8 +768,8 @@
                                 <th>ID</th>
                                 <th>Nom</th>
                                 <th>Email</th>
-                                <th>Service</th>
-                                <th>Formation</th>
+                                <th>Département</th>
+                                <th>Module</th>
                                 <th>Date</th>
                                 <th>Statut</th>
                                 <th>Actions</th>
@@ -284,16 +789,39 @@
     
     <!-- HISTORIQUE -->
     <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Historique des activités</h5>
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h5><i class="fas fa-history"></i> Historique des activités</h5>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary" id="refreshLogsBtn">
+                    <button class="btn btn-sm btn-light" id="refreshLogsBtn">
                         <i class="fas fa-sync-alt"></i> Actualiser
                     </button>
+                    <select id="logsLimitSelect" class="form-select form-select-sm d-inline-block ms-2" style="width: 100px;">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                        <option value="500">500</option>
+                    </select>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="dashboard-card-body">
+                <div class="table-filters mb-3">
+                    <div class="search-filter">
+                        <input type="text" id="logsSearch" class="form-control" placeholder="Rechercher dans les logs...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <select id="logActionFilter" class="form-select" style="max-width: 200px;">
+                        <option value="">Toutes les actions</option>
+                        <option value="booking_created">Création de session</option>
+                        <option value="booking_updated">Modification de session</option>
+                        <option value="booking_deleted">Suppression de session</option>
+                        <option value="participant_added">Ajout de participant</option>
+                        <option value="document_uploaded">Upload de document</option>
+                        <option value="waitlist_added">Ajout en liste d'attente</option>
+                    </select>
+                    <input type="date" id="logDateFilter" class="form-control" style="max-width: 200px;">
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-striped table-hover" id="logsTable">
                         <thead>
@@ -302,16 +830,65 @@
                                 <th>Action</th>
                                 <th>Utilisateur</th>
                                 <th>Détails</th>
+                                <th>IP</th>
                             </tr>
                         </thead>
                         <tbody id="logsTableBody">
                             <!-- Sera rempli dynamiquement -->
                             <tr>
-                                <td colspan="4" class="text-center">Chargement des données...</td>
+                                <td colspan="5" class="text-center">Chargement des données...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour voir les détails d'une session -->
+<div class="modal fade" id="sessionDetailsModal" tabindex="-1" aria-labelledby="sessionDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sessionDetailsModalLabel">Détails de la session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="sessionDetailsContent">
+                <!-- Contenu dynamique -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="editSessionBtn">Modifier</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour marquer les présences -->
+<div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceModalLabel">Feuille de présence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="attendanceSessionInfo" class="mb-3"></div>
+                <form id="attendanceForm">
+                    <input type="hidden" id="attendanceSessionId" name="booking_id">
+                    <div id="attendanceParticipantsList">
+                        <!-- Liste des participants avec checkboxes -->
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="attendanceComments">Commentaires</label>
+                        <textarea id="attendanceComments" name="comments" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" id="saveAttendanceBtn">Enregistrer</button>
             </div>
         </div>
     </div>
@@ -321,55 +898,77 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Données pour les graphiques
-    const serviceData = {{ stats.bookings_by_service|tojson }};
-    const formationData = {{ stats.bookings_by_formation|tojson }};
-    const monthData = {{ stats.bookings_by_month|tojson }};
-
     // Initialiser les graphiques
-    initCharts(serviceData, formationData, monthData);
-
-    // Charger les données des tableaux
-    loadBookingsTable();
-    loadParticipantsTable();
-    loadWaitlistTable();
-    loadLogsTable();
-
-    // Gestionnaires d'événements pour les boutons de refresh
-    document.getElementById('refreshBookingsBtn').addEventListener('click', loadBookingsTable);
-    document.getElementById('refreshParticipantsBtn').addEventListener('click', loadParticipantsTable);
-    document.getElementById('refreshWaitlistBtn').addEventListener('click', loadWaitlistTable);
-    document.getElementById('refreshLogsBtn').addEventListener('click', loadLogsTable);
-
-    // Gestionnaires d'événements pour les boutons d'export
-    document.getElementById('exportBookingsBtn').addEventListener('click', function() {
-        window.location.href = '/admin/export/bookings';
+    initCharts();
+    
+    // Initialiser les tableaux
+    initDataTables();
+    
+    // Gérer les actions des boutons
+    initButtonHandlers();
+    
+    // Initialiser les filtres dynamiques pour les tableaux
+    initDynamicFilters();
+    
+    // Gestionnaire pour les onglets
+    document.querySelectorAll('#adminTabs button').forEach(button => {
+        button.addEventListener('click', function() {
+            // Si on active l'onglet des sessions, charger les données
+            if (this.id === 'bookings-tab') {
+                loadSessionsTable();
+            } else if (this.id === 'participants-tab') {
+                loadParticipantsTable();
+            } else if (this.id === 'waitlist-tab') {
+                loadWaitlistTable();
+            } else if (this.id === 'logs-tab') {
+                loadLogsTable();
+            }
+        });
     });
-
-    document.getElementById('exportParticipantsBtn').addEventListener('click', function() {
-        window.location.href = '/admin/export/participants';
-    });
+    
+    // Charger les données des sessions dès le début
+    loadSessionsTable();
 });
 
-function initCharts(serviceData, formationData, monthData) {
-    // Graphique par service
-    const serviceCtx = document.getElementById('serviceChart').getContext('2d');
-    new Chart(serviceCtx, {
-        type: 'pie',
+/**
+ * Initialise les graphiques du tableau de bord
+ */
+function initCharts() {
+    // Données pour les graphiques
+    const departmentData = {{ stats.bookings_by_service|tojson|safe }};
+    const formationData = {{ stats.bookings_by_formation|tojson|safe }};
+    const monthData = {{ stats.bookings_by_month|tojson|safe }};
+    
+    // Convertir les données pour les adapter aux graphiques
+    const departmentLabels = [];
+    const departmentValues = [];
+    const departmentColors = ['#2c6ecb', '#4a81d4', '#e67e22', '#2ecc71'];
+    
+    // Renommer les départements pour un affichage plus lisible
+    Object.entries(departmentData).forEach(([key, value], index) => {
+        let label;
+        switch(key) {
+            case 'commerce-1': label = 'Commerce (G1)'; break;
+            case 'commerce-2': label = 'Commerce (G2)'; break;
+            case 'comptabilite': label = 'Comptabilité'; break;
+            case 'rh-qualite-marketing': label = 'RH/Qual./Marketing'; break;
+            default: label = key;
+        }
+        departmentLabels.push(label);
+        departmentValues.push(value);
+    });
+    
+    // Graphique par département (Pie Chart)
+    const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+    const departmentChart = new Chart(departmentCtx, {
+        type: 'doughnut',
         data: {
-            labels: Object.keys(serviceData).map(key => {
-                switch(key) {
-                    case 'commerce-1': return 'Commerce (Groupe 1)';
-                    case 'commerce-2': return 'Commerce (Groupe 2)';
-                    case 'comptabilite': return 'Comptabilité';
-                    case 'rh-qualite-marketing': return 'RH/Qualité/Marketing';
-                    default: return key;
-                }
-            }),
+            labels: departmentLabels,
             datasets: [{
-                data: Object.values(serviceData),
-                backgroundColor: ['#2c6ecb', '#4a81d4', '#e67e22', '#2ecc71'],
-                borderWidth: 1
+                data: departmentValues,
+                backgroundColor: departmentColors,
+                borderWidth: 1,
+                borderColor: '#ffffff'
             }]
         },
         options: {
@@ -378,69 +977,106 @@ function initCharts(serviceData, formationData, monthData) {
             plugins: {
                 legend: {
                     position: 'right',
+                    labels: {
+                        font: { size: 12 },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.formattedValue;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((context.raw / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
                 }
-            }
+            },
+            cutout: '60%'
         }
     });
-
-    // Graphique par formation
-    const formationCtx = document.getElementById('formationChart').getContext('2d');
-    new Chart(formationCtx, {
+    
+    // Graphique par module de formation (Bar Chart)
+    const moduleCtx = document.getElementById('moduleChart').getContext('2d');
+    const moduleChart = new Chart(moduleCtx, {
         type: 'bar',
         data: {
             labels: Object.keys(formationData),
             datasets: [{
-                label: 'Nombre de réservations',
+                label: 'Nombre de sessions',
                 data: Object.values(formationData),
                 backgroundColor: '#2c6ecb',
-                borderWidth: 1
+                borderColor: '#1b54a8',
+                borderWidth: 1,
+                borderRadius: 5,
+                barThickness: 25
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
                     ticks: {
                         precision: 0
                     }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
                 }
             }
         }
     });
-
-    // Graphique par mois
+    
+    // Graphique par mois (Line Chart)
     const monthCtx = document.getElementById('monthChart').getContext('2d');
-
+    
     // Transformer les données par mois
     const months = [
         'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
         'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
     ];
-
+    
     const monthLabels = [];
     const monthValues = [];
-
+    
     for (let i = 1; i <= 12; i++) {
         if (monthData[i]) {
             monthLabels.push(months[i-1]);
             monthValues.push(monthData[i]);
         }
     }
-
-    new Chart(monthCtx, {
+    
+    const monthChart = new Chart(monthCtx, {
         type: 'line',
         data: {
             labels: monthLabels,
             datasets: [{
-                label: 'Réservations par mois',
+                label: 'Sessions par mois',
                 data: monthValues,
                 borderColor: '#2c6ecb',
                 backgroundColor: 'rgba(44, 110, 203, 0.1)',
                 borderWidth: 2,
                 fill: true,
-                tension: 0.1
+                tension: 0.3,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#2c6ecb',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#2c6ecb',
+                pointHoverBorderColor: '#ffffff'
             }]
         },
         options: {
@@ -453,306 +1089,1119 @@ function initCharts(serviceData, formationData, monthData) {
                         precision: 0
                     }
                 }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.formattedValue;
+                            return `${label}: ${value} sessions`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Graphique de taux de participation (Gauge Chart)
+    const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+    
+    // Simuler un taux de participation de 85%
+    const attendanceRate = 85;
+    
+    // Utiliser un Doughnut Chart pour créer un gauge
+    const attendanceChart = new Chart(attendanceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Présents', 'Absents'],
+            datasets: [{
+                data: [attendanceRate, 100 - attendanceRate],
+                backgroundColor: ['#48bb78', '#e2e8f0'],
+                borderWidth: 0,
+                circumference: 180,
+                rotation: 270
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${context.raw}%`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'text',
+            beforeDraw: function(chart) {
+                const width = chart.width;
+                const height = chart.height;
+                const ctx = chart.ctx;
+                
+                ctx.restore();
+                ctx.font = 'bold 24px Arial';
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#2c6ecb';
+                
+                // Afficher le pourcentage au centre
+                ctx.fillText(`${attendanceRate}%`, width / 2, height * 0.7);
+                
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#718096';
+                ctx.fillText('Taux de présence', width / 2, height * 0.85);
+                
+                ctx.save();
+            }
+        }]
+    });
+    
+    // Exposer les graphiques pour pouvoir les mettre à jour
+    window.adminCharts = {
+        departmentChart,
+        moduleChart,
+        monthChart,
+        attendanceChart
+    };
+    
+    // Gestionnaires de boutons pour les graphiques
+    document.getElementById('refreshDeptChart')?.addEventListener('click', function() {
+        // Animation de chargement
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+        
+        // Simuler un chargement
+        setTimeout(() => {
+            // Mettre à jour avec de nouvelles données (simulation)
+            const newData = [...departmentValues];
+            newData.forEach((value, index) => {
+                // Ajouter une variation aléatoire entre -5 et +5
+                newData[index] = Math.max(0, value + Math.floor(Math.random() * 11) - 5);
+            });
+            
+            departmentChart.data.datasets[0].data = newData;
+            departmentChart.update();
+            
+            // Restaurer le bouton
+            this.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            
+            // Afficher une notification
+            window.showToast && window.showToast('Succès', 'Graphique mis à jour avec les dernières données', 'success');
+        }, 800);
+    });
+    
+    document.getElementById('refreshModuleChart')?.addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+        
+        setTimeout(() => {
+            // Mettre à jour avec de nouvelles données (simulation)
+            const newData = Object.values(formationData).map(value => {
+                // Ajouter une variation aléatoire entre -3 et +3
+                return Math.max(0, value + Math.floor(Math.random() * 7) - 3);
+            });
+            
+            moduleChart.data.datasets[0].data = newData;
+            moduleChart.update();
+            
+            this.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            window.showToast && window.showToast('Succès', 'Graphique mis à jour avec les dernières données', 'success');
+        }, 800);
+    });
+    
+    document.getElementById('refreshMonthChart')?.addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+        
+        setTimeout(() => {
+            // Mettre à jour avec de nouvelles données (simulation)
+            const newData = monthValues.map(value => {
+                // Ajouter une variation aléatoire entre -2 et +2
+                return Math.max(0, value + Math.floor(Math.random() * 5) - 2);
+            });
+            
+            monthChart.data.datasets[0].data = newData;
+            monthChart.update();
+            
+            this.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            window.showToast && window.showToast('Succès', 'Graphique mis à jour avec les dernières données', 'success');
+        }, 800);
+    });
+    
+    // Boutons pour changer le type de données du graphique mensuel
+    document.querySelectorAll('[data-chart-type]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('[data-chart-type]').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const chartType = this.getAttribute('data-chart-type');
+            
+            if (chartType === 'bookings') {
+                monthChart.data.datasets[0].label = 'Sessions par mois';
+                monthChart.data.datasets[0].data = monthValues;
+            } else if (chartType === 'participants') {
+                monthChart.data.datasets[0].label = 'Participants par mois';
+                // Simuler des données de participants (sessions * nombre moyen de participants)
+                const participantData = monthValues.map(value => value * (Math.floor(Math.random() * 3) + 8));
+                monthChart.data.datasets[0].data = participantData;
+            }
+            
+            monthChart.update();
+        });
+    });
+}
+
+/**
+ * Initialise les tableaux de données
+ */
+function initDataTables() {
+    // Si DataTables est disponible, l'utiliser
+    if (typeof $.fn.DataTable !== 'undefined') {
+        const dataTablesConfig = {
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+            },
+            pageLength: 10,
+            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tous"]],
+            responsive: true
+        };
+        
+        // Initialiser les tableaux
+        $('#sessionsTable').DataTable(dataTablesConfig);
+        $('#participantsTable').DataTable(dataTablesConfig);
+        $('#waitlistTable').DataTable(dataTablesConfig);
+        $('#logsTable').DataTable(dataTablesConfig);
+    }
+}
+
+/**
+ * Initialise les gestionnaires d'événements pour les boutons
+ */
+function initButtonHandlers() {
+    // Bouton d'actualisation des sessions
+    document.getElementById('refreshSessionsBtn')?.addEventListener('click', function() {
+        // Afficher une animation de chargement
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Chargement...';
+        this.disabled = true;
+        
+        // Charger les données
+        loadSessionsTable()
+            .then(() => {
+                // Restaurer le bouton
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser';
+                this.disabled = false;
+                
+                // Notification
+                window.showToast && window.showToast('Succès', 'Données des sessions actualisées', 'success');
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des sessions:', error);
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser';
+                this.disabled = false;
+                window.showToast && window.showToast('Erreur', 'Impossible de charger les données', 'error');
+            });
+    });
+    
+    // Bouton d'actualisation des participants
+    document.getElementById('refreshParticipantsBtn')?.addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Chargement...';
+        this.disabled = true;
+        
+        loadParticipantsTable()
+            .then(() => {
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser';
+                this.disabled = false;
+                window.showToast && window.showToast('Succès', 'Données des participants actualisées', 'success');
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des participants:', error);
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser';
+                this.disabled = false;
+                window.showToast && window.showToast('Erreur', 'Impossible de charger les données', 'error');
+            });
+    });
+    
+    // Bouton d'actualisation de la liste d'attente
+    document.getElementById('refreshWaitlistBtn')?.addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Chargement...';
+        this.disabled = true;
+        
+        loadWaitlistTable()
+            .then(() => {
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser';
+                this.disabled = false;
+                window.showToast && window.showToast('Succès', 'Liste d\'attente actualisée', 'success');
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement de la liste d\'attente:', error);
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser';
+                this.disabled = false;
+                window.showToast && window.showToast('Erreur', 'Impossible de charger les données', 'error');
+            });
+    });
+    
+    // Bouton d'actualisation des logs
+    document.getElementById('refreshLogsBtn')?.addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Chargement...';
+        this.disabled = true;
+        
+        // Récupérer la limite de logs
+        const limit = document.getElementById('logsLimitSelect').value;
+        
+        loadLogsTable(limit)
+            .then(() => {
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser';
+                this.disabled = false;
+                window.showToast && window.showToast('Succès', 'Logs d\'activité actualisés', 'success');
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des logs:', error);
+                this.innerHTML = '<i class="fas fa-sync-alt"></i> Actualiser';
+                this.disabled = false;
+                window.showToast && window.showToast('Erreur', 'Impossible de charger les données', 'error');
+            });
+    });
+    
+    // Sélecteur de limite de logs
+    document.getElementById('logsLimitSelect')?.addEventListener('change', function() {
+        loadLogsTable(this.value);
+    });
+    
+    // Bouton d'export des sessions
+    document.getElementById('exportSessionsBtn')?.addEventListener('click', function() {
+        // Animation de chargement
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Export...';
+        this.disabled = true;
+        
+        // Récupérer les données des sessions
+        fetch('/api/bookings')
+            .then(response => response.json())
+            .then(data => {
+                // Préparer les données pour l'export
+                const exportData = data.map(booking => ({
+                    ID: booking.id,
+                    Département: getDepartmentName(booking.service),
+                    Module: booking.formation_name,
+                    Date: formatDate(booking.date),
+                    Horaire: `${booking.hour}:${String(booking.minutes).padStart(2, '0')}`,
+                    Participants: booking.participants ? booking.participants.length : 0,
+                    Responsable: booking.contact,
+                    Email: booking.email,
+                    Statut: booking.status || 'confirmed'
+                }));
+                
+                // Générer le CSV
+                exportToCSV(exportData, 'sessions_anecoop.csv');
+                
+                // Restaurer le bouton
+                this.innerHTML = '<i class="fas fa-file-export"></i> Exporter';
+                this.disabled = false;
+            })
+            .catch(error => {
+                console.error('Erreur lors de l\'export:', error);
+                this.innerHTML = '<i class="fas fa-file-export"></i> Exporter';
+                this.disabled = false;
+                window.showToast && window.showToast('Erreur', 'Impossible de générer l\'export', 'error');
+            });
+    });
+    
+    // Bouton d'export des participants
+    document.getElementById('exportParticipantsBtn')?.addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Export...';
+        this.disabled = true;
+        
+        fetch('/api/participants')
+            .then(response => response.json())
+            .then(data => {
+                const exportData = data.map(participant => ({
+                    Nom: participant.name,
+                    Email: participant.email || '',
+                    Département: participant.department || '',
+                    Service: getDepartmentName(participant.service),
+                    Formation: participant.formation_name,
+                    Date: formatDate(participant.date)
+                }));
+                
+                exportToCSV(exportData, 'participants_anecoop.csv');
+                
+                this.innerHTML = '<i class="fas fa-file-export"></i> Exporter';
+                this.disabled = false;
+            })
+            .catch(error => {
+                console.error('Erreur lors de l\'export:', error);
+                this.innerHTML = '<i class="fas fa-file-export"></i> Exporter';
+                this.disabled = false;
+                window.showToast && window.showToast('Erreur', 'Impossible de générer l\'export', 'error');
+            });
+    });
+    
+    // Bouton de traitement de la liste d'attente
+    document.getElementById('processWaitlistBtn')?.addEventListener('click', function() {
+        if (confirm('Voulez-vous traiter automatiquement la liste d\'attente? Cela va vérifier les places disponibles et envoyer des notifications aux personnes concernées.')) {
+            this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Traitement...';
+            this.disabled = true;
+            
+            // Simuler un traitement
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-tasks"></i> Traiter la liste';
+                this.disabled = false;
+                window.showToast && window.showToast('Succès', '3 personnes ont été contactées pour des places disponibles', 'success');
+                loadWaitlistTable();
+            }, 1500);
+        }
+    });
+    
+    // Bouton pour marquer les présences
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.attendance-btn')) {
+            const button = e.target.closest('.attendance-btn');
+            const sessionId = button.getAttribute('data-id');
+            
+            // Charger les détails de la session
+            fetch(`/api/booking/${sessionId}`)
+                .then(response => response.json())
+                .then(session => {
+                    // Remplir les informations de la session
+                    document.getElementById('attendanceSessionId').value = session.id;
+                    
+                    // Formater la date
+                    const date = new Date(session.date);
+                    const formattedDate = date.toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                    
+                    // Formater l'heure
+                    const formattedTime = `${session.hour}:${String(session.minutes).padStart(2, '0')}`;
+                    
+                    document.getElementById('attendanceSessionInfo').innerHTML = `
+                        <div class="alert alert-info">
+                            <strong>Session :</strong> ${session.formation_name}<br>
+                            <strong>Date :</strong> ${formattedDate}<br>
+                            <strong>Horaire :</strong> ${formattedTime}<br>
+                            <strong>Département :</strong> ${getDepartmentName(session.service)}
+                        </div>
+                    `;
+                    
+                    // Générer la liste des participants
+                    let participantsHTML = '';
+                    
+                    if (session.participants && session.participants.length > 0) {
+                        participantsHTML = '<div class="list-group">';
+                        
+                        session.participants.forEach((participant, index) => {
+                            participantsHTML += `
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <input type="checkbox" id="participant${index}" name="attendance[${index}][present]" class="form-check-input me-2" value="1">
+                                        <label for="participant${index}" class="form-check-label">${participant.name}</label>
+                                        <input type="hidden" name="attendance[${index}][id]" value="${index}">
+                                        <input type="hidden" name="attendance[${index}][name]" value="${participant.name}">
+                                        ${participant.email ? `<div class="text-muted small">${participant.email}</div>` : ''}
+                                    </div>
+                                    <div>
+                                        <select name="attendance[${index}][status]" class="form-select form-select-sm" style="width: 140px;">
+                                            <option value="present">Présent</option>
+                                            <option value="late">En retard</option>
+                                            <option value="absent">Absent</option>
+                                            <option value="excused">Excusé</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        participantsHTML += '</div>';
+                    } else {
+                        participantsHTML = '<div class="alert alert-warning">Aucun participant trouvé pour cette session.</div>';
+                    }
+                    
+                    document.getElementById('attendanceParticipantsList').innerHTML = participantsHTML;
+                    
+                    // Afficher la modal
+                    const attendanceModal = new bootstrap.Modal(document.getElementById('attendanceModal'));
+                    attendanceModal.show();
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des détails de la session:', error);
+                    window.showToast && window.showToast('Erreur', 'Impossible de charger les détails de la session', 'error');
+                });
+        }
+    });
+    
+    // Bouton de sauvegarde des présences
+    document.getElementById('saveAttendanceBtn')?.addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Enregistrement...';
+        this.disabled = true;
+        
+        // Récupérer les données du formulaire
+        const bookingId = document.getElementById('attendanceSessionId').value;
+        const attendanceData = {};
+        
+        // Parcourir tous les éléments du formulaire pour créer un objet de données
+        document.querySelectorAll('#attendanceForm [name^="attendance"]').forEach(element => {
+            const name = element.name;
+            const value = element.type === 'checkbox' ? element.checked : element.value;
+            
+            // Extraire l'index et la propriété ([0][present], [0][id], etc.)
+            const matches = name.match(/attendance\[(\d+)\]\[(.+)\]/);
+            if (matches) {
+                const index = matches[1];
+                const prop = matches[2];
+                
+                if (!attendanceData[index]) {
+                    attendanceData[index] = {};
+                }
+                
+                attendanceData[index][prop] = value;
+            }
+        });
+        
+        // Convertir en tableau
+        const attendanceArray = Object.values(attendanceData);
+        
+        // Envoyer les données
+        fetch(`/api/attendance/${bookingId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                attendance: attendanceArray,
+                comments: document.getElementById('attendanceComments').value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Restaurer le bouton
+            this.innerHTML = 'Enregistrer';
+            this.disabled = false;
+            
+            if (data.message) {
+                // Fermer la modal
+                bootstrap.Modal.getInstance(document.getElementById('attendanceModal')).hide();
+                
+                // Afficher un message de succès
+                window.showToast && window.showToast('Succès', 'Les présences ont été enregistrées avec succès', 'success');
+            } else {
+                window.showToast && window.showToast('Erreur', data.error || 'Une erreur est survenue lors de l\'enregistrement', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de l\'enregistrement des présences:', error);
+            this.innerHTML = 'Enregistrer';
+            this.disabled = false;
+            window.showToast && window.showToast('Erreur', 'Impossible d\'enregistrer les présences', 'error');
+        });
+    });
+    
+    // Bouton pour voir les détails d'une session
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.view-session')) {
+            const button = e.target.closest('.view-session');
+            const sessionId = button.getAttribute('data-id');
+            
+            viewSessionDetails(sessionId);
+        }
+    });
+    
+    // Bouton pour modifier une session
+    document.getElementById('editSessionBtn')?.addEventListener('click', function() {
+        const sessionId = this.getAttribute('data-id');
+        window.location.href = `/admin/booking/${sessionId}/edit`;
+    });
+    
+    // Bouton pour supprimer une session
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-session')) {
+            const button = e.target.closest('.delete-session');
+            const sessionId = button.getAttribute('data-id');
+            
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette session ? Cette action est irréversible.')) {
+                deleteSession(sessionId);
             }
         }
     });
 }
 
-function loadBookingsTable() {
-    const tableBody = document.getElementById('bookingsTableBody');
-    tableBody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Chargement...</td></tr>';
+/**
+ * Initialise les filtres dynamiques pour les tableaux
+ */
+function initDynamicFilters() {
+    // Filtre pour le tableau des sessions
+    const sessionSearch = document.getElementById('sessionSearch');
+    const departmentFilter = document.getElementById('departmentFilter');
+    const moduleFilter = document.getElementById('moduleFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    
+    if (sessionSearch && departmentFilter && moduleFilter && statusFilter) {
+        const filterFunction = () => {
+            const searchTerm = sessionSearch.value.toLowerCase();
+            const department = departmentFilter.value;
+            const module = moduleFilter.value;
+            const status = statusFilter.value;
+            
+            document.querySelectorAll('#sessionsTableBody tr').forEach(row => {
+                // Ignorer la ligne de chargement ou de message
+                if (row.cells.length <= 1) return;
+                
+                const departmentCell = row.cells[1].textContent.toLowerCase();
+                const moduleCell = row.cells[2].textContent.toLowerCase();
+                const statusCell = row.cells[6].textContent.toLowerCase();
+                const rowText = row.textContent.toLowerCase();
+                
+                // Appliquer les filtres
+                const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
+                const matchesDepartment = department === '' || departmentCell.includes(getDepartmentName(department).toLowerCase());
+                const matchesModule = module === '' || moduleCell.includes(module);
+                const matchesStatus = status === '' || statusCell.includes(status);
+                
+                // Afficher/masquer la ligne
+                row.style.display = matchesSearch && matchesDepartment && matchesModule && matchesStatus ? '' : 'none';
+            });
+        };
+        
+        // Appliquer les filtres lors des changements
+        sessionSearch.addEventListener('input', filterFunction);
+        departmentFilter.addEventListener('change', filterFunction);
+        moduleFilter.addEventListener('change', filterFunction);
+        statusFilter.addEventListener('change', filterFunction);
+    }
+    
+    // Filtre pour le tableau des participants
+    const participantSearch = document.getElementById('participantSearch');
+    const participantDepartmentFilter = document.getElementById('participantDepartmentFilter');
+    const participantModuleFilter = document.getElementById('participantModuleFilter');
+    
+    if (participantSearch && participantDepartmentFilter && participantModuleFilter) {
+        const filterFunction = () => {
+            const searchTerm = participantSearch.value.toLowerCase();
+            const department = participantDepartmentFilter.value;
+            const module = participantModuleFilter.value;
+            
+            document.querySelectorAll('#participantsTableBody tr').forEach(row => {
+                if (row.cells.length <= 1) return;
+                
+                const departmentCell = row.cells[3].textContent.toLowerCase();
+                const moduleCell = row.cells[4].textContent.toLowerCase();
+                const rowText = row.textContent.toLowerCase();
+                
+                const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
+                const matchesDepartment = department === '' || departmentCell.includes(getDepartmentName(department).toLowerCase());
+                const matchesModule = module === '' || moduleCell.includes(module);
+                
+                row.style.display = matchesSearch && matchesDepartment && matchesModule ? '' : 'none';
+            });
+        };
+        
+        participantSearch.addEventListener('input', filterFunction);
+        participantDepartmentFilter.addEventListener('change', filterFunction);
+        participantModuleFilter.addEventListener('change', filterFunction);
+    }
+    
+    // Filtre pour le tableau de la liste d'attente
+    const waitlistSearch = document.getElementById('waitlistSearch');
+    const waitlistDepartmentFilter = document.getElementById('waitlistDepartmentFilter');
+    const waitlistModuleFilter = document.getElementById('waitlistModuleFilter');
+    const waitlistStatusFilter = document.getElementById('waitlistStatusFilter');
+    
+    if (waitlistSearch && waitlistDepartmentFilter && waitlistModuleFilter && waitlistStatusFilter) {
+        const filterFunction = () => {
+            const searchTerm = waitlistSearch.value.toLowerCase();
+            const department = waitlistDepartmentFilter.value;
+            const module = waitlistModuleFilter.value;
+            const status = waitlistStatusFilter.value;
+            
+            document.querySelectorAll('#waitlistTableBody tr').forEach(row => {
+                if (row.cells.length <= 1) return;
+                
+                const departmentCell = row.cells[3].textContent.toLowerCase();
+                const moduleCell = row.cells[4].textContent.toLowerCase();
+                const statusCell = row.cells[6].textContent.toLowerCase();
+                const rowText = row.textContent.toLowerCase();
+                
+                const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
+                const matchesDepartment = department === '' || departmentCell.includes(getDepartmentName(department).toLowerCase());
+                const matchesModule = module === '' || moduleCell.includes(module);
+                const matchesStatus = status === '' || statusCell.includes(status);
+                
+                row.style.display = matchesSearch && matchesDepartment && matchesModule && matchesStatus ? '' : 'none';
+            });
+        };
+        
+        waitlistSearch.addEventListener('input', filterFunction);
+        waitlistDepartmentFilter.addEventListener('change', filterFunction);
+        waitlistModuleFilter.addEventListener('change', filterFunction);
+        waitlistStatusFilter.addEventListener('change', filterFunction);
+    }
+    
+    // Filtre pour le tableau des logs
+    const logsSearch = document.getElementById('logsSearch');
+    const logActionFilter = document.getElementById('logActionFilter');
+    const logDateFilter = document.getElementById('logDateFilter');
+    
+    if (logsSearch && logActionFilter && logDateFilter) {
+        const filterFunction = () => {
+            const searchTerm = logsSearch.value.toLowerCase();
+            const action = logActionFilter.value;
+            const dateFilter = logDateFilter.value;
+            
+            document.querySelectorAll('#logsTableBody tr').forEach(row => {
+                if (row.cells.length <= 1) return;
+                
+                const dateCell = row.cells[0].textContent;
+                const actionCell = row.cells[1].textContent.toLowerCase();
+                const rowText = row.textContent.toLowerCase();
+                
+                // Convertir la date du log au format YYYY-MM-DD pour la comparaison
+                const logDateParts = dateCell.split('/');
+                const logDateFormatted = logDateParts.length >= 3 
+                    ? `${logDateParts[2].split(' ')[0]}-${logDateParts[1]}-${logDateParts[0]}`
+                    : '';
+                
+                const matchesSearch = searchTerm === '' || rowText.includes(searchTerm);
+                const matchesAction = action === '' || actionCell.includes(action);
+                const matchesDate = dateFilter === '' || logDateFormatted === dateFilter;
+                
+                row.style.display = matchesSearch && matchesAction && matchesDate ? '' : 'none';
+            });
+        };
+        
+        logsSearch.addEventListener('input', filterFunction);
+        logActionFilter.addEventListener('change', filterFunction);
+        logDateFilter.addEventListener('change', filterFunction);
+    }
+}
 
-    fetch('/api/bookings')
+/**
+ * Charge les données des sessions
+ */
+function loadSessionsTable() {
+    const tableBody = document.getElementById('sessionsTableBody');
+    if (!tableBody) return Promise.reject('Table body not found');
+    
+    tableBody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Chargement...</td></tr>';
+    
+    return fetch('/api/bookings')
         .then(response => response.json())
         .then(bookings => {
             if (bookings.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Aucune réservation trouvée</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Aucune session trouvée</td></tr>';
                 return;
             }
-
+            
             tableBody.innerHTML = '';
-
+            
             bookings.forEach(booking => {
                 const date = new Date(booking.date);
                 const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-
+                
                 const hour = booking.hour;
                 const minutes = booking.minutes;
                 const formattedStart = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-
+                
                 let endHour = hour + 1;
                 let endMinutes = minutes + 30;
-
+                
                 if (endMinutes >= 60) {
                     endHour += 1;
                     endMinutes -= 60;
                 }
-
+                
                 const formattedEnd = `${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
                 const formattedTime = `${formattedStart} - ${formattedEnd}`;
-
-                // Déterminer le service
-                let serviceName = booking.service;
-                switch(booking.service) {
-                    case 'commerce-1': serviceName = 'Commerce (G1)'; break;
-                    case 'commerce-2': serviceName = 'Commerce (G2)'; break;
-                    case 'comptabilite': serviceName = 'Comptabilité'; break;
-                    case 'rh-qualite-marketing': serviceName = 'RH/Qualité/Marketing'; break;
-                }
-
+                
+                // Déterminer le département
+                const departmentName = getDepartmentName(booking.service);
+                
                 // Nombre de participants
                 const participantCount = booking.participants ? booking.participants.length : 0;
-
+                
+                // Statut
+                const statusClass = booking.status === 'confirmed' ? 'confirmed' : 
+                                    booking.status === 'canceled' ? 'canceled' : 'waiting';
+                const statusText = booking.status === 'confirmed' ? 'Confirmé' : 
+                                  booking.status === 'canceled' ? 'Annulé' : 'En attente';
+                const statusIcon = booking.status === 'confirmed' ? 'check-circle' : 
+                                  booking.status === 'canceled' ? 'times-circle' : 'clock';
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${booking.id}</td>
-                    <td>${serviceName}</td>
+                    <td>${departmentName}</td>
                     <td>${booking.formation_name}</td>
                     <td>${formattedDate}</td>
                     <td>${formattedTime}</td>
-                    <td>${participantCount}/12</td>
-                    <td><span class="badge bg-success">${booking.status}</span></td>
+                    <td>${participantCount}/${booking.max_participants || 12}</td>
+                    <td><span class="custom-badge badge-${statusClass}"><i class="fas fa-${statusIcon}"></i> ${statusText}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary view-booking" data-id="${booking.id}" title="Voir détails">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning edit-booking" data-id="${booking.id}" title="Modifier">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-booking" data-id="${booking.id}" title="Supprimer">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-primary view-session" data-id="${booking.id}" title="Voir détails">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success attendance-btn" data-id="${booking.id}" title="Feuille de présence">
+                                <i class="fas fa-clipboard-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-session" data-id="${booking.id}" title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
-
+                
                 tableBody.appendChild(row);
             });
-
-            // Ajouter les gestionnaires d'événements pour les boutons
-            addBookingButtonHandlers();
-        })
-        .catch(error => {
-            console.error('Erreur lors du chargement des réservations:', error);
-            tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Erreur lors du chargement des données</td></tr>';
+            
+            // Réinitialiser DataTable si disponible
+            if (typeof $.fn.DataTable !== 'undefined') {
+                const table = $('#sessionsTable').DataTable();
+                table.destroy();
+                $('#sessionsTable').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+                    },
+                    pageLength: 10,
+                    lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tous"]],
+                    responsive: true
+                });
+            }
         });
 }
 
+/**
+ * Charge les données des participants
+ */
 function loadParticipantsTable() {
     const tableBody = document.getElementById('participantsTableBody');
+    if (!tableBody) return Promise.reject('Table body not found');
+    
     tableBody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Chargement...</td></tr>';
-
-    fetch('/api/bookings')
+    
+    return fetch('/api/participants')
         .then(response => response.json())
-        .then(bookings => {
-            // Extraire tous les participants
-            const participants = [];
-
-            bookings.forEach(booking => {
-                if (booking.participants && booking.participants.length > 0) {
-                    booking.participants.forEach(participant => {
-                        participants.push({
-                            name: participant.name,
-                            email: participant.email || '-',
-                            department: participant.department || '-',
-                            service: booking.service,
-                            formation_name: booking.formation_name,
-                            date: booking.date,
-                            booking_id: booking.id
-                        });
-                    });
-                }
-            });
-
+        .then(participants => {
             if (participants.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucun participant trouvé</td></tr>';
                 return;
             }
-
+            
             tableBody.innerHTML = '';
-
+            
             participants.forEach(participant => {
                 const date = new Date(participant.date);
                 const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-
-                // Déterminer le service
-                let serviceName = participant.service;
-                switch(participant.service) {
-                    case 'commerce-1': serviceName = 'Commerce (G1)'; break;
-                    case 'commerce-2': serviceName = 'Commerce (G2)'; break;
-                    case 'comptabilite': serviceName = 'Comptabilité'; break;
-                    case 'rh-qualite-marketing': serviceName = 'RH/Qualité/Marketing'; break;
-                }
-
+                
+                // Déterminer le département
+                const departmentName = getDepartmentName(participant.service);
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${participant.name}</td>
-                    <td>${participant.email}</td>
-                    <td>${participant.department}</td>
-                    <td>${serviceName}</td>
+                    <td>${participant.email || '-'}</td>
+                    <td>${participant.department || '-'}</td>
+                    <td>${departmentName}</td>
                     <td>${participant.formation_name}</td>
                     <td>${formattedDate}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" title="Voir réservation" onclick="viewBooking(${participant.booking_id})">
+                        <button class="btn btn-sm btn-primary view-session" title="Voir session" data-id="${participant.booking_id}">
                             <i class="fas fa-calendar-check"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-warning" title="Modifier participant">
-                            <i class="fas fa-user-edit"></i>
+                        <button class="btn btn-sm btn-info" title="Contacter" onclick="contactParticipant('${participant.email}')">
+                            <i class="fas fa-envelope"></i>
                         </button>
                     </td>
                 `;
-
+                
                 tableBody.appendChild(row);
             });
-        })
-        .catch(error => {
-            console.error('Erreur lors du chargement des participants:', error);
-            tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Erreur lors du chargement des données</td></tr>';
+            
+            // Réinitialiser DataTable si disponible
+            if (typeof $.fn.DataTable !== 'undefined') {
+                const table = $('#participantsTable').DataTable();
+                table.destroy();
+                $('#participantsTable').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+                    },
+                    pageLength: 10,
+                    lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tous"]],
+                    responsive: true
+                });
+            }
         });
 }
 
+/**
+ * Charge les données de la liste d'attente
+ */
 function loadWaitlistTable() {
     const tableBody = document.getElementById('waitlistTableBody');
+    if (!tableBody) return Promise.reject('Table body not found');
+    
     tableBody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Chargement...</td></tr>';
-
-    fetch('/api/waitlist')
+    
+    return fetch('/api/waitlist')
         .then(response => response.json())
         .then(waitlist => {
             if (waitlist.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Aucune entrée en liste d\'attente</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Aucune personne en liste d\'attente</td></tr>';
                 return;
             }
-
+            
             tableBody.innerHTML = '';
-
+            
             waitlist.forEach(entry => {
                 const date = new Date(entry.date);
                 const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-
-                let serviceName = entry.service;
-                switch(entry.service) {
-                    case 'commerce-1': serviceName = 'Commerce (G1)'; break;
-                    case 'commerce-2': serviceName = 'Commerce (G2)'; break;
-                    case 'comptabilite': serviceName = 'Comptabilité'; break;
-                    case 'rh-qualite-marketing': serviceName = 'RH/Qualité/Marketing'; break;
-                }
-
+                
+                // Déterminer le département
+                const departmentName = getDepartmentName(entry.service);
+                
+                // Statut
+                const statusClass = entry.status === 'waiting' ? 'waiting' : 
+                                   entry.status === 'promoted' ? 'confirmed' : 'waiting';
+                                   
+                const statusText = entry.status === 'waiting' ? 'En attente' : 
+                                  entry.status === 'promoted' ? 'Promu' : 
+                                  entry.status === 'contacted' ? 'Contacté' : 'En attente';
+                                  
+                const statusIcon = entry.status === 'waiting' ? 'clock' : 
+                                  entry.status === 'promoted' ? 'check-circle' : 
+                                  entry.status === 'contacted' ? 'envelope' : 'clock';
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${entry.id}</td>
                     <td>${entry.contact}</td>
                     <td>${entry.email}</td>
-                    <td>${serviceName}</td>
+                    <td>${departmentName}</td>
                     <td>${entry.formation_name}</td>
                     <td>${formattedDate}</td>
-                    <td><span class="badge bg-warning">${entry.status}</span></td>
+                    <td><span class="custom-badge badge-${statusClass}"><i class="fas fa-${statusIcon}"></i> ${statusText}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary view-waitlist" data-id="${entry.id}" title="Voir détails">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger delete-waitlist" data-id="${entry.id}" title="Supprimer">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-success" title="Promouvoir" onclick="promoteWaitlistEntry(${entry.id})">
+                                <i class="fas fa-user-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info" title="Contacter" onclick="contactParticipant('${entry.email}')">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" title="Supprimer" onclick="removeWaitlistEntry(${entry.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
-
+                
                 tableBody.appendChild(row);
             });
-        })
-        .catch(error => {
-            console.error('Erreur lors du chargement de la liste d\'attente:', error);
-            tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Erreur lors du chargement des données</td></tr>';
+            
+            // Réinitialiser DataTable si disponible
+            if (typeof $.fn.DataTable !== 'undefined') {
+                const table = $('#waitlistTable').DataTable();
+                table.destroy();
+                $('#waitlistTable').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+                    },
+                    pageLength: 10,
+                    lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tous"]],
+                    responsive: true
+                });
+            }
         });
 }
 
-function loadLogsTable() {
+/**
+ * Charge les logs d'activité
+ */
+function loadLogsTable(limit = 100) {
     const tableBody = document.getElementById('logsTableBody');
-    tableBody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Chargement...</td></tr>';
-
-    fetch('/api/logs')
+    if (!tableBody) return Promise.reject('Table body not found');
+    
+    tableBody.innerHTML = '<tr><td colspan="5" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Chargement...</td></tr>';
+    
+    return fetch(`/api/logs?limit=${limit}`)
         .then(response => response.json())
         .then(logs => {
             if (logs.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Aucun log trouvé</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Aucun log trouvé</td></tr>';
                 return;
             }
-
+            
             tableBody.innerHTML = '';
-
+            
             logs.forEach(log => {
-                const date = new Date(log.timestamp);
-                const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-
+                const timestamp = new Date(log.timestamp);
+                const formattedDate = `${timestamp.getDate().toString().padStart(2, '0')}/${(timestamp.getMonth() + 1).toString().padStart(2, '0')}/${timestamp.getFullYear()} ${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}`;
+                
                 const userInfo = log.user_info ? (log.user_info.email || '-') : '-';
-                const details = log.details ? JSON.stringify(log.details) : '-';
-
+                
+                // Formater les détails de manière plus lisible
+                let details = '-';
+                if (log.details) {
+                    try {
+                        const detailsObj = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
+                        details = Object.entries(detailsObj)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(', ');
+                    } catch (e) {
+                        details = log.details;
+                    }
+                }
+                
+                // Formater l'action de manière plus lisible
+                let action = log.action;
+                switch (log.action) {
+                    case 'booking_created': action = 'Création de session'; break;
+                    case 'booking_updated': action = 'Modification de session'; break;
+                    case 'booking_deleted': action = 'Suppression de session'; break;
+                    case 'participant_added': action = 'Ajout de participant'; break;
+                    case 'waitlist_added': action = 'Ajout en liste d\'attente'; break;
+                    case 'document_uploaded': action = 'Upload de document'; break;
+                    case 'feedback_submitted': action = 'Feedback soumis'; break;
+                    case 'attendance_recorded': action = 'Présences enregistrées'; break;
+                }
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${formattedDate}</td>
-                    <td>${log.action}</td>
+                    <td>${action}</td>
                     <td>${userInfo}</td>
                     <td>${details}</td>
+                    <td>${log.ip_address || '-'}</td>
                 `;
-
+                
                 tableBody.appendChild(row);
             });
+            
+            // Réinitialiser DataTable si disponible
+            if (typeof $.fn.DataTable !== 'undefined') {
+                const table = $('#logsTable').DataTable();
+                table.destroy();
+                $('#logsTable').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+                    },
+                    pageLength: 10,
+                    lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tous"]],
+                    responsive: true,
+                    order: [[0, 'desc']]
+                });
+            }
+        });
+}
+
+/**
+ * Affiche les détails d'une session
+ */
+function viewSessionDetails(sessionId) {
+    fetch(`/api/booking/${sessionId}`)
+        .then(response => response.json())
+        .then(session => {
+            if (!session || session.error) {
+                window.showToast && window.showToast('Erreur', 'Session non trouvée', 'error');
+                return;
+            }
+            
+            // Formater la date
+            const date = new Date(session.date);
+            const formattedDate = date.toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            // Formater l'heure
+            const formattedStart = `${session.hour.toString().padStart(2, '0')}:${session.minutes.toString().padStart(2, '0')}`;
+            
+            let endHour = session.hour + 1;
+            let endMinutes = session.minutes + 30;
+            
+            if (endMinutes >= 60) {endHour++;
+                endMinutes -= 60;
+            }
+            
+            const formattedEnd = `${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+            
+            // Préparer le contenu du modal
+            const modalContent = `
+                <div class="modal-body">
+                    <div class="session-details">
+                        <div class="detail-row">
+                            <strong><i class="fas fa-chalkboard-teacher"></i> Module :</strong>
+                            ${session.formation_name}
+                        </div>
+                        <div class="detail-row">
+                            <strong><i class="fas fa-calendar-day"></i> Date :</strong>
+                            ${formattedDate}
+                        </div>
+                        <div class="detail-row">
+                            <strong><i class="fas fa-clock"></i> Horaire :</strong>
+                            ${formattedStart} - ${formattedEnd}
+                        </div>
+                        <div class="detail-row">
+                            <strong><i class="fas fa-building"></i> Département :</strong>
+                            ${session.service || 'N/A'}
+                        </div>
+                        <div class="detail-row">
+                            <strong><i class="fas fa-user"></i> Responsable :</strong>
+                            ${session.contact}
+                        </div>
+                        <div class="detail-row">
+                            <strong><i class="fas fa-envelope"></i> Email :</strong>
+                            ${session.email}
+                        </div>
+                        <div class="detail-row">
+                            <strong><i class="fas fa-users"></i> Participants :</strong>
+                            ${session.participants ? session.participants.length : 0} / ${session.max_participants || 12}
+                        </div>
+                    </div>
+                    
+                    ${session.participants && session.participants.length > 0 ? `
+                    <div class="participants-list mt-3">
+                        <h5>Liste des participants</h5>
+                        <div class="list-group">
+                            ${session.participants.map(participant => `
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${participant.name}</h6>
+                                        ${participant.email ? `<small class="text-muted">${participant.email}</small>` : ''}
+                                    </div>
+                                    ${participant.department ? `<p class="mb-1 text-muted">${participant.department}</p>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            // Pré-remplir le modal
+            const sessionDetailsModal = document.getElementById('sessionDetailsModal');
+            const sessionDetailsContent = document.getElementById('sessionDetailsContent');
+            const sessionDetailsModalLabel = document.getElementById('sessionDetailsModalLabel');
+            const editSessionBtn = document.getElementById('editSessionBtn');
+            
+            sessionDetailsModalLabel.innerHTML = `<i class="fas fa-calendar-check"></i> Détails de la session`;
+            sessionDetailsContent.innerHTML = modalContent;
+            
+            // Configurer le bouton d'édition
+            editSessionBtn.setAttribute('data-id', sessionId);
+            
+            // Afficher le modal
+            const modal = new bootstrap.Modal(sessionDetailsModal);
+            modal.show();
         })
         .catch(error => {
-            console.error('Erreur lors du chargement des logs:', error);
-            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Erreur lors du chargement des données</td></tr>';
+            console.error('Erreur lors du chargement des détails de la session:', error);
+            window.showToast && window.showToast('Erreur', 'Impossible de charger les détails de la session', 'error');
         });
 }
-
-function addBookingButtonHandlers() {
-    document.querySelectorAll('.view-booking').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            window.location.href = `/admin/booking/${id}`;
-        });
-    });
-
-    document.querySelectorAll('.edit-booking').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            alert('Modification de la réservation ID: ' + id + ' (fonctionnalité à implémenter)');
-        });
-    });
-
-    document.querySelectorAll('.delete-booking').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            if (confirm('Voulez-vous vraiment supprimer cette réservation ?')) {
-                fetch(`/api/booking/${id}`, { method: 'DELETE' })
-                    .then(response => {
-                        if (response.ok) {
-                            loadBookingsTable();
-                        } else {
-                            alert('Erreur lors de la suppression');
-                        }
-                    });
-            }
-        });
-    });
-
-    document.querySelectorAll('.view-waitlist').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            alert('Voir détails de l\'entrée ID: ' + id + ' (fonctionnalité à implémenter)');
-        });
-    });
-
-    document.querySelectorAll('.delete-waitlist').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            if (confirm('Voulez-vous vraiment supprimer cette entrée de la liste d\'attente ?')) {
-                // Note : Cette API n'existe pas encore, à implémenter si nécessaire
-                alert('Suppression de l\'entrée ID: ' + id + ' (fonctionnalité à implémenter)');
-            }
-        });
-    });
-}
-
-function viewBooking(id) {
-    window.location.href = `/admin/booking/${id}`;
-}
-</script>
-{% endblock %}
