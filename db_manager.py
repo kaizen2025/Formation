@@ -1,3 +1,4 @@
+# File: db_manager.py
 import json
 import logging
 import datetime
@@ -7,9 +8,10 @@ from contextlib import contextmanager
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from psycopg2 import pool
+from psycopg2 import pool, sql # Importer sql pour les requêtes dynamiques sécurisées
+from psycopg2.errors import UniqueViolation # Importer pour gérer les conflits
 
-from config import DATABASE_URL
+from config import DATABASE_URL # Importer depuis le config modifié
 
 # Configuration du logging
 logging.basicConfig(
@@ -19,42 +21,38 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class DatabaseManager:
-    """Gestionnaire de connexion et d'opérations sur la base de données"""
+    """Gestionnaire de connexion et d'opérations pour le schéma normalisé"""
 
     def __init__(self):
         """Initialise la connexion à la base de données"""
-        max_retries = 5 # Increased retries
-        retry_delay = 3 # Seconds
+        max_retries = 5
+        retry_delay = 3
         for attempt in range(max_retries):
             try:
                 self.connection_pool = pool.ThreadedConnectionPool(
-                    minconn=1,
-                    maxconn=10, # Increased from 5
-                    dsn=DATABASE_URL
+                    minconn=1, maxconn=10, dsn=DATABASE_URL
                 )
-                logger.info("Pool de connexions à la base de données établi (min=1, max=10)")
-                self.initialize_database()
-                break # Success
+                logger.info("Pool de connexions DB établi (min=1, max=10)")
+                self.initialize_database() # Crée les tables si elles n'existent pas
+                break
             except psycopg2.OperationalError as e:
-                logger.error(f"Erreur de connexion (Tentative {attempt + 1}/{max_retries}): {e}")
-                if "too many connections" in str(e):
-                     logger.warning("Le serveur de base de données signale trop de connexions. Vérifiez les limites du serveur ou réduisez maxconn.")
+                logger.error(f"Erreur connexion DB (Tentative {attempt + 1}/{max_retries}): {e}")
                 if attempt == max_retries - 1:
-                    logger.critical("Impossible de se connecter à la base de données après plusieurs tentatives.")
-                    raise ConnectionError("Impossible d'établir la connexion à la base de données.") from e
-                logger.info(f"Nouvelle tentative dans {retry_delay} secondes...")
+                    logger.critical("Impossible de se connecter à la DB après plusieurs tentatives.")
+                    raise ConnectionError("Connexion DB impossible.") from e
+                logger.info(f"Nouvelle tentative dans {retry_delay} sec...")
                 time.sleep(retry_delay)
             except Exception as e:
-                 logger.critical(f"Erreur inattendue lors de l'initialisation du pool de connexion: {e}")
-                 raise
+                logger.critical(f"Erreur inattendue init pool connexion: {e}")
+                raise
 
     def get_connection(self):
         """Obtient une connexion depuis le pool"""
         try:
             return self.connection_pool.getconn()
         except Exception as e:
-            logger.error(f"Erreur lors de l'obtention d'une connexion du pool: {e}")
-            raise ConnectionError("Impossible d'obtenir une connexion depuis le pool.") from e
+            logger.error(f"Erreur obtention connexion pool: {e}")
+            raise ConnectionError("Impossible d'obtenir une connexion DB.") from e
 
     def release_connection(self, conn):
         """Libère une connexion et la renvoie au pool"""
@@ -62,14 +60,14 @@ class DatabaseManager:
             try:
                 self.connection_pool.putconn(conn)
             except Exception as e:
-                logger.error(f"Erreur lors de la libération de la connexion au pool: {e}")
+                logger.error(f"Erreur libération connexion pool: {e}")
 
     @contextmanager
-    def get_cursor(self, use_dict_cursor=False):
+    def get_cursor(self, use_dict_cursor=False, commit_on_exit=False):
         """
-        Fournit un curseur de base de données géré par contexte.
-        Acquiert une connexion depuis le pool et la libère automatiquement.
-        Commits on success, rolls back on error.
+        Fournit un curseur DB géré par contexte.
+        Acquiert/Libère la connexion. Commit/Rollback optionnel.
+        Par défaut, NE COMMIT PAS (laisse le contrôle à l'appelant pour les transactions).
         """
         conn = None
         cursor = None
@@ -78,15 +76,16 @@ class DatabaseManager:
             cursor_factory = RealDictCursor if use_dict_cursor else None
             cursor = conn.cursor(cursor_factory=cursor_factory)
             yield cursor
-            conn.commit()
+            if commit_on_exit:
+                conn.commit()
         except Exception as e:
-            logger.error(f"Erreur de base de données détectée: {e}. Annulation (rollback).")
+            logger.error(f"Erreur DB détectée: {e}. Rollback.")
             if conn:
                 try:
                     conn.rollback()
                 except Exception as rb_err:
-                    logger.error(f"Erreur additionnelle lors du rollback: {rb_err}")
-            raise # Re-raise the exception after rollback
+                    logger.error(f"Erreur additionnelle durant rollback: {rb_err}")
+            raise # Re-raise après rollback
         finally:
             if cursor:
                 cursor.close()
@@ -96,78 +95,145 @@ class DatabaseManager:
     def ping(self):
         """Vérifie la connexion à la base de données"""
         try:
+            # Utilise commit_on_exit=False (par défaut) car SELECT ne modifie rien
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")
                 return True
         except Exception as e:
-            logger.error(f"Erreur lors du ping de la base de données: {e}")
-            return False # Return False on error instead of raising
+            logger.error(f"Erreur ping DB: {e}")
+            return False
 
     def initialize_database(self):
-        """Initialise les tables nécessaires si elles n'existent pas"""
+        """Crée les tables du schéma normalisé si elles n'existent pas"""
+        # ATTENTION: Ceci est une initialisation simple. Pour des migrations complexes
+        # ou des mises à jour de schéma, un outil comme Alembic est recommandé.
         try:
-            with self.get_cursor() as cursor:
-                logger.info("Vérification/Création des tables...")
+            # Utilise commit_on_exit=True car CREATE TABLE modifie le schéma
+            with self.get_cursor(commit_on_exit=True) as cursor:
+                logger.info("Vérification/Création des tables (Schéma Normalisé)...")
 
-                # --- Bookings Table ---
+                # --- Table Admin User ---
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS bookings (
+                    CREATE TABLE IF NOT EXISTS admin_user (
                         id SERIAL PRIMARY KEY,
-                        service VARCHAR(50) NOT NULL,
-                        contact VARCHAR(100) NOT NULL,
-                        email VARCHAR(100) NOT NULL,
-                        phone VARCHAR(20),
-                        formation_id VARCHAR(50) NOT NULL,
-                        formation_name VARCHAR(100) NOT NULL,
-                        booking_date DATE NOT NULL,
-                        hour INTEGER NOT NULL,
-                        minutes INTEGER NOT NULL,
-                        timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        participants JSONB DEFAULT '[]'::jsonb,
-                        additional_info TEXT,
-                        status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'pending', 'canceled', 'waiting'))
+                        username VARCHAR(64) NOT NULL UNIQUE,
+                        password_hash VARCHAR(256) NOT NULL,
+                        is_super_admin BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_admin_user_username ON admin_user (username);")
 
-                # --- Waiting List Table ---
+
+                # --- Table Departments ---
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS waiting_list (
+                    CREATE TABLE IF NOT EXISTS departments (
                         id SERIAL PRIMARY KEY,
-                        booking_id INTEGER REFERENCES bookings(id) ON DELETE SET NULL,
-                        service VARCHAR(50) NOT NULL,
-                        contact VARCHAR(100) NOT NULL,
-                        email VARCHAR(100) NOT NULL,
-                        phone VARCHAR(20),
-                        timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        status VARCHAR(20) DEFAULT 'waiting' CHECK (status IN ('waiting', 'promoted', 'canceled', 'contacted'))
+                        code VARCHAR(50) NOT NULL UNIQUE,
+                        name VARCHAR(100) NOT NULL,
+                        description TEXT,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ
                     );
                 """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_departments_code ON departments (code);")
 
-                # --- Activity Logs Table ---
+                # --- Table Formation Modules ---
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS activity_logs (
+                    CREATE TABLE IF NOT EXISTS formation_modules (
                         id SERIAL PRIMARY KEY,
-                        action VARCHAR(50) NOT NULL,
-                        user_info JSONB,
-                        details JSONB,
-                        ip_address VARCHAR(45),
-                        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                        code VARCHAR(50) NOT NULL UNIQUE,
+                        name VARCHAR(100) NOT NULL,
+                        description TEXT,
+                        duration_minutes INTEGER DEFAULT 90,
+                        min_participants INTEGER DEFAULT 8,
+                        max_participants INTEGER DEFAULT 12,
+                        active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ
                     );
                 """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_fm_code ON formation_modules (code);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_fm_active ON formation_modules (active);")
 
-                # --- Feedback Table ---
+
+                # --- Table Formation Groups ---
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS feedback (
+                    CREATE TABLE IF NOT EXISTS formation_groups (
                         id SERIAL PRIMARY KEY,
-                        type VARCHAR(50) NOT NULL,
-                        message TEXT NOT NULL,
+                        name VARCHAR(100) NOT NULL,
+                        contact_name VARCHAR(100) NOT NULL,
+                        contact_email VARCHAR(100) NOT NULL,
+                        contact_phone VARCHAR(20),
+                        notes TEXT,
+                        department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ,
+                        UNIQUE (department_id, name)
+                    );
+                """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_fg_department_id ON formation_groups (department_id);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_fg_contact_email ON formation_groups (contact_email);")
+
+                # --- Table Participants ---
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS participants (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL,
                         email VARCHAR(100),
-                        status VARCHAR(20) DEFAULT 'new' CHECK (status IN ('new', 'read', 'archived', 'resolved')),
-                        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                        position VARCHAR(100),
+                        notes TEXT,
+                        group_id INTEGER NOT NULL REFERENCES formation_groups(id) ON DELETE CASCADE,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ
                     );
                 """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_p_group_id ON participants (group_id);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_p_email ON participants (email);")
 
-                # --- Documents Table ---
+
+                # --- Table Sessions ---
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS sessions (
+                        id SERIAL PRIMARY KEY,
+                        session_date DATE NOT NULL,
+                        start_hour INTEGER NOT NULL,
+                        start_minutes INTEGER NOT NULL,
+                        duration_minutes INTEGER DEFAULT 90,
+                        status VARCHAR(20) DEFAULT 'confirmed', -- confirmed, canceled, completed
+                        additional_info TEXT,
+                        location VARCHAR(100) DEFAULT 'Sur site',
+                        module_id INTEGER NOT NULL REFERENCES formation_modules(id) ON DELETE CASCADE,
+                        group_id INTEGER NOT NULL REFERENCES formation_groups(id) ON DELETE CASCADE,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ,
+                        UNIQUE (module_id, session_date, start_hour, start_minutes)
+                    );
+                """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_s_date ON sessions (session_date);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_s_status ON sessions (status);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_s_module_id ON sessions (module_id);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_s_group_id ON sessions (group_id);")
+
+
+                # --- Table Attendances ---
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS attendances (
+                        id SERIAL PRIMARY KEY,
+                        present BOOLEAN DEFAULT FALSE,
+                        feedback TEXT,
+                        session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+                        participant_id INTEGER NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
+                        recorded_by VARCHAR(100),
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ,
+                        UNIQUE (session_id, participant_id)
+                    );
+                """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_att_session_id ON attendances (session_id);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_att_participant_id ON attendances (participant_id);")
+
+                # --- Table Documents ---
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS documents (
                         id SERIAL PRIMARY KEY,
@@ -175,897 +241,628 @@ class DatabaseManager:
                         filetype VARCHAR(100) NOT NULL,
                         filesize INTEGER NOT NULL,
                         filedata BYTEA NOT NULL,
-                        document_type VARCHAR(50) DEFAULT 'attachment',
                         description TEXT,
-                        is_global BOOLEAN DEFAULT FALSE, -- Column definition
-                        uploaded_by VARCHAR(100),
-                        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                        is_global BOOLEAN DEFAULT FALSE,
+                        uploaded_by_id INTEGER REFERENCES admin_user(id) ON DELETE SET NULL,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ
                     );
                 """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_is_global ON documents (is_global);")
 
-                # --- ALTER TABLE to add is_global if it doesn't exist ---
-                # This ensures compatibility if the table existed before the column was added
-                logger.info("Vérification de la colonne 'is_global' dans la table 'documents'...")
+                # --- Table session_documents (Join) ---
                 cursor.execute("""
-                    DO $$
-                    BEGIN
-                        IF NOT EXISTS (
-                            SELECT 1 FROM information_schema.columns
-                            WHERE table_schema = current_schema()
-                            AND table_name = 'documents'
-                            AND column_name = 'is_global'
-                        ) THEN
-                            ALTER TABLE documents ADD COLUMN is_global BOOLEAN DEFAULT FALSE;
-                            RAISE NOTICE 'Colonne is_global ajoutée à la table documents.';
-                        ELSE
-                            RAISE NOTICE 'Colonne is_global existe déjà dans la table documents.';
-                        END IF;
-                    END $$;
-                """)
-                logger.info("Vérification de la colonne 'is_global' terminée.")
-
-
-                # --- Document Bookings Join Table ---
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS document_bookings (
-                        id SERIAL PRIMARY KEY,
+                    CREATE TABLE IF NOT EXISTS session_documents (
+                        session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
                         document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-                        booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
-                        UNIQUE(document_id, booking_id)
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (session_id, document_id)
                     );
                 """)
 
-                # --- Attendance Table ---
+                # --- Table module_documents (Join) ---
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS attendance (
+                    CREATE TABLE IF NOT EXISTS module_documents (
+                        module_id INTEGER NOT NULL REFERENCES formation_modules(id) ON DELETE CASCADE,
+                        document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (module_id, document_id)
+                    );
+                 """)
+
+                # --- Table Waiting List ---
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS waitlist (
                         id SERIAL PRIMARY KEY,
-                        booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
-                        attendance_date DATE NOT NULL,
-                        attendance_data JSONB NOT NULL,
-                        comments TEXT,
-                        recorded_by VARCHAR(100),
-                        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(booking_id, attendance_date)
+                        contact_name VARCHAR(100) NOT NULL,
+                        contact_email VARCHAR(100) NOT NULL,
+                        contact_phone VARCHAR(20),
+                        notes TEXT,
+                        status VARCHAR(20) DEFAULT 'waiting', -- waiting, contacted, promoted, canceled
+                        session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ
                     );
                 """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_wl_session_id ON waitlist (session_id);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_wl_email ON waitlist (contact_email);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_wl_status ON waitlist (status);")
 
-                # --- Indexes ---
-                logger.info("Vérification/Création des index...")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_bookings_date_time ON bookings (booking_date, hour, minutes);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_bookings_email ON bookings (email);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_bookings_service ON bookings (service);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waiting_list (email);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_waitlist_booking_id ON waiting_list (booking_id);")
-                # Now this index creation should succeed
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_documents_is_global ON documents (is_global);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_bookings_booking_id ON document_bookings (booking_id);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_doc_bookings_document_id ON document_bookings (document_id);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_attendance_booking_id ON attendance (booking_id);")
-                logger.info("Index initialisés/vérifiés avec succès.")
-
-                logger.info("Initialisation de la base de données terminée avec succès.")
-        except Exception as e:
-            logger.error(f"Erreur lors de l'initialisation des tables: {e}")
-            raise # Re-raise to indicate failure
-
-    # --- Rest of the DatabaseManager class methods (get_all_bookings, create_booking, etc.) ---
-    # No changes needed in the other methods based on the error log provided.
-    # Keep the improved versions from the previous response.
-
-    # --- Booking Methods ---
-
-    def get_all_bookings(self) -> List[Dict[str, Any]]:
-        """Récupère toutes les réservations de la base de données"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
+                # --- Table Activity Logs ---
                 cursor.execute("""
-                    SELECT
-                        b.id, b.service, b.contact, b.email, b.phone,
-                        b.formation_id, b.formation_name,
-                        TO_CHAR(b.booking_date, 'YYYY-MM-DD') as date,
-                        b.hour, b.minutes,
-                        TO_CHAR(b.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                        b.participants, b.additional_info, b.status
-                    FROM bookings b
-                    ORDER BY b.booking_date, b.hour, b.minutes
+                    CREATE TABLE IF NOT EXISTS activity_logs (
+                        id SERIAL PRIMARY KEY,
+                        action VARCHAR(50) NOT NULL,
+                        user_info JSONB, -- {'admin_id': 1, 'username': 'admin'} or {'user_email': '...', 'group_id': 5}
+                        entity_type VARCHAR(50), -- 'Session', 'Document', 'Participant', etc.
+                        entity_id INTEGER,
+                        details JSONB, -- Specific details of the action
+                        ip_address VARCHAR(45),
+                        user_agent TEXT,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                    );
                 """)
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération des réservations: {e}")
-            return []
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_al_action ON activity_logs (action);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_al_entity ON activity_logs (entity_type, entity_id);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_al_created_at ON activity_logs (created_at DESC);")
 
-    def get_bookings_by_service(self, service: str) -> List[Dict[str, Any]]:
-        """Récupère les réservations pour un service spécifique"""
+                # --- Table Feedbacks ---
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS feedbacks (
+                        id SERIAL PRIMARY KEY,
+                        type VARCHAR(50) NOT NULL, -- bug, suggestion, comment
+                        message TEXT NOT NULL,
+                        email VARCHAR(100),
+                        contact_name VARCHAR(100),
+                        status VARCHAR(20) DEFAULT 'new', -- new, read, addressed, archived
+                        response TEXT, -- Admin response
+                        session_id INTEGER REFERENCES sessions(id) ON DELETE SET NULL,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ
+                    );
+                """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_fb_status ON feedbacks (status);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_fb_type ON feedbacks (type);")
+
+                logger.info("Initialisation DB (Schéma Normalisé) terminée.")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'initialisation des tables: {e}", exc_info=True)
+            raise # Re-raise pour indiquer l'échec
+
+    # --- Méthodes CRUD adaptées ---
+    # (Implémentation partielle - à compléter)
+
+    # --- Departments ---
+    def get_all_departments(self) -> List[Dict[str, Any]]:
         try:
             with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        b.id, b.service, b.contact, b.email, b.phone,
-                        b.formation_id, b.formation_name,
-                        TO_CHAR(b.booking_date, 'YYYY-MM-DD') as date,
-                        b.hour, b.minutes,
-                        TO_CHAR(b.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                        b.participants, b.additional_info, b.status
-                    FROM bookings b
-                    WHERE b.service = %s
-                    ORDER BY b.booking_date, b.hour, b.minutes
-                """, (service,))
+                cursor.execute("SELECT id, code, name, description FROM departments ORDER BY name")
                 return cursor.fetchall()
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération des réservations pour le service {service}: {e}")
+            logger.error(f"Erreur get_all_departments: {e}")
             return []
 
-    def get_bookings_by_email(self, email: str) -> List[Dict[str, Any]]:
-        """Récupère les réservations où l'utilisateur est responsable"""
+    def get_department_by_id(self, dept_id: int) -> Optional[Dict[str, Any]]:
         try:
             with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        b.id, b.service, b.contact, b.email, b.phone,
-                        b.formation_id, b.formation_name,
-                        TO_CHAR(b.booking_date, 'YYYY-MM-DD') as date,
-                        b.hour, b.minutes,
-                        TO_CHAR(b.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                        b.participants, b.additional_info, b.status
-                    FROM bookings b
-                    WHERE b.email = %s
-                    ORDER BY b.booking_date, b.hour, b.minutes
-                """, (email,))
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération des réservations pour l'email {email}: {e}")
-            return []
-
-    def get_bookings_by_participant_email(self, email: str) -> List[Dict[str, Any]]:
-        """Récupère les réservations où l'utilisateur est participant"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        b.id, b.service, b.contact, b.email as contact_email, b.phone,
-                        b.formation_id, b.formation_name,
-                        TO_CHAR(b.booking_date, 'YYYY-MM-DD') as date,
-                        b.hour, b.minutes,
-                        TO_CHAR(b.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                        b.participants, b.additional_info, b.status
-                    FROM bookings b
-                    WHERE b.participants @> %s::jsonb
-                    ORDER BY b.booking_date, b.hour, b.minutes
-                """, (json.dumps([{'email': email}]),))
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération des réservations pour le participant {email}: {e}")
-            return []
-
-    def get_booking_by_id(self, booking_id: int) -> Optional[Dict[str, Any]]:
-        """Récupère une réservation par son ID"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        b.id, b.service, b.contact, b.email, b.phone,
-                        b.formation_id, b.formation_name,
-                        TO_CHAR(b.booking_date, 'YYYY-MM-DD') as date,
-                        b.hour, b.minutes,
-                        TO_CHAR(b.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                        b.participants, b.additional_info, b.status
-                    FROM bookings b
-                    WHERE b.id = %s
-                """, (booking_id,))
+                cursor.execute("SELECT id, code, name, description FROM departments WHERE id = %s", (dept_id,))
                 return cursor.fetchone()
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération de la réservation {booking_id}: {e}")
+            logger.error(f"Erreur get_department_by_id {dept_id}: {e}")
             return None
 
-    def create_booking(self, booking_data: Dict[str, Any]) -> Optional[int]:
-        """Crée une nouvelle réservation et retourne son ID"""
-        sql = """
-            INSERT INTO bookings (
-                service, contact, email, phone, formation_id, formation_name,
-                booking_date, hour, minutes, participants, additional_info, status
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        """
-        params = (
-            booking_data['service'],
-            booking_data['contact'],
-            booking_data['email'],
-            booking_data.get('phone'),
-            booking_data['formation_id'],
-            booking_data['formation_name'],
-            booking_data['date'],
-            booking_data['hour'],
-            booking_data['minutes'],
-            json.dumps(booking_data.get('participants', [])),
-            booking_data.get('additional_info'),
-            booking_data.get('status', 'confirmed')
-        )
+    def create_department(self, data: Dict[str, Any]) -> Optional[int]:
+        sql = "INSERT INTO departments (code, name, description) VALUES (%s, %s, %s) RETURNING id"
         try:
-            with self.get_cursor() as cursor:
-                cursor.execute(sql, params)
-                booking_id = cursor.fetchone()[0]
-
-            self.add_activity_log(
-                'booking_created',
-                {'email': booking_data['email'], 'service': booking_data['service']},
-                {'booking_id': booking_id, 'formation': booking_data['formation_name']}
-            )
-            return booking_id
+            with self.get_cursor(commit_on_exit=True) as cursor: # Commit here
+                cursor.execute(sql, (data['code'], data['name'], data.get('description')))
+                dept_id = cursor.fetchone()[0]
+                # Consider adding activity log here
+                return dept_id
+        except UniqueViolation:
+             logger.warning(f"Tentative de création de département avec code dupliqué: {data.get('code')}")
+             return -1 # Indicate duplicate error
         except Exception as e:
-            logger.error(f"Erreur lors de la création de la réservation: {e}")
+            logger.error(f"Erreur create_department: {e}")
             return None
 
-    def update_booking(self, booking_id: int, booking_data: Dict[str, Any]) -> bool:
-        """Met à jour une réservation existante"""
-        sql = """
-            UPDATE bookings
-            SET
-                service = %s, contact = %s, email = %s, phone = %s,
-                formation_id = %s, formation_name = %s, booking_date = %s,
-                hour = %s, minutes = %s, participants = %s,
-                additional_info = %s, status = %s
-            WHERE id = %s
-        """
-        params = (
-            booking_data['service'],
-            booking_data['contact'],
-            booking_data['email'],
-            booking_data.get('phone'),
-            booking_data['formation_id'],
-            booking_data['formation_name'],
-            booking_data['date'],
-            booking_data['hour'],
-            booking_data['minutes'],
-            json.dumps(booking_data.get('participants', [])),
-            booking_data.get('additional_info'),
-            booking_data.get('status', 'confirmed'),
-            booking_id
-        )
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute(sql, params)
-                updated_rows = cursor.rowcount
-
-            if updated_rows > 0:
-                self.add_activity_log(
-                    'booking_updated',
-                    {'email': booking_data['email'], 'service': booking_data['service']},
-                    {'booking_id': booking_id, 'formation': booking_data['formation_name']}
-                )
-                return True
-            else:
-                logger.warning(f"Tentative de mise à jour de la réservation {booking_id} mais aucune ligne affectée.")
-                return False
-        except Exception as e:
-            logger.error(f"Erreur lors de la mise à jour de la réservation {booking_id}: {e}")
-            return False
-
-    def delete_booking(self, booking_id: int) -> bool:
-        """Supprime une réservation"""
-        try:
-            booking_info = self.get_booking_by_id(booking_id)
-
-            with self.get_cursor() as cursor:
-                cursor.execute("DELETE FROM bookings WHERE id = %s", (booking_id,))
-                deleted_rows = cursor.rowcount
-
-            if deleted_rows > 0:
-                if booking_info:
-                     self.add_activity_log(
-                        'booking_deleted',
-                        {'service': booking_info['service'], 'email': booking_info['email']},
-                        {'booking_id': booking_id, 'formation': booking_info['formation_name']}
-                    )
-                else:
-                     self.add_activity_log('booking_deleted', None, {'booking_id': booking_id})
-                logger.info(f"Réservation {booking_id} supprimée avec succès.")
-                return True
-            else:
-                logger.warning(f"Tentative de suppression de la réservation {booking_id} mais aucune ligne affectée.")
-                return False
-        except Exception as e:
-            logger.error(f"Erreur lors de la suppression de la réservation {booking_id}: {e}")
-            return False
-
-    def check_slot_availability(self, date: str, hour: int, minutes: int) -> Dict[str, Any]:
-        """Vérifie la disponibilité d'un créneau horaire et retourne des infos"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT b.id, b.service, b.formation_name, b.participants, COUNT(wl.id) as waitlist_count
-                    FROM bookings b
-                    LEFT JOIN waiting_list wl ON b.id = wl.booking_id AND wl.status = 'waiting'
-                    WHERE b.booking_date = %s AND b.hour = %s AND b.minutes = %s
-                    GROUP BY b.id, b.service, b.formation_name, b.participants
-                """, (date, hour, minutes))
-                booking = cursor.fetchone()
-
-                if not booking:
-                    return {"available": True, "booking": None, "waitlist_available": False, "waitlist_count": 0}
-
-                from config import MAX_PARTICIPANTS, WAITLIST_CONFIG
-                participants_count = len(booking.get('participants', []))
-                waitlist_enabled = WAITLIST_CONFIG.get("enabled", False)
-                waitlist_limit = WAITLIST_CONFIG.get("waitlist_limit", 0)
-                current_waitlist_count = int(booking.get('waitlist_count', 0))
-
-                waitlist_available = (
-                    waitlist_enabled and
-                    participants_count >= MAX_PARTICIPANTS and
-                    current_waitlist_count < waitlist_limit
-                )
-
-                return {
-                    "available": False,
-                    "booking": booking,
-                    "waitlist_available": waitlist_available,
-                    "waitlist_count": current_waitlist_count
-                }
-        except Exception as e:
-            logger.error(f"Erreur lors de la vérification du créneau {date} {hour}:{minutes}: {e}")
-            return {"available": False, "error": str(e)}
-
-    # --- Waitlist Methods ---
-
-    def add_to_waiting_list(self, waitlist_data: Dict[str, Any]) -> Optional[int]:
-        """Ajoute une personne à la liste d'attente pour une réservation"""
-        sql = """
-            INSERT INTO waiting_list (
-                booking_id, service, contact, email, phone, status
-            )
-            VALUES (%s, %s, %s, %s, %s, %s)
-            RETURNING id
-        """
-        params = (
-            waitlist_data.get('booking_id'),
-            waitlist_data['service'],
-            waitlist_data['contact'],
-            waitlist_data['email'],
-            waitlist_data.get('phone'),
-            waitlist_data.get('status', 'waiting')
-        )
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute(sql, params)
-                waitlist_id = cursor.fetchone()[0]
-
-            self.add_activity_log(
-                'waitlist_added',
-                {'email': waitlist_data['email'], 'service': waitlist_data['service']},
-                {'booking_id': waitlist_data.get('booking_id'), 'waitlist_id': waitlist_id}
-            )
-            return waitlist_id
-        except Exception as e:
-            logger.error(f"Erreur lors de l'ajout à la liste d'attente: {e}")
-            return None
-
-    def get_waiting_list(self) -> List[Dict[str, Any]]:
-        """Récupère toute la liste d'attente"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        w.id, w.booking_id, w.service, w.contact, w.email, w.phone,
-                        TO_CHAR(w.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                        w.status,
-                        COALESCE(b.formation_name, 'Formation supprimée') as formation_name,
-                        TO_CHAR(b.booking_date, 'YYYY-MM-DD') as date,
-                        b.hour, b.minutes
-                    FROM waiting_list w
-                    LEFT JOIN bookings b ON w.booking_id = b.id
-                    ORDER BY w.timestamp
-                """)
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération de la liste d'attente: {e}")
-            return []
-
-    def get_waitlist_by_email(self, email: str) -> List[Dict[str, Any]]:
-        """Récupère la liste d'attente pour un email spécifique"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                     SELECT
-                        w.id, w.booking_id, w.service, w.contact, w.email, w.phone,
-                        TO_CHAR(w.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                        w.status,
-                        COALESCE(b.formation_name, 'Formation supprimée') as formation_name,
-                        TO_CHAR(b.booking_date, 'YYYY-MM-DD') as date,
-                        b.hour, b.minutes
-                    FROM waiting_list w
-                    LEFT JOIN bookings b ON w.booking_id = b.id
-                    WHERE w.email = %s
-                    ORDER BY w.timestamp
-                """, (email,))
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération de la liste d'attente pour l'email {email}: {e}")
-            return []
-
-    def remove_from_waitlist(self, waitlist_id: int) -> bool:
-        """Supprime une entrée de la liste d'attente"""
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute("DELETE FROM waiting_list WHERE id = %s", (waitlist_id,))
-                deleted_rows = cursor.rowcount
-            if deleted_rows > 0:
-                self.add_activity_log('waitlist_removed', None, {'waitlist_id': waitlist_id})
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"Erreur lors de la suppression de l'entrée de liste d'attente {waitlist_id}: {e}")
-            return False
-
-    def update_waitlist_status(self, waitlist_id: int, status: str) -> bool:
-        """Met à jour le statut d'une entrée de liste d'attente"""
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute("UPDATE waiting_list SET status = %s WHERE id = %s", (status, waitlist_id))
-                updated_rows = cursor.rowcount
-            if updated_rows > 0:
-                 self.add_activity_log('waitlist_status_updated', None, {'waitlist_id': waitlist_id, 'new_status': status})
-                 return True
-            return False
-        except Exception as e:
-             logger.error(f"Erreur lors de la mise à jour du statut de l'entrée {waitlist_id}: {e}")
+    def update_department(self, dept_id: int, data: Dict[str, Any]) -> bool:
+         sql = """
+             UPDATE departments SET code = %s, name = %s, description = %s, updated_at = CURRENT_TIMESTAMP
+             WHERE id = %s
+         """
+         try:
+             with self.get_cursor(commit_on_exit=True) as cursor:
+                 cursor.execute(sql, (data['code'], data['name'], data.get('description'), dept_id))
+                 return cursor.rowcount > 0
+         except UniqueViolation:
+             logger.warning(f"Tentative de mise à jour de département avec code dupliqué: {data.get('code')}")
+             return False
+         except Exception as e:
+             logger.error(f"Erreur update_department {dept_id}: {e}")
              return False
 
-    # --- Attendance Methods ---
+    def delete_department(self, dept_id: int) -> bool:
+        # Attention: vérifier les dépendances (groups) avant suppression ou utiliser ON DELETE SET NULL/CASCADE
+        try:
+            with self.get_cursor(commit_on_exit=True) as cursor:
+                # Peut-être vérifier si des groupes existent pour ce département d'abord ?
+                cursor.execute("DELETE FROM departments WHERE id = %s", (dept_id,))
+                return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Erreur delete_department {dept_id}: {e}")
+            return False
 
-    def save_attendance(self, attendance_data: Dict[str, Any]) -> Optional[int]:
-        """Enregistre ou met à jour les données de présence pour une réservation"""
+
+    # --- Formation Modules ---
+    def get_all_modules(self, active_only=True) -> List[Dict[str, Any]]:
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                query = "SELECT id, code, name, description, duration_minutes, min_participants, max_participants, active FROM formation_modules"
+                params = []
+                if active_only:
+                    query += " WHERE active = TRUE"
+                query += " ORDER BY name"
+                cursor.execute(query, params)
+                return cursor.fetchall()
+        except Exception as e:
+            logger.error(f"Erreur get_all_modules: {e}")
+            return []
+
+    def get_module_by_id(self, module_id: int) -> Optional[Dict[str, Any]]:
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                cursor.execute("SELECT id, code, name, description, duration_minutes, min_participants, max_participants, active FROM formation_modules WHERE id = %s", (module_id,))
+                return cursor.fetchone()
+        except Exception as e:
+            logger.error(f"Erreur get_module_by_id {module_id}: {e}")
+            return None
+
+    def create_module(self, data: Dict[str, Any]) -> Optional[int]:
+        sql = """INSERT INTO formation_modules
+                 (code, name, description, duration_minutes, min_participants, max_participants, active)
+                 VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id"""
+        try:
+            with self.get_cursor(commit_on_exit=True) as cursor:
+                cursor.execute(sql, (data['code'], data['name'], data.get('description'),
+                                    data.get('duration_minutes', 90), data.get('min_participants', 8),
+                                    data.get('max_participants', 12), data.get('active', True)))
+                module_id = cursor.fetchone()[0]
+                return module_id
+        except UniqueViolation:
+             logger.warning(f"Tentative de création de module avec code dupliqué: {data.get('code')}")
+             return -1
+        except Exception as e:
+            logger.error(f"Erreur create_module: {e}")
+            return None
+
+    def update_module(self, module_id: int, data: Dict[str, Any]) -> bool:
+        sql = """UPDATE formation_modules SET
+                 code=%s, name=%s, description=%s, duration_minutes=%s, min_participants=%s,
+                 max_participants=%s, active=%s, updated_at=CURRENT_TIMESTAMP
+                 WHERE id = %s"""
+        try:
+            with self.get_cursor(commit_on_exit=True) as cursor:
+                cursor.execute(sql, (data['code'], data['name'], data.get('description'),
+                                    data.get('duration_minutes', 90), data.get('min_participants', 8),
+                                    data.get('max_participants', 12), data.get('active', True), module_id))
+                return cursor.rowcount > 0
+        except UniqueViolation:
+             logger.warning(f"Tentative de mise à jour de module avec code dupliqué: {data.get('code')}")
+             return False
+        except Exception as e:
+            logger.error(f"Erreur update_module {module_id}: {e}")
+            return False
+
+    def delete_module(self, module_id: int) -> bool:
+        # Vérifier dépendances (sessions) avant suppression ?
+        try:
+            with self.get_cursor(commit_on_exit=True) as cursor:
+                cursor.execute("DELETE FROM formation_modules WHERE id = %s", (module_id,))
+                return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Erreur delete_module {module_id}: {e}")
+            return False
+
+    # --- Formation Groups ---
+    def get_all_groups(self) -> List[Dict[str, Any]]:
+        sql = """SELECT g.id, g.name, g.contact_name, g.contact_email, g.contact_phone,
+                       g.department_id, d.name as department_name, d.code as department_code
+                 FROM formation_groups g
+                 LEFT JOIN departments d ON g.department_id = d.id
+                 ORDER BY d.name, g.name"""
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                cursor.execute(sql)
+                return cursor.fetchall()
+        except Exception as e:
+            logger.error(f"Erreur get_all_groups: {e}")
+            return []
+
+    def get_group_by_id(self, group_id: int) -> Optional[Dict[str, Any]]:
+        sql = """SELECT g.id, g.name, g.contact_name, g.contact_email, g.contact_phone, g.notes,
+                       g.department_id, d.name as department_name, d.code as department_code
+                 FROM formation_groups g
+                 LEFT JOIN departments d ON g.department_id = d.id
+                 WHERE g.id = %s"""
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                cursor.execute(sql, (group_id,))
+                return cursor.fetchone()
+        except Exception as e:
+            logger.error(f"Erreur get_group_by_id {group_id}: {e}")
+            return None
+
+    # ... CRUD pour Groups ...
+
+    # --- Participants ---
+    def get_participants_by_group(self, group_id: int) -> List[Dict[str, Any]]:
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                cursor.execute("SELECT id, name, email, position FROM participants WHERE group_id = %s ORDER BY name", (group_id,))
+                return cursor.fetchall()
+        except Exception as e:
+            logger.error(f"Erreur get_participants_by_group {group_id}: {e}")
+            return []
+
+    def add_participant_to_group(self, group_id: int, participant_data: Dict[str, Any]) -> Optional[int]:
+        sql = "INSERT INTO participants (group_id, name, email, position, notes) VALUES (%s, %s, %s, %s, %s) RETURNING id"
+        try:
+            with self.get_cursor(commit_on_exit=True) as cursor:
+                 cursor.execute(sql, (group_id, participant_data['name'], participant_data.get('email'),
+                                     participant_data.get('position'), participant_data.get('notes')))
+                 return cursor.fetchone()[0]
+        except Exception as e:
+             logger.error(f"Erreur add_participant_to_group for group {group_id}: {e}")
+             return None
+
+    # ... CRUD pour Participants ...
+
+
+    # --- Sessions ---
+    def get_all_sessions(self) -> List[Dict[str, Any]]:
         sql = """
-            INSERT INTO attendance (
-                booking_id, attendance_date, attendance_data, comments, recorded_by
-            )
-            VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (booking_id, attendance_date) DO UPDATE SET
-                attendance_data = EXCLUDED.attendance_data,
-                comments = EXCLUDED.comments,
-                recorded_by = EXCLUDED.recorded_by,
-                timestamp = CURRENT_TIMESTAMP
+            SELECT
+                s.id, s.session_date, s.start_hour, s.start_minutes, s.status,
+                s.location, s.additional_info,
+                m.id as module_id, m.name as module_name, m.code as module_code,
+                g.id as group_id, g.name as group_name, g.contact_name as group_contact,
+                d.id as department_id, d.name as department_name
+            FROM sessions s
+            JOIN formation_modules m ON s.module_id = m.id
+            JOIN formation_groups g ON s.group_id = g.id
+            LEFT JOIN departments d ON g.department_id = d.id
+            ORDER BY s.session_date, s.start_hour, s.start_minutes
+        """
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                cursor.execute(sql)
+                # Convert date to string for JSON compatibility if needed by frontend
+                sessions = cursor.fetchall()
+                for session in sessions:
+                    if isinstance(session['session_date'], datetime.date):
+                         session['session_date'] = session['session_date'].isoformat()
+                return sessions
+        except Exception as e:
+            logger.error(f"Erreur get_all_sessions: {e}")
+            return []
+
+    def get_session_by_id(self, session_id: int) -> Optional[Dict[str, Any]]:
+        sql = """
+            SELECT
+                s.id, s.session_date, s.start_hour, s.start_minutes, s.duration_minutes, s.status,
+                s.location, s.additional_info, s.created_at, s.updated_at,
+                m.id as module_id, m.name as module_name, m.code as module_code, m.description as module_description,
+                g.id as group_id, g.name as group_name, g.contact_name as group_contact, g.contact_email as group_email, g.contact_phone as group_phone,
+                d.id as department_id, d.name as department_name
+            FROM sessions s
+            JOIN formation_modules m ON s.module_id = m.id
+            JOIN formation_groups g ON s.group_id = g.id
+            LEFT JOIN departments d ON g.department_id = d.id
+            WHERE s.id = %s
+        """
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                cursor.execute(sql, (session_id,))
+                session = cursor.fetchone()
+                if session:
+                    if isinstance(session['session_date'], datetime.date):
+                         session['session_date'] = session['session_date'].isoformat()
+                    # Fetch participants for this session's group
+                    session['participants'] = self.get_participants_by_group(session['group_id'])
+                    # Fetch documents for this session
+                    session['documents'] = self.get_documents_metadata_for_session(session_id)
+                return session
+        except Exception as e:
+            logger.error(f"Erreur get_session_by_id {session_id}: {e}")
+            return None
+
+    def create_session(self, session_data: Dict[str, Any]) -> Optional[int]:
+        """ Crée une session. La gestion des participants/attendances se fait après."""
+        sql = """
+            INSERT INTO sessions (module_id, group_id, session_date, start_hour, start_minutes,
+                                  duration_minutes, status, location, additional_info)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """
         params = (
-            attendance_data['booking_id'],
-            attendance_data['date'],
-            json.dumps(attendance_data['attendance']),
-            attendance_data.get('comments'),
-            attendance_data.get('recorded_by')
+            session_data['module_id'],
+            session_data['group_id'],
+            session_data['date'],
+            session_data['hour'],
+            session_data['minutes'],
+            session_data.get('duration_minutes', 90),
+            session_data.get('status', 'confirmed'),
+            session_data.get('location', 'Sur site'),
+            session_data.get('additional_info')
         )
         try:
-            with self.get_cursor() as cursor:
+            # Important: Ne pas commiter ici si fait partie d'une transaction plus large (finalize)
+            # Utiliser le curseur retourné par get_cursor sans commit_on_exit=True
+            # L'appelant (ex: finalize) devra gérer le commit/rollback
+            # Si c'est une création simple (admin), on peut commiter ici
+            with self.get_cursor(commit_on_exit=True) as cursor: # Commit for simple creation
                 cursor.execute(sql, params)
-                attendance_id = cursor.fetchone()[0]
-
-            self.add_activity_log(
-                'attendance_recorded',
-                {'recorded_by': attendance_data.get('recorded_by')},
-                {'booking_id': attendance_data['booking_id'], 'date': attendance_data['date']}
-            )
-            return attendance_id
+                session_id = cursor.fetchone()[0]
+                return session_id
+        except UniqueViolation:
+             logger.warning(f"Tentative de création de session sur un créneau déjà pris: Module {session_data.get('module_id')} le {session_data.get('date')} à {session_data.get('hour')}:{session_data.get('minutes')}")
+             return -1 # Indicate conflict
         except Exception as e:
-            logger.error(f"Erreur lors de l'enregistrement des présences: {e}")
+            logger.error(f"Erreur create_session: {e}")
+            # Ne pas commiter si erreur
             return None
 
-    def get_attendance_by_booking_id(self, booking_id: int) -> List[Dict[str, Any]]:
-        """Récupère les données de présence pour une réservation"""
+    # ... Update/Delete pour Sessions ...
+
+    def check_slot_availability(self, module_id: int, date: str, hour: int, minutes: int) -> Dict[str, Any]:
+        """ Vérifie si un créneau est déjà pris pour un module spécifique """
+        sql = """
+            SELECT s.id, g.name as group_name
+            FROM sessions s
+            JOIN formation_groups g ON s.group_id = g.id
+            WHERE s.module_id = %s AND s.session_date = %s AND s.start_hour = %s AND s.start_minutes = %s
+              AND s.status != 'canceled'
+        """
         try:
             with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        id, booking_id,
-                        TO_CHAR(attendance_date, 'YYYY-MM-DD') as date,
-                        attendance_data, comments, recorded_by,
-                        TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp
-                    FROM attendance
-                    WHERE booking_id = %s
-                    ORDER BY attendance_date DESC
-                """, (booking_id,))
+                cursor.execute(sql, (module_id, date, hour, minutes))
+                existing_session = cursor.fetchone()
+                if existing_session:
+                    return {"available": False, "session": existing_session}
+                else:
+                    return {"available": True, "session": None}
+        except Exception as e:
+            logger.error(f"Erreur check_slot_availability: {e}")
+            return {"available": False, "error": str(e)} # Consider slot unavailable on error
+
+
+    # --- Attendances ---
+    def link_participants_to_session(self, session_id: int, group_id: int, cursor):
+        """ Associe tous les participants d'un groupe à une session (dans attendances). CURSEUR REQUIS."""
+        participants = self.get_participants_by_group(group_id) # Fetch participants outside loop if possible
+        if not participants: return True # No participants to link
+
+        sql_insert_attendance = """
+            INSERT INTO attendances (session_id, participant_id, present)
+            VALUES (%s, %s, FALSE)
+            ON CONFLICT (session_id, participant_id) DO NOTHING
+        """
+        try:
+            args_list = [(session_id, p['id']) for p in participants]
+            cursor.executemany(sql_insert_attendance, args_list)
+            return True
+        except Exception as e:
+            logger.error(f"Erreur link_participants_to_session {session_id} for group {group_id}: {e}")
+            return False
+
+
+    # --- Documents ---
+    def save_document(self, doc_data: Dict[str, Any], cursor) -> Optional[int]:
+        """ Enregistre un document. CURSEUR REQUIS. """
+        sql = """
+            INSERT INTO documents (filename, filetype, filesize, filedata, description, is_global, uploaded_by_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """
+        params = (
+            doc_data['filename'],
+            doc_data['filetype'],
+            doc_data['filesize'],
+            doc_data['filedata'], # Doit être psycopg2.Binary(bytes)
+            doc_data.get('description'),
+            doc_data.get('is_global', False),
+            doc_data.get('uploaded_by_id') # Admin user ID
+        )
+        try:
+            cursor.execute(sql, params)
+            doc_id = cursor.fetchone()[0]
+            return doc_id
+        except Exception as e:
+            logger.error(f"Erreur save_document '{doc_data.get('filename')}': {e}")
+            return None
+
+    def associate_document_to_session(self, document_id: int, session_id: int, cursor) -> bool:
+        """ Associe un document à une session. CURSEUR REQUIS. """
+        sql = """
+            INSERT INTO session_documents (session_id, document_id)
+            VALUES (%s, %s)
+            ON CONFLICT (session_id, document_id) DO NOTHING
+        """
+        try:
+            cursor.execute(sql, (session_id, document_id))
+            return True # OK même si conflit (déjà associé)
+        except Exception as e:
+            logger.error(f"Erreur associate_document_to_session doc:{document_id} sess:{session_id}: {e}")
+            return False
+
+    def get_document_by_id(self, document_id: int) -> Optional[Dict[str, Any]]:
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                 cursor.execute("SELECT id, filename, filetype, filesize, filedata, description, is_global, uploaded_by_id, created_at FROM documents WHERE id = %s", (document_id,))
+                 return cursor.fetchone()
+        except Exception as e:
+             logger.error(f"Erreur get_document_by_id {document_id}: {e}")
+             return None
+
+    def get_documents_metadata_for_session(self, session_id: int) -> List[Dict[str, Any]]:
+        sql = """
+            SELECT d.id, d.filename, d.filetype, d.filesize, d.description, d.is_global
+            FROM documents d
+            JOIN session_documents sd ON d.id = sd.document_id
+            WHERE sd.session_id = %s
+            ORDER BY d.filename
+        """
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                cursor.execute(sql, (session_id,))
                 return cursor.fetchall()
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération des présences pour la réservation {booking_id}: {e}")
+            logger.error(f"Erreur get_documents_metadata_for_session {session_id}: {e}")
             return []
 
-    # --- Activity Log Methods ---
+    def get_global_documents(self) -> List[Dict[str, Any]]:
+        try:
+            with self.get_cursor(use_dict_cursor=True) as cursor:
+                 cursor.execute("SELECT id, filename, filetype, filesize, description FROM documents WHERE is_global = TRUE ORDER BY filename")
+                 return cursor.fetchall()
+        except Exception as e:
+             logger.error(f"Erreur get_global_documents: {e}")
+             return []
 
-    def add_activity_log(self, action: str, user_info: Optional[Dict[str, Any]],
-                         details: Optional[Dict[str, Any]], ip_address: Optional[str] = None) -> Optional[int]:
-        """Ajoute une entrée dans les logs d'activité"""
+    # ... Delete/Update pour Documents ...
+
+    # --- Activity Logs ---
+    def add_activity_log(self, action: str, user_info: Optional[Dict]=None, details: Optional[Dict]=None, entity_type: Optional[str]=None, entity_id: Optional[int]=None, ip_address: Optional[str]=None, user_agent: Optional[str]=None):
         sql = """
-            INSERT INTO activity_logs (action, user_info, details, ip_address)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id
+            INSERT INTO activity_logs (action, user_info, details, entity_type, entity_id, ip_address, user_agent)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         params = (
             action,
             json.dumps(user_info) if user_info else None,
             json.dumps(details) if details else None,
-            ip_address
+            entity_type,
+            entity_id,
+            ip_address,
+            user_agent
         )
         try:
-            with self.get_cursor() as cursor:
+            # Commit immediately for logs
+            with self.get_cursor(commit_on_exit=True) as cursor:
                 cursor.execute(sql, params)
-                log_id = cursor.fetchone()[0]
-            return log_id
         except Exception as e:
-            logger.error(f"Erreur lors de l'ajout du log d'activité ({action}): {e}")
-            return None
+            # Log error but don't stop the main process
+            logger.error(f"Erreur add_activity_log ({action}): {e}")
+
 
     def get_activity_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Récupère les logs d'activité"""
+        sql = """
+            SELECT id, action, user_info, details, entity_type, entity_id, ip_address, user_agent, created_at
+            FROM activity_logs
+            ORDER BY created_at DESC
+            LIMIT %s
+        """
         try:
             with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        id, action, user_info, details, ip_address,
-                        TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp
-                    FROM activity_logs
-                    ORDER BY timestamp DESC
-                    LIMIT %s
-                """, (limit,))
-                return cursor.fetchall()
+                cursor.execute(sql, (limit,))
+                logs = cursor.fetchall()
+                # Convert datetime for JSON compatibility if needed
+                for log in logs:
+                    if isinstance(log.get('created_at'), datetime.datetime):
+                         log['created_at'] = log['created_at'].isoformat()
+                return logs
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération des logs d'activité: {e}")
+            logger.error(f"Erreur get_activity_logs: {e}")
             return []
 
-    # --- Feedback Methods ---
 
-    def save_feedback(self, feedback_data: Dict[str, Any]) -> Optional[int]:
-        """Enregistre un feedback utilisateur"""
-        sql = """
-            INSERT INTO feedback (type, message, email, status)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id
-        """
-        params = (
-            feedback_data.get('type', 'other'),
-            feedback_data['message'],
-            feedback_data.get('email'),
-            feedback_data.get('status', 'new')
-        )
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute(sql, params)
-                feedback_id = cursor.fetchone()[0]
-
-            self.add_activity_log(
-                'feedback_submitted',
-                {'email': feedback_data.get('email')},
-                {'feedback_id': feedback_id, 'type': feedback_data.get('type')}
-            )
-            return feedback_id
-        except Exception as e:
-            logger.error(f"Erreur lors de l'enregistrement du feedback: {e}")
-            return None
-
-    def get_all_feedback(self) -> List[Dict[str, Any]]:
-        """Récupère tous les feedbacks"""
+    # --- Admin User ---
+    def get_admin_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
         try:
             with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        id, type, message, email, status,
-                        TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp
-                    FROM feedback
-                    ORDER BY timestamp DESC
-                """)
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération des feedbacks: {e}")
-            return []
-
-    def update_feedback_status(self, feedback_id: int, status: str) -> bool:
-        """Met à jour le statut d'un feedback"""
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute("UPDATE feedback SET status = %s WHERE id = %s", (status, feedback_id))
-                updated_rows = cursor.rowcount
-            if updated_rows > 0:
-                 self.add_activity_log('feedback_status_updated', None, {'feedback_id': feedback_id, 'new_status': status})
-                 return True
-            return False
-        except Exception as e:
-             logger.error(f"Erreur lors de la mise à jour du statut du feedback {feedback_id}: {e}")
-             return False
-
-    # --- Document Methods ---
-
-    def save_document(self, document_data: Dict[str, Any]) -> Optional[int]:
-        """Enregistre un document (global ou non)"""
-        sql = """
-            INSERT INTO documents (
-                filename, filetype, filesize, filedata,
-                document_type, description, is_global, uploaded_by
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        """
-        params = (
-            document_data['filename'],
-            document_data['filetype'],
-            document_data['filesize'],
-            document_data['filedata'], # Should be psycopg2.Binary(file_bytes)
-            document_data.get('document_type', 'attachment'),
-            document_data.get('description', ''),
-            document_data.get('is_global', False),
-            document_data.get('uploaded_by')
-        )
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute(sql, params)
-                document_id = cursor.fetchone()[0]
-
-            self.add_activity_log(
-                'document_uploaded',
-                {'uploaded_by': document_data.get('uploaded_by')},
-                {'document_id': document_id, 'filename': document_data['filename']}
-            )
-            return document_id
-        except Exception as e:
-            logger.error(f"Erreur lors de l'enregistrement du document: {e}")
-            return None
-
-    def associate_document_to_booking(self, document_id: int, booking_id: int) -> bool:
-        """Associe un document existant à une réservation"""
-        sql = """
-            INSERT INTO document_bookings (document_id, booking_id)
-            VALUES (%s, %s)
-            ON CONFLICT (document_id, booking_id) DO NOTHING
-        """
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute(sql, (document_id, booking_id))
-                inserted_rows = cursor.rowcount
-            self.add_activity_log(
-                'document_associated',
-                None,
-                {'document_id': document_id, 'booking_id': booking_id, 'newly_inserted': inserted_rows > 0}
-            )
-            return True
-        except Exception as e:
-            logger.error(f"Erreur lors de l'association du document {document_id} à la réservation {booking_id}: {e}")
-            return False
-
-    def get_document_by_id(self, document_id: int) -> Optional[Dict[str, Any]]:
-        """Récupère un document par son ID (inclut les données binaires)"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        id, filename, filetype, filesize, filedata,
-                        document_type, description, is_global, uploaded_by,
-                        TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp
-                    FROM documents
-                    WHERE id = %s
-                """, (document_id,))
+                cursor.execute("SELECT id, username, password_hash, is_super_admin FROM admin_user WHERE username = %s", (username,))
                 return cursor.fetchone()
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération du document {document_id}: {e}")
+            logger.error(f"Erreur get_admin_user_by_username {username}: {e}")
             return None
 
-    def get_documents_metadata_by_booking_id(self, booking_id: int) -> List[Dict[str, Any]]:
-        """Récupère les métadonnées des documents associés à une réservation (sans les données binaires)"""
+    def get_admin_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
         try:
             with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        d.id, d.filename, d.filetype, d.filesize,
-                        d.document_type, d.description, d.is_global, d.uploaded_by,
-                        TO_CHAR(d.timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp
-                    FROM documents d
-                    JOIN document_bookings db ON d.id = db.document_id
-                    WHERE db.booking_id = %s
-                    ORDER BY d.timestamp DESC
-                """, (booking_id,))
-                return cursor.fetchall()
+                cursor.execute("SELECT id, username, password_hash, is_super_admin FROM admin_user WHERE id = %s", (user_id,))
+                return cursor.fetchone()
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération des métadonnées des documents pour la réservation {booking_id}: {e}")
-            return []
+            logger.error(f"Erreur get_admin_user_by_id {user_id}: {e}")
+            return None
 
-    def get_global_documents(self) -> List[Dict[str, Any]]:
-        """Récupère tous les documents globaux (métadonnées uniquement)"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        id, filename, filetype, filesize,
-                        document_type, description, uploaded_by,
-                        TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp
-                    FROM documents
-                    WHERE is_global = TRUE
-                    ORDER BY timestamp DESC
-                """)
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération des documents globaux: {e}")
-            return []
-
-    def get_all_documents_metadata(self) -> List[Dict[str, Any]]:
-        """Récupère les métadonnées de tous les documents"""
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                cursor.execute("""
-                    SELECT
-                        id, filename, filetype, filesize,
-                        document_type, description, is_global, uploaded_by,
-                        TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp
-                    FROM documents
-                    ORDER BY timestamp DESC
-                """)
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération de tous les documents: {e}")
-            return []
-
-    def delete_document(self, document_id: int) -> bool:
-        """Supprime un document"""
-        try:
-            doc_info = self.get_document_by_id(document_id)
-
-            with self.get_cursor() as cursor:
-                cursor.execute("DELETE FROM documents WHERE id = %s", (document_id,))
-                deleted_rows = cursor.rowcount
-
-            if deleted_rows > 0:
-                filename = doc_info['filename'] if doc_info else 'Unknown'
-                self.add_activity_log('document_deleted', None, {'document_id': document_id, 'filename': filename})
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"Erreur lors de la suppression du document {document_id}: {e}")
-            return False
-
-    # --- Dashboard Stats ---
-
+    # --- Stats (Exemple adapté) ---
     def get_dashboard_stats(self) -> Dict[str, Any]:
-        """Obtient des statistiques pour le tableau de bord admin"""
-        stats = {
-            'total_bookings': 0, 'total_participants': 0, 'bookings_by_service': {},
-            'bookings_by_month': {}, 'waiting_list_count': 0, 'bookings_by_formation': {},
-            'total_documents': 0, 'global_documents': 0, 'new_feedback_count': 0,
-            'bookings_trend': 0
-        }
+        stats = {'total_sessions': 0, 'total_participants': 0, 'sessions_by_department': {}, 'waiting_list_count': 0, 'new_feedback_count': 0}
         try:
             with self.get_cursor(use_dict_cursor=True) as cursor:
+                # Total Sessions (non-canceled)
+                cursor.execute("SELECT COUNT(*) as total FROM sessions WHERE status != 'canceled'")
+                stats['total_sessions'] = cursor.fetchone()['total']
+
+                # Total Participants (approx count from groups linked to non-canceled sessions)
+                # This is complex, maybe just count unique participants in attendances?
                 cursor.execute("""
-                    WITH BookingCounts AS (
-                        SELECT COUNT(*) as total FROM bookings
-                    ), ParticipantCounts AS (
-                        SELECT COALESCE(SUM(jsonb_array_length(participants)), 0) as total FROM bookings
-                    ), BookingsByService AS (
-                        SELECT service, COUNT(*) as count FROM bookings GROUP BY service
-                    ), BookingsByMonth AS (
-                        SELECT EXTRACT(MONTH FROM booking_date) as month, COUNT(*) as count FROM bookings GROUP BY month
-                    ), WaitlistCounts AS (
-                        SELECT COUNT(*) as total FROM waiting_list WHERE status = 'waiting'
-                    ), BookingsByFormation AS (
-                        SELECT formation_name, COUNT(*) as count FROM bookings GROUP BY formation_name
-                    ), DocumentCounts AS (
-                        SELECT COUNT(*) as total FROM documents
-                    ), GlobalDocCounts AS (
-                        SELECT COUNT(*) as total FROM documents WHERE is_global = TRUE
-                    ), NewFeedbackCounts AS (
-                        SELECT COUNT(*) as total FROM feedback WHERE status = 'new'
-                    ), BookingsLastMonth AS (
-                         SELECT COUNT(*) as count FROM bookings
-                         WHERE timestamp >= date_trunc('month', current_date - interval '1 month')
-                         AND timestamp < date_trunc('month', current_date)
-                    ), BookingsThisMonth AS (
-                         SELECT COUNT(*) as count FROM bookings
-                         WHERE timestamp >= date_trunc('month', current_date)
-                    )
-                    SELECT
-                        (SELECT total FROM BookingCounts) as total_bookings,
-                        (SELECT total FROM ParticipantCounts) as total_participants,
-                        (SELECT jsonb_object_agg(service, count) FROM BookingsByService) as bookings_by_service,
-                        (SELECT jsonb_object_agg(month::text, count) FROM BookingsByMonth) as bookings_by_month,
-                        (SELECT total FROM WaitlistCounts) as waiting_list_count,
-                        (SELECT jsonb_object_agg(formation_name, count) FROM BookingsByFormation) as bookings_by_formation,
-                        (SELECT total FROM DocumentCounts) as total_documents,
-                        (SELECT total FROM GlobalDocCounts) as global_documents,
-                        (SELECT total FROM NewFeedbackCounts) as new_feedback_count,
-                        (SELECT count FROM BookingsLastMonth) as bookings_last_month,
-                        (SELECT count FROM BookingsThisMonth) as bookings_this_month
+                    SELECT COUNT(DISTINCT p.id) as total
+                    FROM participants p
+                    JOIN formation_groups g ON p.group_id = g.id
+                    JOIN sessions s ON s.group_id = g.id
+                    WHERE s.status != 'canceled'
                 """)
-                result = cursor.fetchone()
+                stats['total_participants'] = cursor.fetchone()['total'] # Approximatif
 
-                if result:
-                    stats['total_bookings'] = result.get('total_bookings', 0)
-                    stats['total_participants'] = int(result.get('total_participants', 0))
-                    stats['bookings_by_service'] = result.get('bookings_by_service', {}) or {}
-                    stats['bookings_by_month'] = {int(k): v for k, v in (result.get('bookings_by_month', {}) or {}).items()}
-                    stats['waiting_list_count'] = result.get('waiting_list_count', 0)
-                    stats['bookings_by_formation'] = result.get('bookings_by_formation', {}) or {}
-                    stats['total_documents'] = result.get('total_documents', 0)
-                    stats['global_documents'] = result.get('global_documents', 0)
-                    stats['new_feedback_count'] = result.get('new_feedback_count', 0)
+                # Sessions by Department
+                cursor.execute("""
+                    SELECT d.name, COUNT(s.id) as count
+                    FROM sessions s
+                    JOIN formation_groups g ON s.group_id = g.id
+                    JOIN departments d ON g.department_id = d.id
+                    WHERE s.status != 'canceled'
+                    GROUP BY d.name
+                """)
+                stats['sessions_by_department'] = {row['name']: row['count'] for row in cursor.fetchall()}
 
-                    last_month = result.get('bookings_last_month', 0)
-                    this_month = result.get('bookings_this_month', 0)
-                    if last_month > 0:
-                        stats['bookings_trend'] = round(((this_month - last_month) / last_month) * 100)
-                    elif this_month > 0:
-                         stats['bookings_trend'] = 100
-                    else:
-                         stats['bookings_trend'] = 0
+                # Waiting List Count
+                cursor.execute("SELECT COUNT(*) as total FROM waitlist WHERE status = 'waiting'")
+                stats['waiting_list_count'] = cursor.fetchone()['total']
+
+                # New Feedback Count
+                cursor.execute("SELECT COUNT(*) as total FROM feedbacks WHERE status = 'new'")
+                stats['new_feedback_count'] = cursor.fetchone()['total']
 
             return stats
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération des statistiques: {e}")
-            return stats
+            logger.error(f"Erreur get_dashboard_stats: {e}")
+            return stats # Retourner stats partielles ou par défaut
 
-    # --- Search Method ---
-    def search(self, query: str) -> List[Dict[str, Any]]:
-        """Recherche globale dans les réservations, participants, documents"""
-        results = []
-        search_term = f"%{query}%"
-        try:
-            with self.get_cursor(use_dict_cursor=True) as cursor:
-                # Search Bookings
-                cursor.execute("""
-                    SELECT id, formation_name as title, TO_CHAR(booking_date, 'YYYY-MM-DD') as date,
-                           service as context, 'booking' as type
-                    FROM bookings
-                    WHERE formation_name ILIKE %s OR contact ILIKE %s OR email ILIKE %s OR service ILIKE %s
-                    LIMIT 10
-                """, (search_term, search_term, search_term, search_term))
-                results.extend(cursor.fetchall())
-
-                # Search Participants
-                cursor.execute("""
-                    SELECT b.id as booking_id, p.name as title, b.formation_name as context, 'participant' as type
-                    FROM bookings b, jsonb_to_recordset(b.participants) AS p(name text, email text, department text)
-                    WHERE p.name ILIKE %s OR p.email ILIKE %s OR p.department ILIKE %s
-                    LIMIT 10
-                """, (search_term, search_term, search_term))
-                results.extend(cursor.fetchall())
-
-                # Search Documents
-                cursor.execute("""
-                    SELECT id, filename as title, document_type as context, 'document' as type
-                    FROM documents
-                    WHERE filename ILIKE %s OR description ILIKE %s
-                    LIMIT 10
-                """, (search_term, search_term))
-                results.extend(cursor.fetchall())
-
-            # Add URLs (example)
-            for result in results:
-                if result['type'] == 'booking':
-                    result['url'] = f"/admin/booking/{result['id']}"
-                elif result['type'] == 'participant':
-                     result['url'] = f"/admin/participants?search={result['title']}"
-                elif result['type'] == 'document':
-                     result['url'] = f"/admin/documents?search={result['title']}"
-
-            return results
-
-        except Exception as e:
-            logger.error(f"Erreur lors de la recherche globale pour '{query}': {e}")
-            return []
+    # --- Add other necessary methods for waitlist, feedback, etc. ---
 
     def close_pool(self):
         """Ferme le pool de connexions"""
         if hasattr(self, 'connection_pool') and self.connection_pool:
             try:
                 self.connection_pool.closeall()
-                logger.info("Pool de connexions fermé.")
+                logger.info("Pool de connexions DB fermé.")
             except Exception as e:
-                logger.error(f"Erreur lors de la fermeture du pool de connexions: {e}")
+                logger.error(f"Erreur fermeture pool connexion: {e}")
 
-
-# --- Instance Creation and Cleanup ---
+# --- Instance Creation ---
 db_manager = None
 try:
     db_manager = DatabaseManager()
 except ConnectionError as e:
-    logger.critical(f"CRITICAL: Failed to initialize DatabaseManager - {e}")
+    logger.critical(f"CRITICAL: Echec init DatabaseManager - {e}")
+    db_manager = None # S'assurer qu'il est None si échec
 except Exception as e:
-     logger.critical(f"CRITICAL: Unexpected error initializing DatabaseManager - {e}")
+     logger.critical(f"CRITICAL: Erreur inattendue init DatabaseManager - {e}")
+     db_manager = None
 
-# Optional: Add a cleanup function for application shutdown
+# Optional: Cleanup on exit
 # import atexit
 # def cleanup_db():
 #     if db_manager:
